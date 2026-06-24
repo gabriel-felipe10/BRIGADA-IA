@@ -555,10 +555,162 @@ const PRODUCTS_DB = [
   },
 ];
 
-// ── Helpers de Estado ─────────────────────────────────────────────────────────
+// ── Helpers de Estado e Sincronização ─────────────────────────────────────────
 window.BrigadaData = {
-  users: [...USERS_DB],
-  products: [...PRODUCTS_DB],
+  users: [],
+  products: [],
+
+  // Carrega todos os produtos e usuários do Supabase via backend Flask
+  async load() {
+    try {
+      const [resProd, resUsers] = await Promise.all([
+        fetch('/api/products').then(r => {
+          if (!r.ok) throw new Error('Falha ao obter produtos');
+          return r.json();
+        }),
+        fetch('/api/users').then(r => {
+          if (!r.ok) throw new Error('Falha ao obter usuários');
+          return r.json();
+        })
+      ]);
+      
+      this.products = resProd;
+      this.users = resUsers;
+      console.log('Dados carregados com sucesso do Supabase via API');
+      return true;
+    } catch (err) {
+      console.warn("Erro ao carregar do Supabase (usando fallback local em memória):", err);
+      // Se falhar (por exemplo, sem tabelas criadas no banco), usa os dados locais mockados
+      this.products = [...PRODUCTS_DB];
+      this.users = [...USERS_DB];
+      return false;
+    }
+  },
+
+  // Adiciona produto no backend
+  async addProduct(p) {
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      this.products.push(created);
+      return created;
+    } catch (err) {
+      console.error("Erro na API ao criar produto (usando fallback local):", err);
+      const local = { id: this.nextProductId(), ...p };
+      this.products.push(local);
+      return local;
+    }
+  },
+
+  // Atualiza produto no backend
+  async updateProduct(id, p) {
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      const idx = this.products.findIndex(x => x.id === id);
+      if (idx !== -1) this.products[idx] = updated;
+      return updated;
+    } catch (err) {
+      console.error("Erro na API ao atualizar produto (usando fallback local):", err);
+      const idx = this.products.findIndex(x => x.id === id);
+      if (idx !== -1) {
+        this.products[idx] = { ...this.products[idx], ...p };
+        return this.products[idx];
+      }
+      return null;
+    }
+  },
+
+  // Remove produto no backend
+  async deleteProduct(id) {
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await res.text());
+      const idx = this.products.findIndex(x => x.id === id);
+      if (idx !== -1) this.products.splice(idx, 1);
+      return true;
+    } catch (err) {
+      console.error("Erro na API ao excluir produto (usando fallback local):", err);
+      const idx = this.products.findIndex(x => x.id === id);
+      if (idx !== -1) this.products.splice(idx, 1);
+      return true;
+    }
+  },
+
+  // Adiciona usuário no backend
+  async addUser(u) {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(u)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      this.users.push(created);
+      return created;
+    } catch (err) {
+      console.error("Erro na API ao criar usuário (usando fallback local):", err);
+      const local = { 
+        id: this.nextUserId(), 
+        ...u, 
+        createdAt: new Date().toISOString().split('T')[0], 
+        lastLogin: null 
+      };
+      this.users.push(local);
+      return local;
+    }
+  },
+
+  // Atualiza usuário no backend
+  async updateUser(id, u) {
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(u)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      const idx = this.users.findIndex(x => x.id === id);
+      if (idx !== -1) this.users[idx] = updated;
+      return updated;
+    } catch (err) {
+      console.error("Erro na API ao atualizar usuário (usando fallback local):", err);
+      const idx = this.users.findIndex(x => x.id === id);
+      if (idx !== -1) {
+        this.users[idx] = { ...this.users[idx], ...u };
+        return this.users[idx];
+      }
+      return null;
+    }
+  },
+
+  // Remove usuário no backend
+  async deleteUser(id) {
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await res.text());
+      const idx = this.users.findIndex(x => x.id === id);
+      if (idx !== -1) this.users.splice(idx, 1);
+      return true;
+    } catch (err) {
+      console.error("Erro na API ao excluir usuário (usando fallback local):", err);
+      const idx = this.users.findIndex(x => x.id === id);
+      if (idx !== -1) this.users.splice(idx, 1);
+      return true;
+    }
+  },
 
   // Calcula status de validade de um produto
   getProductStatus(product) {
@@ -598,7 +750,7 @@ window.BrigadaData = {
     };
   },
 
-  // Próximo ID disponível
+  // Próximo ID disponível (usado em fallback local)
   nextProductId() {
     return Math.max(...this.products.map(p => p.id), 0) + 1;
   },
@@ -613,7 +765,7 @@ window.BrigadaData = {
     return `${d}/${m}/${y}`;
   },
 
-  // Formata data de hora
+  // Formata data e hora
   formatDateTime(isoStr) {
     if (!isoStr) return '—';
     const d = new Date(isoStr);

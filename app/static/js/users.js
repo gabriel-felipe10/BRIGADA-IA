@@ -282,7 +282,7 @@ window.BrigadaUsers = {
     setTimeout(() => modal.style.display = 'none', 250);
   },
 
-  saveUser(container) {
+  async saveUser(container) {
     const name = container.querySelector('#user-field-name').value.trim();
     const email = container.querySelector('#user-field-email').value.trim();
     const role = container.querySelector('#user-field-role').value;
@@ -311,16 +311,14 @@ window.BrigadaUsers = {
       return;
     }
 
+    const avatar = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const payload = {
+      name, email, role, status, avatar,
+      ...(password ? { password } : {})
+    };
+
     if (this.editingId) {
-      const idx = window.BrigadaData.users.findIndex(u => u.id === this.editingId);
-      if (idx !== -1) {
-        window.BrigadaData.users[idx] = {
-          ...window.BrigadaData.users[idx],
-          name, email, role, status,
-          avatar: name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
-          ...(password ? { password } : {}),
-        };
-      }
+      await window.BrigadaData.updateUser(this.editingId, payload);
       // Update current user session if editing self
       if (this.editingId === window.BrigadaAuth.currentUser?.id) {
         window.BrigadaAuth.currentUser.name = name;
@@ -329,13 +327,7 @@ window.BrigadaUsers = {
       }
       window.BrigadaUI.showToast('Usuário atualizado com sucesso!', 'success');
     } else {
-      window.BrigadaData.users.push({
-        id: window.BrigadaData.nextUserId(),
-        name, email, password, role, status,
-        avatar: name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
-        createdAt: new Date().toISOString().split('T')[0],
-        lastLogin: null,
-      });
+      await window.BrigadaData.addUser(payload);
       window.BrigadaUI.showToast('Usuário cadastrado com sucesso!', 'success');
     }
 
@@ -343,12 +335,9 @@ window.BrigadaUsers = {
     this.renderTable(container);
   },
 
-  confirmDelete(container) {
-    const idx = window.BrigadaData.users.findIndex(u => u.id === this.deletingId);
-    if (idx !== -1) {
-      window.BrigadaData.users.splice(idx, 1);
-      window.BrigadaUI.showToast('Usuário removido.', 'success');
-    }
+  async confirmDelete(container) {
+    await window.BrigadaData.deleteUser(this.deletingId);
+    window.BrigadaUI.showToast('Usuário removido.', 'success');
     this.closeDeleteModal(container);
     this.renderTable(container);
   },

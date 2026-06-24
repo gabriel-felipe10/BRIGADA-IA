@@ -342,7 +342,7 @@ window.BrigadaProducts = {
     setTimeout(() => modal.style.display = 'none', 250);
   },
 
-  saveProduct(container) {
+  async saveProduct(container) {
     const plu = container.querySelector('#field-plu').value.trim();
     const name = container.querySelector('#field-name').value.trim();
     const category = container.querySelector('#field-category').value;
@@ -362,20 +362,13 @@ window.BrigadaProducts = {
       return;
     }
 
+    const payload = { plu, name, category, startDate, endDate, supplier, location, unit };
+
     if (this.editingId) {
-      const idx = window.BrigadaData.products.findIndex(p => p.id === this.editingId);
-      if (idx !== -1) {
-        window.BrigadaData.products[idx] = {
-          ...window.BrigadaData.products[idx],
-          plu, name, category, startDate, endDate, supplier, location, unit,
-        };
-      }
+      await window.BrigadaData.updateProduct(this.editingId, payload);
       window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');
     } else {
-      window.BrigadaData.products.push({
-        id: window.BrigadaData.nextProductId(),
-        plu, name, category, startDate, endDate, supplier, location, unit,
-      });
+      await window.BrigadaData.addProduct(payload);
       window.BrigadaUI.showToast('Produto cadastrado com sucesso!', 'success');
     }
 
@@ -383,12 +376,9 @@ window.BrigadaProducts = {
     this.renderTable(container);
   },
 
-  confirmDelete(container) {
-    const idx = window.BrigadaData.products.findIndex(p => p.id === this.deletingId);
-    if (idx !== -1) {
-      window.BrigadaData.products.splice(idx, 1);
-      window.BrigadaUI.showToast('Produto removido.', 'success');
-    }
+  async confirmDelete(container) {
+    await window.BrigadaData.deleteProduct(this.deletingId);
+    window.BrigadaUI.showToast('Produto removido.', 'success');
     this.closeDeleteModal(container);
     this.renderTable(container);
   },

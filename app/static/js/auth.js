@@ -17,7 +17,7 @@ window.BrigadaAuth = {
     }
   },
 
-  login(email, password) {
+  async login(email, password) {
     const user = window.BrigadaData.users.find(
       u => u.email === email && u.password === password && u.status === 'active'
     );
@@ -26,9 +26,9 @@ window.BrigadaAuth = {
     this.currentUser = { ...user };
     delete this.currentUser.password;
     sessionStorage.setItem('brigada_user', JSON.stringify(this.currentUser));
-    // Atualiza lastLogin no DB
-    const idx = window.BrigadaData.users.findIndex(u => u.id === user.id);
-    if (idx !== -1) window.BrigadaData.users[idx].lastLogin = new Date().toISOString();
+    // Atualiza lastLogin no DB via API
+    const now = new Date().toISOString();
+    await window.BrigadaData.updateUser(user.id, { lastLogin: now });
     return { success: true, user: this.currentUser };
   },
 

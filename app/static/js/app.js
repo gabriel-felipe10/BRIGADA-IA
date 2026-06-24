@@ -31,8 +31,25 @@ window.BrigadaUI = {
 window.BrigadaRouter = {
   currentPage: null,
 
-  init() {
+  async init() {
     window.BrigadaAuth.init();
+    
+    // Mostra tela de carregamento do banco de dados (Supabase)
+    const root = document.getElementById('app-root');
+    if (root) {
+      root.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#060918;color:#fff;font-family:var(--font-family, sans-serif);">
+          <div style="border:3px solid rgba(255,255,255,0.1);border-left-color:var(--primary, #8b5cf6);border-radius:50%;width:36px;height:36px;animation:spin-db 1s linear infinite;margin-bottom:1rem;"></div>
+          <p style="color:var(--text-secondary, rgba(255,255,255,0.6));font-size:0.9rem;letter-spacing:0.5px;">Conectando ao Supabase...</p>
+        </div>
+        <style>
+          @keyframes spin-db { to { transform: rotate(360deg); } }
+        </style>
+      `;
+    }
+    
+    await window.BrigadaData.load();
+    
     if (window.BrigadaAuth.isLoggedIn()) {
       this.navigate('dashboard');
     } else {
@@ -133,17 +150,24 @@ window.BrigadaRouter = {
       btnText.textContent = 'Autenticando...';
       errorEl.style.display = 'none';
 
-      // Simula latência
-      setTimeout(() => {
-        const result = window.BrigadaAuth.login(email, password);
-        spinner.style.display = 'none';
-        btnText.textContent = 'Entrar no Sistema';
-        if (result.success) {
-          window.BrigadaUI.showToast(`Bem-vindo, ${result.user.name}! 👋`, 'success');
-          this.navigate('dashboard');
-        } else {
+      // Simula latência e aguarda login assíncrono
+      setTimeout(async () => {
+        try {
+          const result = await window.BrigadaAuth.login(email, password);
+          spinner.style.display = 'none';
+          btnText.textContent = 'Entrar no Sistema';
+          if (result.success) {
+            window.BrigadaUI.showToast(`Bem-vindo, ${result.user.name}! 👋`, 'success');
+            this.navigate('dashboard');
+          } else {
+            errorEl.style.display = 'block';
+            errorEl.textContent = result.message;
+          }
+        } catch (err) {
+          spinner.style.display = 'none';
+          btnText.textContent = 'Entrar no Sistema';
           errorEl.style.display = 'block';
-          errorEl.textContent = result.message;
+          errorEl.textContent = 'Erro ao tentar autenticar. Tente novamente.';
         }
       }, 700);
     });
