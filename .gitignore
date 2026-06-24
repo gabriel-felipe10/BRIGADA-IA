@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Logs (keep directory, ignore data)
+logs/*.db
+logs/*.jsonl
+logs/*.log
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini

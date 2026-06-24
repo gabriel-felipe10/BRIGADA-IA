@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — BRIGADA-IA{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<section class="section fade-in" id="stats-section">
+    <div class="section__header">
+        <h2 class="section__title">📈 Visão Geral</h2>
+    </div>
+    <div class="stats-grid stagger" id="stats-grid">
+        <div class="card" id="card-total">
+            <p class="card__title">Total de Validações</p>
+            <p class="card__value card__value--accent" id="stat-total">0</p>
+            <p class="card__footer">Todas as execuções</p>
+        </div>
+        <div class="card" id="card-success">
+            <p class="card__title">Taxa de Sucesso</p>
+            <p class="card__value card__value--success" id="stat-rate">0%</p>
+            <p class="card__footer" id="stat-success-count">0 aprovadas</p>
+        </div>
+        <div class="card" id="card-errors">
+            <p class="card__title">Erros Detectados</p>
+            <p class="card__value card__value--error" id="stat-errors">0</p>
+            <p class="card__footer">Validações com falha</p>
+        </div>
+        <div class="card" id="card-types">
+            <p class="card__title">Tipos Processados</p>
+            <p class="card__value card__value--accent" id="stat-types">0</p>
+            <p class="card__footer" id="stat-types-detail">Nenhum tipo</p>
+        </div>
+    </div>
+</section>
+
+<!-- Validation Panel -->
+<section class="section fade-in" id="validation-section">
+    <div class="section__header">
+        <h2 class="section__title">🔍 Nova Validação</h2>
+    </div>
+
+    <div class="card" style="padding: var(--space-xl);">
+        <div class="validation-panel">
+            <!-- Input Side -->
+            <div class="validation-input">
+                <!-- Type Selector -->
+                <div class="editor-label">Tipo de Validação</div>
+                <div class="type-selector" id="type-selector">
+                    <button class="type-btn type-btn--active" data-type="csv" id="btn-type-csv">
+                        📊 CSV
+                    </button>
+                    <button class="type-btn" data-type="json" id="btn-type-json">
+                        📋 JSON
+                    </button>
+                    <button class="type-btn" data-type="business_rule" id="btn-type-business">
+                        ⚙️ Regra de Negócio
+                    </button>
+                </div>
+
+                <!-- JSON Editor -->
+                <div class="editor-wrapper">
+                    <label class="editor-label" for="json-editor">Payload JSON</label>
+                    <textarea
+                        class="json-editor"
+                        id="json-editor"
+                        placeholder='Cole seu payload JSON aqui...'
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="btn-validate" id="btn-validate" onclick="submitValidation()">
+                    <span>🚀 Executar Validação</span>
+                </button>
+            </div>
+
+            <!-- Result Side -->
+            <div class="result-container">
+                <!-- Placeholder -->
+                <div class="result-placeholder" id="result-placeholder">
+                    <div class="result-placeholder__icon">🛡️</div>
+                    <p class="result-placeholder__text">
+                        Selecione um tipo e insira os dados<br>para iniciar a validação
+                    </p>
+                </div>
+
+                <!-- Result Card (hidden initially) -->
+                <div class="result-card" id="result-card">
+                    <div class="result-header">
+                        <div class="result-icon" id="result-icon">✅</div>
+                        <div>
+                            <p class="result-title" id="result-title">Resultado</p>
+                            <p class="result-meta" id="result-meta"></p>
+                        </div>
+                    </div>
+
+                    <!-- Error Details -->
+                    <div class="result-details" id="result-details" style="display: none;">
+                        <p class="result-details__title">Detalhes dos Erros</p>
+                        <ul class="result-details__list" id="result-details-list"></ul>
+                    </div>
+
+                    <!-- Full JSON Response -->
+                    <div>
+                        <p class="result-details__title" style="margin-top: var(--space-md);">Resposta Completa</p>
+                        <pre class="result-json" id="result-json"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activity -->
+<section class="section fade-in" id="recent-section">
+    <div class="section__header">
+        <h2 class="section__title">🕐 Atividade Recente</h2>
+        <a href="/logs" class="nav__link" id="link-view-all">Ver tudo →</a>
+    </div>
+    <div class="logs-table-wrapper">
+        <table class="logs-table" id="recent-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Data/Hora</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Duração</th>
+                </tr>
+            </thead>
+            <tbody id="recent-tbody">
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <div class="empty-state__icon">📭</div>
+                        <p class="empty-state__text">Nenhuma validação realizada ainda</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

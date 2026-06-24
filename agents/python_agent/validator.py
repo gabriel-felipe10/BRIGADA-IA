@@ -1,4 +1,5 @@
 import json
+from loguru import logger
 
 
 def run_validation(payload):
@@ -14,9 +15,12 @@ def run_validation(payload):
 
     if "type" not in payload:
         result["details"].append("Missing 'type' field")
+        logger.warning("Payload sem campo 'type'")
         return result
 
     payload_type = payload["type"]
+    logger.debug("Validando payload | tipo={}", payload_type)
+
     if payload_type == "csv":
         # Simple CSV validation: check that data is a list of lists
         if "data" not in payload or not isinstance(payload["data"], list):
@@ -56,8 +60,15 @@ def run_validation(payload):
                     result["details"].append("'value' must be a number")
     else:
         result["details"].append(f"Unsupported type '{payload_type}'")
+        logger.warning("Tipo de validação não suportado: {}", payload_type)
 
     if not result["details"]:
         result["status"] = "success"
+        logger.debug("Validação OK | tipo={}", payload_type)
+    else:
+        logger.debug(
+            "Validação com erros | tipo={} erros={}",
+            payload_type, len(result["details"]),
+        )
 
     return result

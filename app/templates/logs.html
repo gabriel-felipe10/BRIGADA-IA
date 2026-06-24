@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Logs de Auditoria — BRIGADA-IA{% endblock %}
+
+{% block content %}
+<section class="section fade-in">
+    <div class="section__header">
+        <h2 class="section__title">📋 Logs de Auditoria</h2>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar" id="log-filters">
+        <select id="filter-status" onchange="loadLogs()">
+            <option value="">Todos os Status</option>
+            <option value="success">✅ Sucesso</option>
+            <option value="error">❌ Erro</option>
+        </select>
+        <select id="filter-type" onchange="loadLogs()">
+            <option value="">Todos os Tipos</option>
+            <option value="csv">📊 CSV</option>
+            <option value="json">📋 JSON</option>
+            <option value="business_rule">⚙️ Regra de Negócio</option>
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="logs-table-wrapper">
+        <table class="logs-table" id="logs-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Data/Hora</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Duração</th>
+                    <th>Detalhes</th>
+                </tr>
+            </thead>
+            <tbody id="logs-tbody">
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-state__icon">📭</div>
+                        <p class="empty-state__text">Carregando logs...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="logs-pagination">
+        <button class="pagination__btn" id="btn-prev" onclick="changePage(-1)" disabled>← Anterior</button>
+        <span class="pagination__info" id="page-info">Página 1</span>
+        <button class="pagination__btn" id="btn-next" onclick="changePage(1)">Próxima →</button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-load logs when page opens
+    document.addEventListener('DOMContentLoaded', () => loadLogs());
+</script>
+{% endblock %}

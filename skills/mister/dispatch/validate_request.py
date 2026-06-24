@@ -9,6 +9,8 @@ import sys
 import json
 import subprocess
 
+from loguru import logger
+
 
 def main():
     # Determine paths relative to this script
@@ -17,17 +19,22 @@ def main():
     root_dir = os.path.abspath(os.path.join(script_dir, "..", "..", ".."))
     python_agent_main = os.path.join(root_dir, "agents", "python_agent", "main.py")
 
+    logger.info("Dispatch iniciado | agent={}", python_agent_main)
+
     # Read input payload
     if len(sys.argv) > 1:
         arg = sys.argv[1]
         # Check if the argument is a JSON string or file path
         if arg.strip().startswith("{"):
             payload_str = arg
+            logger.debug("Input recebido via argumento JSON")
         else:
             if os.path.exists(arg):
                 with open(arg, "r", encoding="utf-8") as f:
                     payload_str = f.read()
+                logger.debug("Input recebido via arquivo: {}", arg)
             else:
+                logger.error("Arquivo de input não encontrado: {}", arg)
                 print(
                     json.dumps(
                         {
@@ -40,11 +47,13 @@ def main():
     else:
         # Read from stdin
         payload_str = sys.stdin.read()
+        logger.debug("Input recebido via stdin")
 
     # Verify we can parse JSON
     try:
         json.loads(payload_str)
     except json.JSONDecodeError as e:
+        logger.error("JSON inválido no input: {}", str(e))
         print(
             json.dumps(
                 {
@@ -56,6 +65,7 @@ def main():
         sys.exit(1)
 
     # Invoke python_agent/main.py using the current python executable
+    logger.info("Invocando agente de validação...")
     try:
         proc = subprocess.run(
             [sys.executable, python_agent_main],
@@ -65,9 +75,14 @@ def main():
             encoding="utf-8",
             check=True,
         )
+        logger.info("Agente retornou com sucesso")
         # Output result
         print(proc.stdout)
     except subprocess.CalledProcessError as e:
+        logger.error(
+            "Agente falhou | returncode={} stderr={}",
+            e.returncode, e.stderr.strip(),
+        )
         print(
             json.dumps(
                 {
@@ -81,6 +96,7 @@ def main():
         )
         sys.exit(1)
     except Exception as e:
+        logger.exception("Erro inesperado no dispatch: {}", str(e))
         print(
             json.dumps(
                 {

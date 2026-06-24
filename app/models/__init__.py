@@ -1,0 +1,1 @@
+"""BRIGADA-IA — Models package."""

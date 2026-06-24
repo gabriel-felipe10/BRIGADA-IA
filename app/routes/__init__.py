@@ -1,0 +1,1 @@
+"""BRIGADA-IA — Routes package."""
