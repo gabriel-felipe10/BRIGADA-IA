@@ -83,8 +83,8 @@ window.BrigadaProducts = {
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">Data Inicial *</label>
-                  <input type="date" id="field-startDate" class="form-input" required>
+                  <label class="form-label">Data Inicial</label>
+                  <input type="date" id="field-startDate" class="form-input">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Data Final (Validade) *</label>
@@ -101,14 +101,20 @@ window.BrigadaProducts = {
                   <input type="text" id="field-location" class="form-input" placeholder="ex: Câmara Fria A1">
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Unidade</label>
-                <select id="field-unit" class="form-input">
-                  <option value="kg">kg</option>
-                  <option value="pct">pct</option>
-                  <option value="un">un</option>
-                  <option value="cx">cx</option>
-                </select>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Quantidade</label>
+                  <input type="number" id="field-quantity" class="form-input" placeholder="ex: 10.5" step="any" min="0">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Unidade</label>
+                  <select id="field-unit" class="form-input">
+                    <option value="kg">kg</option>
+                    <option value="pct">pct</option>
+                    <option value="un">un</option>
+                    <option value="cx">cx</option>
+                  </select>
+                </div>
               </div>
             </form>
           </div>
@@ -187,10 +193,13 @@ window.BrigadaProducts = {
 
     const rows = products.map(p => {
       const status = window.BrigadaData.getProductStatus(p);
+      const qty = p.quantity !== undefined ? p.quantity : 0;
+      const unit = p.unit || 'kg';
       return `
         <tr data-id="${p.id}">
           <td><span class="plu-badge">${p.plu}</span></td>
           <td class="product-name">${p.name}</td>
+          <td><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
           <td><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
           <td>${window.BrigadaData.formatDate(p.startDate)}</td>
           <td>${window.BrigadaData.formatDate(p.endDate)}</td>
@@ -214,6 +223,7 @@ window.BrigadaProducts = {
             <tr>
               <th>PLU</th>
               <th>Produto</th>
+              <th>Qtd</th>
               <th>Categoria</th>
               <th>Data Inicial</th>
               <th>Data Final</th>
@@ -291,9 +301,8 @@ window.BrigadaProducts = {
     container.querySelector('#modal-title').textContent = 'Novo Produto';
     container.querySelector('#product-form').reset();
     container.querySelector('#field-id').value = '';
-    // Set default start date to today
-    const today = new Date().toISOString().split('T')[0];
-    container.querySelector('#field-startDate').value = today;
+    container.querySelector('#field-startDate').value = '';
+    container.querySelector('#field-quantity').value = '';
     this.showModal(container);
   },
 
@@ -306,11 +315,12 @@ window.BrigadaProducts = {
     container.querySelector('#field-plu').value = product.plu;
     container.querySelector('#field-name').value = product.name;
     container.querySelector('#field-category').value = product.category;
-    container.querySelector('#field-startDate').value = product.startDate;
+    container.querySelector('#field-startDate').value = product.startDate || '';
     container.querySelector('#field-endDate').value = product.endDate;
     container.querySelector('#field-supplier').value = product.supplier || '';
     container.querySelector('#field-location').value = product.location || '';
     container.querySelector('#field-unit').value = product.unit || 'kg';
+    container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
     this.showModal(container);
   },
 
@@ -351,18 +361,20 @@ window.BrigadaProducts = {
     const supplier = container.querySelector('#field-supplier').value.trim();
     const location = container.querySelector('#field-location').value.trim();
     const unit = container.querySelector('#field-unit').value;
+    const qtyVal = container.querySelector('#field-quantity').value;
+    const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
 
-    if (!plu || !name || !category || !startDate || !endDate) {
+    if (!plu || !name || !category || !endDate) {
       window.BrigadaUI.showToast('Preencha todos os campos obrigatórios.', 'error');
       return;
     }
 
-    if (endDate < startDate) {
+    if (startDate && endDate < startDate) {
       window.BrigadaUI.showToast('A data final não pode ser anterior à data inicial.', 'error');
       return;
     }
 
-    const payload = { plu, name, category, startDate, endDate, supplier, location, unit };
+    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity };
 
     if (this.editingId) {
       await window.BrigadaData.updateProduct(this.editingId, payload);

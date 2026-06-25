@@ -23,7 +23,8 @@ def get_products():
                 "endDate": p.get("end_date"),
                 "unit": p.get("unit"),
                 "supplier": p.get("supplier"),
-                "location": p.get("location")
+                "location": p.get("location"),
+                "quantity": p.get("quantity", 0)
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -40,7 +41,7 @@ def create_product():
         data = request.get_json(force=True)
         logger.debug("Criando produto | data={}", data)
         
-        required = ["plu", "name", "category", "startDate", "endDate"]
+        required = ["plu", "name", "category", "endDate"]
         for field in required:
             if not data.get(field):
                 return jsonify({"error": f"Campo '{field}' é obrigatório"}), 400
@@ -50,11 +51,12 @@ def create_product():
             "plu": data.get("plu"),
             "name": data.get("name"),
             "category": data.get("category"),
-            "start_date": data.get("startDate"),
+            "start_date": data.get("startDate") if data.get("startDate") else None,
             "end_date": data.get("endDate"),
             "unit": data.get("unit", "kg"),
             "supplier": data.get("supplier"),
-            "location": data.get("location")
+            "location": data.get("location"),
+            "quantity": float(data.get("quantity", 0)) if data.get("quantity") is not None else 0.0
         }
         
         response = supabase.table("produtos").insert(db_data).execute()
@@ -71,7 +73,8 @@ def create_product():
             "endDate": p.get("end_date"),
             "unit": p.get("unit"),
             "supplier": p.get("supplier"),
-            "location": p.get("location")
+            "location": p.get("location"),
+            "quantity": p.get("quantity", 0)
         }
         
         logger.info("Produto criado no Supabase | id={} plu={}", created["id"], created["plu"])
@@ -93,11 +96,12 @@ def update_product(product_id):
         if "plu" in data: db_data["plu"] = data["plu"]
         if "name" in data: db_data["name"] = data["name"]
         if "category" in data: db_data["category"] = data["category"]
-        if "startDate" in data: db_data["start_date"] = data["startDate"]
+        if "startDate" in data: db_data["start_date"] = data["startDate"] if data["startDate"] else None
         if "endDate" in data: db_data["end_date"] = data["endDate"]
         if "unit" in data: db_data["unit"] = data["unit"]
         if "supplier" in data: db_data["supplier"] = data["supplier"]
         if "location" in data: db_data["location"] = data["location"]
+        if "quantity" in data: db_data["quantity"] = float(data["quantity"]) if data["quantity"] is not None else 0.0
         
         response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
         if not response.data:
@@ -113,7 +117,8 @@ def update_product(product_id):
             "endDate": p.get("end_date"),
             "unit": p.get("unit"),
             "supplier": p.get("supplier"),
-            "location": p.get("location")
+            "location": p.get("location"),
+            "quantity": p.get("quantity", 0)
         }
         
         logger.info("Produto atualizado no Supabase | id={}", updated["id"])
