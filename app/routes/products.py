@@ -46,10 +46,17 @@ def create_product():
             if not data.get(field):
                 return jsonify({"error": f"Campo '{field}' é obrigatório"}), 400
         
+        # Verifica se já existe um produto com o mesmo PLU
+        plu = data.get("plu").strip()
+        existing = supabase.table("produtos").select("id, name").eq("plu", plu).execute()
+        if existing.data:
+            logger.warning("Tentativa de cadastrar PLU duplicado | plu={}", plu)
+            return jsonify({"error": f"Já existe um produto cadastrado com o PLU '{plu}' ({existing.data[0]['name']})."}), 409
+        
         # Mapeia camelCase para o snake_case do banco
         db_data = {
-            "plu": data.get("plu"),
-            "name": data.get("name"),
+            "plu": plu,
+            "name": data.get("name").strip(),
             "category": data.get("category"),
             "start_date": data.get("startDate") if data.get("startDate") else None,
             "end_date": data.get("endDate"),
@@ -91,10 +98,18 @@ def update_product(product_id):
         data = request.get_json(force=True)
         logger.debug("Atualizando produto | id={} data={}", product_id, data)
         
+        # Se alterou o PLU, verifica se não vai duplicar outro produto
+        if "plu" in data:
+            plu = data["plu"].strip()
+            existing = supabase.table("produtos").select("id, name").eq("plu", plu).neq("id", product_id).execute()
+            if existing.data:
+                logger.warning("Tentativa de atualizar PLU para duplicado | id={} plu={}", product_id, plu)
+                return jsonify({"error": f"Já existe outro produto cadastrado com o PLU '{plu}' ({existing.data[0]['name']})."}), 409
+
         # Mapeia campos do front-end para o banco
         db_data = {}
-        if "plu" in data: db_data["plu"] = data["plu"]
-        if "name" in data: db_data["name"] = data["name"]
+        if "plu" in data: db_data["plu"] = data["plu"].strip()
+        if "name" in data: db_data["name"] = data["name"].strip()
         if "category" in data: db_data["category"] = data["category"]
         if "startDate" in data: db_data["start_date"] = data["startDate"] if data["startDate"] else None
         if "endDate" in data: db_data["end_date"] = data["endDate"]

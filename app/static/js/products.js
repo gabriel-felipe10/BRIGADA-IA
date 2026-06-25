@@ -374,18 +374,30 @@ window.BrigadaProducts = {
       return;
     }
 
-    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity };
-
-    if (this.editingId) {
-      await window.BrigadaData.updateProduct(this.editingId, payload);
-      window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');
-    } else {
-      await window.BrigadaData.addProduct(payload);
-      window.BrigadaUI.showToast('Produto cadastrado com sucesso!', 'success');
+    // Validação local de PLU duplicado (independente do nível de usuário)
+    const duplicate = window.BrigadaData.products.find(
+      p => p.plu.trim().toLowerCase() === plu.toLowerCase() && p.id !== this.editingId
+    );
+    if (duplicate) {
+      window.BrigadaUI.showToast(`Não é permitido cadastrar produtos com o mesmo PLU. O PLU "${plu}" já pertence a: ${duplicate.name}.`, 'error');
+      return;
     }
 
-    this.closeModal(container);
-    this.renderTable(container);
+    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity };
+
+    try {
+      if (this.editingId) {
+        await window.BrigadaData.updateProduct(this.editingId, payload);
+        window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');
+      } else {
+        await window.BrigadaData.addProduct(payload);
+        window.BrigadaUI.showToast('Produto cadastrado com sucesso!', 'success');
+      }
+      this.closeModal(container);
+      this.renderTable(container);
+    } catch (err) {
+      window.BrigadaUI.showToast(err.message || 'Erro ao salvar o produto.', 'error');
+    }
   },
 
   async confirmDelete(container) {

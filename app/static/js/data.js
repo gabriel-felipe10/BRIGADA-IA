@@ -595,11 +595,18 @@ window.BrigadaData = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p)
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao salvar produto no servidor');
+      }
       const created = await res.json();
       this.products.push(created);
       return created;
     } catch (err) {
+      // Se for um erro de validação do próprio backend, repassa para o front exibir
+      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
+        throw err;
+      }
       console.error("Erro na API ao criar produto (usando fallback local):", err);
       const local = { id: this.nextProductId(), ...p };
       this.products.push(local);
@@ -615,12 +622,18 @@ window.BrigadaData = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p)
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao atualizar produto no servidor');
+      }
       const updated = await res.json();
       const idx = this.products.findIndex(x => x.id === id);
       if (idx !== -1) this.products[idx] = updated;
       return updated;
     } catch (err) {
+      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
+        throw err;
+      }
       console.error("Erro na API ao atualizar produto (usando fallback local):", err);
       const idx = this.products.findIndex(x => x.id === id);
       if (idx !== -1) {
