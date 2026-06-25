@@ -97,8 +97,12 @@ window.BrigadaProducts = {
                   <input type="text" id="field-supplier" class="form-input" placeholder="Nome do fornecedor">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Localização</label>
-                  <input type="text" id="field-location" class="form-input" placeholder="ex: Câmara Fria A1">
+                  <label class="form-label">Localização *</label>
+                  <select id="field-location" class="form-input" required>
+                    <option value="">Selecione...</option>
+                    <option value="resfriado">❄️ Resfriado</option>
+                    <option value="congelado">🥶 Congelado</option>
+                  </select>
                 </div>
               </div>
               <div class="form-row">
@@ -205,7 +209,11 @@ window.BrigadaProducts = {
           <td>${window.BrigadaData.formatDate(p.endDate)}</td>
           <td><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
           <td>${p.supplier || '—'}</td>
-          <td>${p.location || '—'}</td>
+          <td>
+            ${p.location === 'resfriado' ? '<span class="badge" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2);">❄️ Resfriado</span>' : 
+              p.location === 'congelado' ? '<span class="badge" style="background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2);">🥶 Congelado</span>' : 
+              p.location || '—'}
+          </td>
           <td class="actions-cell">
             <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>
             <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>
@@ -359,13 +367,13 @@ window.BrigadaProducts = {
     const startDate = container.querySelector('#field-startDate').value;
     const endDate = container.querySelector('#field-endDate').value;
     const supplier = container.querySelector('#field-supplier').value.trim();
-    const location = container.querySelector('#field-location').value.trim();
+    const location = container.querySelector('#field-location').value;
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
 
-    if (!plu || !name || !category || !endDate) {
-      window.BrigadaUI.showToast('Preencha todos os campos obrigatórios.', 'error');
+    if (!plu || !name || !category || !endDate || !location) {
+      window.BrigadaUI.showToast('Preencha todos os campos obrigatórios (incluindo Localização).', 'error');
       return;
     }
 

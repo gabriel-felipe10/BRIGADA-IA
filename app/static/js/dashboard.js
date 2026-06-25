@@ -201,7 +201,7 @@ window.BrigadaDashboard = {
         <div class="alert-item__icon">${catIcon[p.category]}</div>
         <div class="alert-item__body">
           <p class="alert-item__name">${p.name}</p>
-          <p class="alert-item__meta">PLU: ${p.plu} · ${p.location || '—'}</p>
+          <p class="alert-item__meta">PLU: ${p.plu} · ${p.location === 'resfriado' ? '❄️ Resfriado' : p.location === 'congelado' ? '🥶 Congelado' : p.location || '—'}</p>
         </div>
         <div class="alert-item__status">
           <span class="badge ${p.status.class}">${p.status.icon} ${p.status.label}</span>
@@ -272,6 +272,7 @@ window.BrigadaDashboard = {
           <tr>
             <th>PLU</th>
             <th>Produto</th>
+            <th>Qtd</th>
             <th>Categoria</th>
             <th>Data Inicial</th>
             <th>Validade</th>
@@ -284,11 +285,16 @@ window.BrigadaDashboard = {
             <tr>
               <td><span class="plu-badge">${p.plu}</span></td>
               <td class="product-name">${p.name}</td>
+              <td><strong style="color:var(--primary); font-size: 0.95rem;">${p.quantity !== undefined ? p.quantity : 0}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${p.unit || 'kg'}</span></td>
               <td><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
               <td>${window.BrigadaData.formatDate(p.startDate)}</td>
               <td>${window.BrigadaData.formatDate(p.endDate)}</td>
               <td><span class="badge ${p._status.class}">${p._status.icon} ${p._status.label}</span></td>
-              <td>${p.location || '—'}</td>
+              <td>
+                ${p.location === 'resfriado' ? '<span class="badge" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2);">❄️ Resfriado</span>' : 
+                  p.location === 'congelado' ? '<span class="badge" style="background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2);">🥶 Congelado</span>' : 
+                  p.location || '—'}
+              </td>
             </tr>
           `).join('')}
         </tbody>
