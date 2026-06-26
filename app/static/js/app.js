@@ -107,17 +107,6 @@ window.BrigadaRouter = {
               <span id="btn-login-text">Entrar no Sistema</span>
             </button>
           </form>
-          <div class="login-hints">
-            <p class="login-hints__title">Contas de teste:</p>
-            <div class="login-hint" data-email="admin@brigada.com" data-pwd="admin123">
-              <span>🛡️ Super Admin</span>
-              <span class="login-hint__cred">admin@brigada.com / admin123</span>
-            </div>
-            <div class="login-hint" data-email="marcos@brigada.com" data-pwd="123456">
-              <span>👤 Usuário</span>
-              <span class="login-hint__cred">marcos@brigada.com / 123456</span>
-            </div>
-          </div>
         </div>
       </div>
     `;
@@ -126,15 +115,6 @@ window.BrigadaRouter = {
     document.getElementById('toggle-password')?.addEventListener('click', () => {
       const input = document.getElementById('login-password');
       input.type = input.type === 'password' ? 'text' : 'password';
-    });
-
-    // Quick fill hints
-    root.querySelectorAll('.login-hint').forEach(hint => {
-      hint.style.cursor = 'pointer';
-      hint.addEventListener('click', () => {
-        document.getElementById('login-email').value = hint.dataset.email;
-        document.getElementById('login-password').value = hint.dataset.pwd;
-      });
     });
 
     // Form submit
