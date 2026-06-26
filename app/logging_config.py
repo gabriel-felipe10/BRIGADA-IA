@@ -42,23 +42,24 @@ logger.add(
 # ---------------------------------------------------------------------------
 # Sink 2 — Arquivo rotacionado (logs/brigada.log)
 # ---------------------------------------------------------------------------
-_log_file = os.path.join(Config.LOG_DIR, "brigada.log")
+if not os.environ.get("VERCEL"):
+    _log_file = os.path.join(Config.LOG_DIR, "brigada.log")
 
-_file_format = (
-    "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
-    "{level: <8} | "
-    "{name}:{function}:{line} — {message}"
-)
+    _file_format = (
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
+        "{level: <8} | "
+        "{name}:{function}:{line} — {message}"
+    )
 
-logger.add(
-    _log_file,
-    format=_file_format,
-    level="DEBUG",
-    rotation="10 MB",
-    retention="7 days",
-    compression="zip",
-    encoding="utf-8",
-    enqueue=True,  # Thread-safe
-)
+    logger.add(
+        _log_file,
+        format=_file_format,
+        level="DEBUG",
+        rotation="10 MB",
+        retention="7 days",
+        compression="zip",
+        encoding="utf-8",
+        enqueue=True,  # Thread-safe
+    )
 
 logger.info("Logger BRIGADA-IA inicializado com sucesso")

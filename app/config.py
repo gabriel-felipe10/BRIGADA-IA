@@ -15,10 +15,12 @@ class Config:
     DEBUG = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
 
     # Database
-    DB_PATH = os.path.join(BASE_DIR, "logs", "brigada.db")
-
-    # Logs
-    LOG_DIR = os.path.join(BASE_DIR, "logs")
+    if os.environ.get("VERCEL"):
+        DB_PATH = "/tmp/brigada.db"
+        LOG_DIR = "/tmp"
+    else:
+        DB_PATH = os.path.join(BASE_DIR, "logs", "brigada.db")
+        LOG_DIR = os.path.join(BASE_DIR, "logs")
 
     # App
     APP_NAME = "BRIGADA-IA"
