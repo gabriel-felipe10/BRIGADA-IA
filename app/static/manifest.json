@@ -1,0 +1,31 @@
+{
+  "name": "BRIGADA-IA — Brigada de Validade",
+  "short_name": "BRIGADA-IA",
+  "description": "Sistema de Gestão de Validade para Açougue Varejo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060918",
+  "theme_color": "#8b5cf6",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

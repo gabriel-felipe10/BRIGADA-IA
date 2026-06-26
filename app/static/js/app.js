@@ -95,7 +95,10 @@ window.BrigadaRouter = {
               <input type="email" id="login-email" class="form-input" placeholder="seu@email.com" autocomplete="email" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Senha</label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" style="margin-bottom: 0;">Senha</label>
+                <a href="#" id="link-forgot-password" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 500; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">Esqueci minha senha</a>
+              </div>
               <div class="password-wrapper">
                 <input type="password" id="login-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required>
                 <button type="button" class="btn-eye" id="toggle-password">👁️</button>
@@ -109,12 +112,56 @@ window.BrigadaRouter = {
           </form>
         </div>
       </div>
+
+      <!-- Modal Esqueci Minha Senha -->
+      <div class="modal-overlay" id="forgot-password-modal" style="display:none; z-index: 2000;">
+        <div class="modal modal--sm">
+          <div class="modal-header">
+            <h3 class="modal-title">🔑 Redefinir Senha</h3>
+            <button class="modal-close" id="forgot-modal-close">✕</button>
+          </div>
+          <div class="modal-body" style="padding: 1.5rem 0;">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+              Para redefinir sua senha, solicite ao **Super Administrador** para alterá-la na aba de gerenciamento de usuários do sistema.
+            </p>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">
+              Ou entre em contato via e-mail: <strong style="color: var(--primary);">admin@brigada.com</strong>
+            </p>
+          </div>
+          <div class="modal-footer" style="padding-top: 0;">
+            <button class="btn btn--primary btn--full" id="forgot-btn-ok">Entendi</button>
+          </div>
+        </div>
+      </div>
     `;
 
     // Toggle password
     document.getElementById('toggle-password')?.addEventListener('click', () => {
       const input = document.getElementById('login-password');
       input.type = input.type === 'password' ? 'text' : 'password';
+    });
+
+    // Forgot password modal events
+    const forgotModal = document.getElementById('forgot-password-modal');
+    const closeForgotModal = () => {
+      if (forgotModal) {
+        forgotModal.classList.remove('modal-overlay--visible');
+        setTimeout(() => forgotModal.style.display = 'none', 250);
+      }
+    };
+
+    document.getElementById('link-forgot-password')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (forgotModal) {
+        forgotModal.style.display = 'flex';
+        requestAnimationFrame(() => forgotModal.classList.add('modal-overlay--visible'));
+      }
+    });
+
+    document.getElementById('forgot-modal-close')?.addEventListener('click', closeForgotModal);
+    document.getElementById('forgot-btn-ok')?.addEventListener('click', closeForgotModal);
+    forgotModal?.addEventListener('click', (e) => {
+      if (e.target.id === 'forgot-password-modal') closeForgotModal();
     });
 
     // Form submit
@@ -158,6 +205,8 @@ window.BrigadaRouter = {
     const user = window.BrigadaAuth.currentUser;
     const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
     const avatarColor = this.avatarColor(user.name);
+    const hasImageAvatar = user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http'));
+    const avatarHTML = hasImageAvatar ? `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : user.avatar;
 
     root.innerHTML = `
       <div class="app-shell">
@@ -194,15 +243,17 @@ window.BrigadaRouter = {
             ` : ''}
           </nav>
 
-          <div class="sidebar__footer">
-            <div class="sidebar__user">
-              <div class="sidebar__avatar" style="background:${avatarColor}">${user.avatar}</div>
+          <div class="sidebar__footer" style="flex-direction: column; align-items: stretch; gap: var(--sp-md);">
+            <div class="sidebar__user" style="width: 100%;" title="Clique para editar seu perfil">
+              <div class="sidebar__avatar" id="sidebar-user-avatar" style="${hasImageAvatar ? '' : `background:${avatarColor}`}">${avatarHTML}</div>
               <div class="sidebar__user-info">
                 <p class="sidebar__user-name" id="sidebar-user-name">${user.name}</p>
-                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : '👤 Usuário'}</p>
+                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : '👤 Usuário'}</p>
               </div>
             </div>
-            <button class="btn-logout" id="btn-logout" title="Sair">🚪</button>
+            <button class="btn-logout" id="btn-logout" title="Sair do Sistema">
+              <span>🚪</span> Sair do Sistema
+            </button>
           </div>
         </aside>
 
@@ -215,6 +266,47 @@ window.BrigadaRouter = {
             <!-- Conteúdo injetado aqui -->
           </div>
         </main>
+      </div>
+
+      <!-- Modal de perfil do usuário logado -->
+      <div class="modal-overlay" id="profile-modal" style="display:none; z-index: 2000;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 class="modal-title">👤 Meu Perfil</h3>
+            <button class="modal-close" id="profile-modal-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <form id="profile-form">
+              <div class="form-group">
+                <label class="form-label">Nome Completo *</label>
+                <input type="text" id="profile-field-name" class="form-input" placeholder="Seu nome" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">E-mail</label>
+                <input type="email" id="profile-field-email" class="form-input" disabled style="opacity: 0.6; cursor: not-allowed; background: rgba(255,255,255,0.02); border-color: var(--glass-border);">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nova Senha (deixe em branco para manter)</label>
+                <input type="password" id="profile-field-password" class="form-input" placeholder="Mínimo 6 caracteres">
+              </div>
+              <input type="hidden" id="profile-field-avatar-base64">
+              <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Foto de Perfil</label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <div class="user-avatar" id="profile-avatar-preview" style="width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; background: var(--glass-bg); border: 1px solid var(--glass-border); overflow: hidden;">US</div>
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <input type="file" id="profile-field-avatar-file" class="form-input" accept="image/*" style="padding: 4px; background: transparent; border: 1px solid var(--glass-border);">
+                    <button type="button" class="btn btn--ghost" id="profile-btn-remove-avatar" style="padding: 4px 8px; font-size: 0.75rem; align-self: flex-start; display: none;">Remover Foto</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn--ghost" id="profile-btn-cancel">Cancelar</button>
+            <button class="btn btn--primary" id="profile-btn-save">Salvar Alterações</button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -236,6 +328,154 @@ window.BrigadaRouter = {
     // Mobile menu
     document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
       document.getElementById('sidebar')?.classList.toggle('sidebar--open');
+    });
+
+    // Eventos do Modal de Perfil
+    const profileModal = document.getElementById('profile-modal');
+    const closeProfileModal = () => {
+      if (profileModal) {
+        profileModal.classList.remove('modal-overlay--visible');
+        setTimeout(() => profileModal.style.display = 'none', 250);
+      }
+    };
+
+    document.querySelector('.sidebar__user')?.addEventListener('click', () => {
+      const currentUser = window.BrigadaAuth.currentUser;
+      if (!currentUser) return;
+
+      const nameInput = document.getElementById('profile-field-name');
+      const emailInput = document.getElementById('profile-field-email');
+      const pwdInput = document.getElementById('profile-field-password');
+      const base64Input = document.getElementById('profile-field-avatar-base64');
+      const previewEl = document.getElementById('profile-avatar-preview');
+      const removeBtn = document.getElementById('profile-btn-remove-avatar');
+      const fileInput = document.getElementById('profile-field-avatar-file');
+
+      nameInput.value = currentUser.name;
+      emailInput.value = currentUser.email;
+      pwdInput.value = '';
+      fileInput.value = '';
+
+      if (currentUser.avatar && (currentUser.avatar.startsWith('data:image/') || currentUser.avatar.startsWith('http'))) {
+        base64Input.value = currentUser.avatar;
+        previewEl.innerHTML = `<img src="${currentUser.avatar}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+        previewEl.style.background = 'none';
+        removeBtn.style.display = 'inline-block';
+      } else {
+        base64Input.value = '';
+        previewEl.textContent = currentUser.avatar || 'US';
+        previewEl.style.background = 'var(--glass-bg)';
+        removeBtn.style.display = 'none';
+      }
+
+      profileModal.style.display = 'flex';
+      requestAnimationFrame(() => profileModal.classList.add('modal-overlay--visible'));
+    });
+
+    document.getElementById('profile-modal-close')?.addEventListener('click', closeProfileModal);
+    document.getElementById('profile-btn-cancel')?.addEventListener('click', closeProfileModal);
+    profileModal?.addEventListener('click', (e) => {
+      if (e.target.id === 'profile-modal') closeProfileModal();
+    });
+
+    const profileFileInput = document.getElementById('profile-field-avatar-file');
+    const profilePreviewEl = document.getElementById('profile-avatar-preview');
+    const profileBase64Input = document.getElementById('profile-field-avatar-base64');
+    const profileRemoveBtn = document.getElementById('profile-btn-remove-avatar');
+
+    profileFileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const max_size = 128;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const resizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          profileBase64Input.value = resizedBase64;
+          profilePreviewEl.innerHTML = `<img src="${resizedBase64}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+          profilePreviewEl.style.background = 'none';
+          profileRemoveBtn.style.display = 'inline-block';
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    profileRemoveBtn?.addEventListener('click', () => {
+      profileFileInput.value = '';
+      profileBase64Input.value = '';
+      const name = document.getElementById('profile-field-name').value.trim() || 'US';
+      const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      profilePreviewEl.textContent = initials;
+      profilePreviewEl.style.background = 'var(--glass-bg)';
+      profileRemoveBtn.style.display = 'none';
+    });
+
+    document.getElementById('profile-btn-save')?.addEventListener('click', async () => {
+      const currentUser = window.BrigadaAuth.currentUser;
+      if (!currentUser) return;
+
+      const name = document.getElementById('profile-field-name').value.trim();
+      const password = document.getElementById('profile-field-password').value;
+      const base64Avatar = document.getElementById('profile-field-avatar-base64').value;
+      
+      if (!name) {
+        window.BrigadaUI.showToast('O nome é obrigatório.', 'error');
+        return;
+      }
+
+      if (password && password.length < 6) {
+        window.BrigadaUI.showToast('A senha deve ter pelo menos 6 caracteres.', 'error');
+        return;
+      }
+
+      const avatar = base64Avatar || name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const payload = {
+        name,
+        email: currentUser.email,
+        role: currentUser.role,
+        status: currentUser.status,
+        avatar,
+        ...(password ? { password } : {})
+      };
+
+      try {
+        await window.BrigadaData.updateUser(currentUser.id, payload);
+        
+        currentUser.name = name;
+        currentUser.avatar = avatar;
+        sessionStorage.setItem('brigada_user', JSON.stringify(currentUser));
+        
+        window.BrigadaRouter.updateUserInfo();
+
+        window.BrigadaUI.showToast('Perfil atualizado com sucesso!', 'success');
+        closeProfileModal();
+      } catch (err) {
+        window.BrigadaUI.showToast(err.message || 'Erro ao salvar alterações do perfil.', 'error');
+      }
     });
 
     // Render page content
@@ -383,7 +623,7 @@ window.BrigadaRouter = {
       </div>
 
       <!-- Quick actions -->
-      <div class="glass-panel">
+      <div class="glass-panel" style="margin-bottom:2rem;">
         <h3 class="glass-panel__title" style="margin-bottom:1rem;">⚡ Ações Rápidas</h3>
         <div class="quick-actions">
           <button class="quick-action-btn" id="qa-dashboard">
@@ -400,17 +640,39 @@ window.BrigadaRouter = {
           </button>
         </div>
       </div>
+
+      <!-- Gestão de Usuários integrada -->
+      <div class="glass-panel" style="margin-bottom:2rem;">
+        <div id="admin-users-wrapper"></div>
+      </div>
     `;
 
     container.querySelector('#qa-dashboard')?.addEventListener('click', () => this.navigate('dashboard'));
     container.querySelector('#qa-products')?.addEventListener('click', () => this.navigate('products'));
     container.querySelector('#qa-users')?.addEventListener('click', () => this.navigate('users'));
+
+    // Renderiza a Gestão de Usuários diretamente no Painel do Administrador
+    const adminUsersWrapper = container.querySelector('#admin-users-wrapper');
+    if (adminUsersWrapper) {
+      window.BrigadaUsers.render(adminUsersWrapper);
+    }
   },
 
   updateUserInfo() {
     const user = window.BrigadaAuth.currentUser;
-    const el = document.getElementById('sidebar-user-name');
-    if (el && user) el.textContent = user.name;
+    const elName = document.getElementById('sidebar-user-name');
+    if (elName && user) elName.textContent = user.name;
+    const elAvatar = document.getElementById('sidebar-user-avatar');
+    if (elAvatar && user) {
+      const hasImage = user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http'));
+      if (hasImage) {
+        elAvatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+        elAvatar.style.background = 'none';
+      } else {
+        elAvatar.textContent = user.avatar;
+        elAvatar.style.background = this.avatarColor(user.name);
+      }
+    }
   },
 
   avatarColor(name) {

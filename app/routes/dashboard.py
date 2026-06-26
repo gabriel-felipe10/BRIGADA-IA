@@ -3,10 +3,22 @@ BRIGADA-IA — Rota principal (SPA).
 Serve o painel de validade com Super Admin, Gestão de Usuários e Dashboard.
 """
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 from app.logging_config import logger
 
 dashboard_bp = Blueprint("dashboard", __name__)
+
+
+@dashboard_bp.route("/sw.js")
+def serve_sw():
+    """Serve o service worker a partir da raiz para definir o escopo correto."""
+    return current_app.send_static_file("js/sw.js")
+
+
+@dashboard_bp.route("/manifest.json")
+def serve_manifest():
+    """Serve o manifest a partir da raiz."""
+    return current_app.send_static_file("manifest.json")
 
 
 @dashboard_bp.route("/")

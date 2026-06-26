@@ -19,9 +19,14 @@ window.BrigadaAuth = {
 
   async login(email, password) {
     const user = window.BrigadaData.users.find(
-      u => u.email === email && u.password === password && u.status === 'active'
+      u => u.email === email && u.password === password
     );
     if (!user) return { success: false, message: 'E-mail ou senha incorretos.' };
+
+    if (user.status !== 'active') {
+      return { success: false, message: 'Usuário bloqueado. Fale com o admin para desbloquear.' };
+    }
+
     // Salva sessão (sem senha)
     this.currentUser = { ...user };
     delete this.currentUser.password;
@@ -42,6 +47,18 @@ window.BrigadaAuth = {
   },
 
   isSuperAdmin() {
+    return this.currentUser?.role === 'superadmin';
+  },
+
+  isGestao() {
+    return this.currentUser?.role === 'gestao';
+  },
+
+  canAddProduct() {
+    return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user';
+  },
+
+  canEditOrDeleteProduct() {
     return this.currentUser?.role === 'superadmin';
   },
 

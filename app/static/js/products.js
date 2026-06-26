@@ -14,14 +14,14 @@ window.BrigadaProducts = {
   },
 
   buildHTML() {
-    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
+    const canAddProduct = window.BrigadaAuth.canAddProduct();
     return `
       <div class="panel-header">
         <div class="panel-header__left">
           <h2 class="panel-title">📦 Gestão de Produtos</h2>
           <p class="panel-subtitle">Controle completo do estoque por categoria</p>
         </div>
-        ${isSuperAdmin ? `
+        ${canAddProduct ? `
         <button class="btn btn--primary" id="btn-add-product">
           <span>＋</span> Novo Produto
         </button>
@@ -198,7 +198,7 @@ window.BrigadaProducts = {
       return;
     }
 
-    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
+    const canEditOrDelete = window.BrigadaAuth.canEditOrDeleteProduct();
     const rows = products.map(p => {
       const status = window.BrigadaData.getProductStatus(p);
       const qty = p.quantity !== undefined ? p.quantity : 0;
@@ -218,7 +218,7 @@ window.BrigadaProducts = {
               p.location === 'congelado' ? '<span class="badge" style="background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2);">🥶 Congelado</span>' : 
               p.location || '—'}
           </td>
-          ${isSuperAdmin ? `
+          ${canEditOrDelete ? `
           <td class="actions-cell">
             <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>
             <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>
@@ -243,7 +243,7 @@ window.BrigadaProducts = {
               <th>Status</th>
               <th>Fornecedor</th>
               <th>Localização</th>
-              ${isSuperAdmin ? '<th>Ações</th>' : ''}
+              ${canEditOrDelete ? '<th>Ações</th>' : ''}
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -310,7 +310,7 @@ window.BrigadaProducts = {
   },
 
   openAddModal(container) {
-    if (!window.BrigadaAuth.isSuperAdmin()) return;
+    if (!window.BrigadaAuth.canAddProduct()) return;
     this.editingId = null;
     container.querySelector('#modal-title').textContent = 'Novo Produto';
     container.querySelector('#product-form').reset();
@@ -321,7 +321,7 @@ window.BrigadaProducts = {
   },
 
   openEditModal(id, container) {
-    if (!window.BrigadaAuth.isSuperAdmin()) return;
+    if (!window.BrigadaAuth.canEditOrDeleteProduct()) return;
     const product = window.BrigadaData.products.find(p => p.id === id);
     if (!product) return;
     this.editingId = id;
@@ -352,7 +352,7 @@ window.BrigadaProducts = {
   },
 
   openDeleteModal(id, container) {
-    if (!window.BrigadaAuth.isSuperAdmin()) return;
+    if (!window.BrigadaAuth.canEditOrDeleteProduct()) return;
     const product = window.BrigadaData.products.find(p => p.id === id);
     if (!product) return;
     this.deletingId = id;
@@ -369,9 +369,17 @@ window.BrigadaProducts = {
   },
 
   async saveProduct(container) {
-    if (!window.BrigadaAuth.isSuperAdmin()) {
-      window.BrigadaUI.showToast('Permissão negada. Apenas Super Administradores podem salvar produtos.', 'error');
-      return;
+    const isEditing = !!this.editingId;
+    if (isEditing) {
+      if (!window.BrigadaAuth.canEditOrDeleteProduct()) {
+        window.BrigadaUI.showToast('Permissão negada. Apenas Super Administradores podem editar produtos.', 'error');
+        return;
+      }
+    } else {
+      if (!window.BrigadaAuth.canAddProduct()) {
+        window.BrigadaUI.showToast('Permissão negada. Apenas Super Administradores e Usuários comuns podem adicionar produtos.', 'error');
+        return;
+      }
     }
     const plu = container.querySelector('#field-plu').value.trim();
     const name = container.querySelector('#field-name').value.trim();
@@ -421,7 +429,7 @@ window.BrigadaProducts = {
   },
 
   async confirmDelete(container) {
-    if (!window.BrigadaAuth.isSuperAdmin()) {
+    if (!window.BrigadaAuth.canEditOrDeleteProduct()) {
       window.BrigadaUI.showToast('Permissão negada. Apenas Super Administradores podem excluir produtos.', 'error');
       return;
     }

@@ -32,6 +32,7 @@ window.BrigadaUsers = {
           <select id="filter-role" class="select-control">
             <option value="all">Todos os perfis</option>
             <option value="superadmin">🛡️ Super Admin</option>
+            <option value="gestao">👥 Gestão</option>
             <option value="user">👤 Usuário</option>
           </select>
           <select id="filter-user-status" class="select-control">
@@ -65,6 +66,7 @@ window.BrigadaUsers = {
                   <label class="form-label">Perfil *</label>
                   <select id="user-field-role" class="form-input" required>
                     <option value="user">👤 Usuário</option>
+                    <option value="gestao">👥 Gestão</option>
                     <option value="superadmin">🛡️ Super Admin</option>
                   </select>
                 </div>
@@ -84,6 +86,17 @@ window.BrigadaUsers = {
                     <option value="active">✅ Ativo</option>
                     <option value="inactive">⛔ Inativo</option>
                   </select>
+                </div>
+              </div>
+              <input type="hidden" id="user-field-avatar-base64">
+              <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Foto de Perfil</label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <div class="user-avatar" id="user-avatar-preview" style="width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; background: var(--glass-bg); border: 1px solid var(--glass-border); overflow: hidden;">US</div>
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <input type="file" id="user-field-avatar-file" class="form-input" accept="image/*" style="padding: 4px; background: transparent; border: 1px solid var(--glass-border);">
+                    <button type="button" class="btn btn--ghost" id="btn-remove-avatar" style="padding: 4px 8px; font-size: 0.75rem; align-self: flex-start; display: none;">Remover Foto</button>
+                  </div>
                 </div>
               </div>
             </form>
@@ -145,16 +158,18 @@ window.BrigadaUsers = {
       return;
     }
 
-    const roleLabel = { superadmin: '🛡️ Super Admin', user: '👤 Usuário' };
-    const roleClass = { superadmin: 'badge--superadmin', user: 'badge--user-role' };
+    const roleLabel = { superadmin: '🛡️ Super Admin', gestao: '👥 Gestão', user: '👤 Usuário' };
+    const roleClass = { superadmin: 'badge--superadmin', gestao: 'badge--gestao-role', user: 'badge--user-role' };
 
     const rows = users.map(u => {
       const isCurrentUser = u.id === window.BrigadaAuth.currentUser?.id;
+      const hasImageAvatar = u.avatar && (u.avatar.startsWith('data:image/') || u.avatar.startsWith('http'));
+      const avatarHTML = hasImageAvatar ? `<img src="${u.avatar}" alt="${u.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : u.avatar;
       return `
         <tr>
           <td>
             <div class="user-cell">
-              <div class="user-avatar" style="background: ${this.avatarColor(u.name)}">${u.avatar}</div>
+              <div class="user-avatar" style="${hasImageAvatar ? '' : `background: ${this.avatarColor(u.name)}`}">${avatarHTML}</div>
               <div>
                 <div class="user-name">${u.name} ${isCurrentUser ? '<span class="badge badge--you">Você</span>' : ''}</div>
                 <div class="user-email">${u.email}</div>
@@ -166,6 +181,10 @@ window.BrigadaUsers = {
           <td>${window.BrigadaData.formatDate(u.createdAt)}</td>
           <td>${window.BrigadaData.formatDateTime(u.lastLogin)}</td>
           <td class="actions-cell">
+            ${!isCurrentUser ? `
+            <button class="btn-icon btn-icon--status" data-action="toggle-status" data-id="${u.id}" title="${u.status === 'active' ? 'Bloquear' : 'Desbloquear'}">
+              ${u.status === 'active' ? '🔒' : '🔓'}
+            </button>` : ''}
             <button class="btn-icon btn-icon--edit" data-action="edit-user" data-id="${u.id}" title="Editar">✏️</button>
             ${!isCurrentUser ? `<button class="btn-icon btn-icon--delete" data-action="delete-user" data-id="${u.id}" title="Excluir">🗑️</button>` : ''}
           </td>
@@ -196,6 +215,7 @@ window.BrigadaUsers = {
         const id = parseInt(btn.dataset.id);
         if (action === 'edit-user') this.openEditModal(id, container);
         if (action === 'delete-user') this.openDeleteModal(id, container);
+        if (action === 'toggle-status') this.toggleUserStatus(id, container);
       });
     });
   },
@@ -226,7 +246,64 @@ window.BrigadaUsers = {
       if (e.target.id === 'user-modal') this.closeModal(container);
     });
     container.querySelector('#delete-user-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'delete-user-modal') this.closeDeleteModal(container);
+        if (e.target.id === 'delete-user-modal') this.closeDeleteModal(container);
+    });
+
+    // Avatar image upload event listeners
+    const fileInput = container.querySelector('#user-field-avatar-file');
+    const previewEl = container.querySelector('#user-avatar-preview');
+    const base64Input = container.querySelector('#user-field-avatar-base64');
+    const removeBtn = container.querySelector('#btn-remove-avatar');
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const max_size = 128;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const resizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          base64Input.value = resizedBase64;
+          previewEl.innerHTML = `<img src="${resizedBase64}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+          previewEl.style.background = 'none';
+          removeBtn.style.display = 'inline-block';
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    removeBtn?.addEventListener('click', () => {
+      fileInput.value = '';
+      base64Input.value = '';
+      const name = container.querySelector('#user-field-name').value.trim() || 'US';
+      const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      previewEl.textContent = initials;
+      previewEl.style.background = 'var(--glass-bg)';
+      removeBtn.style.display = 'none';
     });
   },
 
@@ -236,6 +313,19 @@ window.BrigadaUsers = {
     container.querySelector('#user-form').reset();
     container.querySelector('#user-field-id').value = '';
     container.querySelector('#user-pwd-label').textContent = 'Senha *';
+
+    const fileInput = container.querySelector('#user-field-avatar-file');
+    const base64Input = container.querySelector('#user-field-avatar-base64');
+    const previewEl = container.querySelector('#user-avatar-preview');
+    const removeBtn = container.querySelector('#btn-remove-avatar');
+    if (fileInput) fileInput.value = '';
+    if (base64Input) base64Input.value = '';
+    if (previewEl) {
+      previewEl.textContent = 'US';
+      previewEl.style.background = 'var(--glass-bg)';
+    }
+    if (removeBtn) removeBtn.style.display = 'none';
+
     this.showModal(container);
   },
 
@@ -251,6 +341,28 @@ window.BrigadaUsers = {
     container.querySelector('#user-field-status').value = user.status;
     container.querySelector('#user-field-password').value = '';
     container.querySelector('#user-pwd-label').textContent = 'Nova Senha (deixe em branco para manter)';
+
+    const fileInput = container.querySelector('#user-field-avatar-file');
+    const base64Input = container.querySelector('#user-field-avatar-base64');
+    const previewEl = container.querySelector('#user-avatar-preview');
+    const removeBtn = container.querySelector('#btn-remove-avatar');
+    if (fileInput) fileInput.value = '';
+    if (user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http'))) {
+      if (base64Input) base64Input.value = user.avatar;
+      if (previewEl) {
+        previewEl.innerHTML = `<img src="${user.avatar}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+        previewEl.style.background = 'none';
+      }
+      if (removeBtn) removeBtn.style.display = 'inline-block';
+    } else {
+      if (base64Input) base64Input.value = '';
+      if (previewEl) {
+        previewEl.textContent = user.avatar || 'US';
+        previewEl.style.background = 'var(--glass-bg)';
+      }
+      if (removeBtn) removeBtn.style.display = 'none';
+    }
+
     this.showModal(container);
   },
 
@@ -311,7 +423,8 @@ window.BrigadaUsers = {
       return;
     }
 
-    const avatar = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const base64Avatar = container.querySelector('#user-field-avatar-base64')?.value;
+    const avatar = base64Avatar || name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const payload = {
       name, email, role, status, avatar,
       ...(password ? { password } : {})
@@ -322,6 +435,7 @@ window.BrigadaUsers = {
       // Update current user session if editing self
       if (this.editingId === window.BrigadaAuth.currentUser?.id) {
         window.BrigadaAuth.currentUser.name = name;
+        window.BrigadaAuth.currentUser.avatar = avatar;
         sessionStorage.setItem('brigada_user', JSON.stringify(window.BrigadaAuth.currentUser));
         window.BrigadaRouter.updateUserInfo();
       }
@@ -340,5 +454,18 @@ window.BrigadaUsers = {
     window.BrigadaUI.showToast('Usuário removido.', 'success');
     this.closeDeleteModal(container);
     this.renderTable(container);
+  },
+
+  async toggleUserStatus(id, container) {
+    const user = window.BrigadaData.users.find(u => u.id === id);
+    if (!user) return;
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    try {
+      await window.BrigadaData.updateUser(id, { status: newStatus });
+      window.BrigadaUI.showToast(`Usuário ${user.name} ${newStatus === 'active' ? 'desbloqueado' : 'bloqueado'} com sucesso!`, 'success');
+      this.renderTable(container);
+    } catch (err) {
+      window.BrigadaUI.showToast(err.message || 'Erro ao alterar status do usuário.', 'error');
+    }
   },
 };
