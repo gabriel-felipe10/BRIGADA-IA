@@ -32,6 +32,7 @@ window.BrigadaProducts = {
         <button class="cat-tab cat-tab--active" data-cat="all">🏪 Todos</button>
         <button class="cat-tab" data-cat="aves">🐔 Aves</button>
         <button class="cat-tab" data-cat="suino">🐷 Suíno</button>
+        <button class="cat-tab" data-cat="bovino">🐮 Bovino</button>
         <button class="cat-tab" data-cat="pescado">🐟 Pescado</button>
       </div>
 
@@ -76,6 +77,7 @@ window.BrigadaProducts = {
                     <option value="">Selecione...</option>
                     <option value="aves">🐔 Aves</option>
                     <option value="suino">🐷 Suíno</option>
+                    <option value="bovino">🐮 Bovino</option>
                     <option value="pescado">🐟 Pescado</option>
                   </select>
                 </div>
@@ -187,7 +189,7 @@ window.BrigadaProducts = {
     if (!wrapper) return;
 
     const products = this.getFilteredProducts();
-    const catMap = { aves: '🐔 Aves', suino: '🐷 Suíno', pescado: '🐟 Pescado' };
+    const catMap = { aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado' };
 
     if (products.length === 0) {
       wrapper.innerHTML = `
@@ -205,21 +207,21 @@ window.BrigadaProducts = {
       const unit = p.unit || 'kg';
       return `
         <tr data-id="${p.id}">
-          <td><span class="plu-badge">${p.plu}</span></td>
-          <td class="product-name">${p.name}</td>
-          <td><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
-          <td><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
-          <td>${window.BrigadaData.formatDate(p.startDate)}</td>
-          <td>${window.BrigadaData.formatDate(p.endDate)}</td>
-          <td><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
-          <td>${p.supplier || '—'}</td>
-          <td>
+          <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
+          <td data-label="Produto" class="product-name">${p.name}</td>
+          <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
+          <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
+          <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
+          <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
+          <td data-label="Status"><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
+          <td data-label="Fornecedor">${p.supplier || '—'}</td>
+          <td data-label="Localização">
             ${p.location === 'resfriado' ? '<span class="badge" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2);">❄️ Resfriado</span>' : 
               p.location === 'congelado' ? '<span class="badge" style="background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2);">🥶 Congelado</span>' : 
               p.location || '—'}
           </td>
           ${canEditOrDelete ? `
-          <td class="actions-cell">
+          <td data-label="Ações" class="actions-cell">
             <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>
             <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>
           </td>` : ''}

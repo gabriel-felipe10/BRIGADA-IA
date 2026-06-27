@@ -210,6 +210,8 @@ window.BrigadaRouter = {
 
     root.innerHTML = `
       <div class="app-shell">
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
           <div class="sidebar__brand">
@@ -310,16 +312,26 @@ window.BrigadaRouter = {
       </div>
     `;
 
+    // Helper to close sidebar on mobile
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const closeSidebar = () => {
+      sidebar?.classList.remove('sidebar--open');
+      overlay?.classList.remove('sidebar-overlay--visible');
+    };
+
     // Nav links
     root.querySelectorAll('.sidebar__link[data-page]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
+        closeSidebar();
         this.navigate(link.dataset.page);
       });
     });
 
     // Logout
     document.getElementById('btn-logout')?.addEventListener('click', () => {
+      closeSidebar();
       window.BrigadaAuth.logout();
       window.BrigadaUI.showToast('Até logo! 👋', 'success');
       this.navigate('login');
@@ -327,8 +339,12 @@ window.BrigadaRouter = {
 
     // Mobile menu
     document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-      document.getElementById('sidebar')?.classList.toggle('sidebar--open');
+      sidebar?.classList.toggle('sidebar--open');
+      overlay?.classList.toggle('sidebar-overlay--visible');
     });
+
+    // Close on overlay click
+    overlay?.addEventListener('click', closeSidebar);
 
     // Eventos do Modal de Perfil
     const profileModal = document.getElementById('profile-modal');
@@ -506,6 +522,7 @@ window.BrigadaRouter = {
     const byCategory = {
       aves: products.filter(p => p.category === 'aves').length,
       suino: products.filter(p => p.category === 'suino').length,
+      bovino: products.filter(p => p.category === 'bovino').length,
       pescado: products.filter(p => p.category === 'pescado').length,
     };
 
@@ -552,7 +569,7 @@ window.BrigadaRouter = {
       </div>
 
       <!-- Category breakdown -->
-      <div class="dashboard-grid dashboard-grid--3 stagger" style="margin-bottom:2rem;">
+      <div class="dashboard-grid dashboard-grid--4 stagger" style="margin-bottom:2rem;">
         <div class="cat-overview-card cat-overview-card--aves">
           <div class="cat-overview-card__icon">🐔</div>
           <div class="cat-overview-card__body">
@@ -574,6 +591,18 @@ window.BrigadaRouter = {
               <span class="badge badge--ok">${products.filter(p => p.category === 'suino' && window.BrigadaData.getProductStatus(p).days > 3).length} OK</span>
               <span class="badge badge--warning">${products.filter(p => p.category === 'suino' && window.BrigadaData.getProductStatus(p).days >= 0 && window.BrigadaData.getProductStatus(p).days <= 3).length} atenção</span>
               <span class="badge badge--expired">${products.filter(p => p.category === 'suino' && window.BrigadaData.getProductStatus(p).days < 0).length} vencido</span>
+            </div>
+          </div>
+        </div>
+        <div class="cat-overview-card cat-overview-card--bovino">
+          <div class="cat-overview-card__icon">🐮</div>
+          <div class="cat-overview-card__body">
+            <h3>Bovino</h3>
+            <p class="cat-count">${byCategory.bovino} produtos</p>
+            <div class="cat-status-row">
+              <span class="badge badge--ok">${products.filter(p => p.category === 'bovino' && window.BrigadaData.getProductStatus(p).days > 3).length} OK</span>
+              <span class="badge badge--warning">${products.filter(p => p.category === 'bovino' && window.BrigadaData.getProductStatus(p).days >= 0 && window.BrigadaData.getProductStatus(p).days <= 3).length} atenção</span>
+              <span class="badge badge--expired">${products.filter(p => p.category === 'bovino' && window.BrigadaData.getProductStatus(p).days < 0).length} vencido</span>
             </div>
           </div>
         </div>
@@ -608,12 +637,12 @@ window.BrigadaRouter = {
               <tbody>
                 ${criticalProducts.map(p => `
                   <tr>
-                    <td><span class="plu-badge">${p.plu}</span></td>
-                    <td class="product-name">${p.name}</td>
-                    <td><span class="cat-pill cat-pill--${p.category}">${p.category === 'aves' ? '🐔 Aves' : p.category === 'suino' ? '🐷 Suíno' : '🐟 Pescado'}</span></td>
-                    <td>${window.BrigadaData.formatDate(p.endDate)}</td>
-                    <td><span class="badge ${p._status.class}">${p._status.icon} ${p._status.label}</span></td>
-                    <td>${p.location || '—'}</td>
+                    <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
+                    <td data-label="Produto" class="product-name">${p.name}</td>
+                    <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${p.category === 'aves' ? '🐔 Aves' : p.category === 'suino' ? '🐷 Suíno' : p.category === 'bovino' ? '🐮 Bovino' : '🐟 Pescado'}</span></td>
+                    <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
+                    <td data-label="Status"><span class="badge ${p._status.class}">${p._status.icon} ${p._status.label}</span></td>
+                    <td data-label="Localização">${p.location || '—'}</td>
                   </tr>
                 `).join('')}
               </tbody>

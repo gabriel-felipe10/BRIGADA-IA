@@ -553,6 +553,52 @@ const PRODUCTS_DB = [
     supplier: 'Noronha Pescados S.A.',
     location: 'Gôndola de Congelados 02',
   },
+
+  // ── BOVINO ─────────────────────────────────────────────────────────────────
+  {
+    id: 46,
+    plu: '4001',
+    name: 'Alcatra Bovina sem Osso Resfriada kg',
+    category: 'bovino',
+    startDate: daysAgo(2),
+    endDate: daysFromNow(5),
+    unit: 'kg',
+    supplier: 'Friboi (JBS S.A.)',
+    location: 'Vitrine de Bovinos',
+  },
+  {
+    id: 47,
+    plu: '4002',
+    name: 'Contra Filé Bovino Grill Friboi kg',
+    category: 'bovino',
+    startDate: daysAgo(4),
+    endDate: daysFromNow(1),
+    unit: 'kg',
+    supplier: 'Friboi (JBS S.A.)',
+    location: 'Vitrine de Bovinos',
+  },
+  {
+    id: 48,
+    plu: '4003',
+    name: 'Patinho Bovino Moído Resfriado Swift Bandeja 1kg',
+    category: 'bovino',
+    startDate: daysAgo(3),
+    endDate: daysFromNow(2),
+    unit: 'pct',
+    supplier: 'Swift (JBS S.A.)',
+    location: 'Balcão de Auto-serviço',
+  },
+  {
+    id: 49,
+    plu: '4004',
+    name: 'Maminha Bovina Resfriada Estância 92 kg',
+    category: 'bovino',
+    startDate: daysAgo(5),
+    endDate: daysFromNow(-2),
+    unit: 'kg',
+    supplier: 'Minerva Foods',
+    location: 'Vitrine de Bovinos',
+  },
 ];
 
 // ── Helpers de Estado e Sincronização ─────────────────────────────────────────

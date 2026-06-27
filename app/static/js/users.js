@@ -167,7 +167,7 @@ window.BrigadaUsers = {
       const avatarHTML = hasImageAvatar ? `<img src="${u.avatar}" alt="${u.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : u.avatar;
       return `
         <tr>
-          <td>
+          <td data-label="Usuário">
             <div class="user-cell">
               <div class="user-avatar" style="${hasImageAvatar ? '' : `background: ${this.avatarColor(u.name)}`}">${avatarHTML}</div>
               <div>
@@ -176,11 +176,11 @@ window.BrigadaUsers = {
               </div>
             </div>
           </td>
-          <td><span class="badge ${roleClass[u.role]}">${roleLabel[u.role]}</span></td>
-          <td><span class="badge ${u.status === 'active' ? 'badge--ok' : 'badge--expired'}">${u.status === 'active' ? '✅ Ativo' : '⛔ Inativo'}</span></td>
-          <td>${window.BrigadaData.formatDate(u.createdAt)}</td>
-          <td>${window.BrigadaData.formatDateTime(u.lastLogin)}</td>
-          <td class="actions-cell">
+          <td data-label="Perfil"><span class="badge ${roleClass[u.role]}">${roleLabel[u.role]}</span></td>
+          <td data-label="Status"><span class="badge ${u.status === 'active' ? 'badge--ok' : 'badge--expired'}">${u.status === 'active' ? '✅ Ativo' : '⛔ Inativo'}</span></td>
+          <td data-label="Criado Em">${window.BrigadaData.formatDate(u.createdAt)}</td>
+          <td data-label="Último Login">${window.BrigadaData.formatDateTime(u.lastLogin)}</td>
+          <td data-label="Ações" class="actions-cell">
             ${!isCurrentUser ? `
             <button class="btn-icon btn-icon--status" data-action="toggle-status" data-id="${u.id}" title="${u.status === 'active' ? 'Bloquear' : 'Desbloquear'}">
               ${u.status === 'active' ? '🔒' : '🔓'}
