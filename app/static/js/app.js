@@ -71,7 +71,7 @@ window.BrigadaRouter = {
         </div>
         <div class="login-card">
           <div class="login-logo">
-            <span class="login-logo__icon">🛡️</span>
+            <img src="/static/icon.jpg" alt="Logo" style="width: 72px; height: 72px; border-radius: 16px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.08);">
             <h1 class="login-logo__title">BRIGADA-IA</h1>
             <p class="login-logo__sub">Sistema de Validade · Açougue Varejo</p>
           </div>
@@ -201,7 +201,7 @@ window.BrigadaRouter = {
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
           <div class="sidebar__brand">
-            <span class="sidebar__logo">🛡️</span>
+            <img src="/static/icon.jpg" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.08);">
             <div>
               <h1 class="sidebar__title">BRIGADA-IA</h1>
               <p class="sidebar__sub">Varejo · Açougue</p>
