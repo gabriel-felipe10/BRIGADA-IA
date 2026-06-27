@@ -224,6 +224,10 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">👥</span>
               <span>Usuários</span>
             </a>
+            <a class="sidebar__link ${activePage === 'notifications' ? 'sidebar__link--active' : ''}" data-page="notifications" href="#">
+              <span class="sidebar__link-icon">🔔</span>
+              <span>Notificações</span>
+            </a>
             <a class="sidebar__link ${activePage === 'admin' ? 'sidebar__link--active' : ''}" data-page="admin" href="#">
               <span class="sidebar__link-icon">🛡️</span>
               <span>Super Admin</span>
@@ -495,6 +499,9 @@ window.BrigadaRouter = {
     } else if (page === 'users') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       window.BrigadaUsers.render(container);
+    } else if (page === 'notifications') {
+      if (!window.BrigadaAuth.requireSuperAdmin()) return;
+      window.BrigadaNotifications.render(container);
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       this.renderAdminPanel(container);
@@ -653,6 +660,10 @@ window.BrigadaRouter = {
             <span class="quick-action-btn__icon">👥</span>
             <span>Gestão de Usuários</span>
           </button>
+          <button class="quick-action-btn" id="qa-notifications">
+            <span class="quick-action-btn__icon">🔔</span>
+            <span>Notificações</span>
+          </button>
         </div>
       </div>
 
@@ -665,6 +676,7 @@ window.BrigadaRouter = {
     container.querySelector('#qa-dashboard')?.addEventListener('click', () => this.navigate('dashboard'));
     container.querySelector('#qa-products')?.addEventListener('click', () => this.navigate('products'));
     container.querySelector('#qa-users')?.addEventListener('click', () => this.navigate('users'));
+    container.querySelector('#qa-notifications')?.addEventListener('click', () => this.navigate('notifications'));
 
     // Renderiza a Gestão de Usuários diretamente no Painel do Administrador
     const adminUsersWrapper = container.querySelector('#admin-users-wrapper');

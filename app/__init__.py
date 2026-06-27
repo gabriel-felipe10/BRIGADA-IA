@@ -32,14 +32,16 @@ def create_app():
     from app.routes.logs import logs_bp
     from app.routes.products import products_bp
     from app.routes.users import users_bp
+    from app.routes.settings import settings_bp
 
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(logs_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(settings_bp)
 
-    logger.info("Blueprints registrados: api, dashboard, logs, products, users")
+    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings")
     logger.info("🛡️  BRIGADA-IA pronta para receber requisições")
 
     return app

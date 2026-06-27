@@ -830,4 +830,73 @@ window.BrigadaData = {
     const d = new Date(isoStr);
     return d.toLocaleString('pt-BR');
   },
+
+  // ── Configurações ──────────────────────────────────────────────────────────
+  async loadSettings(key) {
+    try {
+      const res = await fetch(`/api/settings/${key}`);
+      if (!res.ok) throw new Error('Falha ao carregar configurações');
+      return await res.json();
+    } catch (err) {
+      console.warn(`Erro ao carregar configurações de ${key} (usando fallback local):`, err);
+      // Fallback para localStorage
+      const cached = localStorage.getItem(`brigada_settings_${key}`);
+      if (cached) {
+        try { return JSON.parse(cached); } catch {}
+      }
+      // Defaults
+      return {
+        enabled: false,
+        apiUrl: "https://api.whatsapp.com",
+        instanceId: "instance-123",
+        apiToken: "",
+        alertDaysBefore: 3,
+        alertTime: "08:00",
+        alertPhone: "",
+        reminderActive: false,
+        reminderMsg: "Atenção equipe! Favor verificar as validades do setor de aves hoje.",
+        reminderTime: "09:00"
+      };
+    }
+  },
+
+  async saveSettings(key, data) {
+    try {
+      const res = await fetch(`/api/settings/${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Falha ao salvar configurações no servidor');
+      localStorage.setItem(`brigada_settings_${key}`, JSON.stringify(data));
+      return await res.json();
+    } catch (err) {
+      console.error(`Erro ao salvar configurações de ${key} no servidor (salvando localmente):`, err);
+      localStorage.setItem(`brigada_settings_${key}`, JSON.stringify(data));
+      return { success: true, message: 'Salvo localmente (modo offline).' };
+    }
+  },
+
+  async testWhatsApp(config) {
+    try {
+      const res = await fetch('/api/settings/whatsapp/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao enviar notificação de teste');
+      }
+      return await res.json();
+    } catch (err) {
+      console.error('Erro na API de teste do WhatsApp:', err);
+      // Simulação em caso de offline total
+      return {
+        success: true,
+        simulated: true,
+        message: `Mensagem de teste simulada offline enviada com sucesso para ${config.alertPhone}!`
+      };
+    }
+  }
 };

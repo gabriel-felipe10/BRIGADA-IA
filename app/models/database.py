@@ -53,6 +53,13 @@ def init_db():
         ON validation_logs(type)
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key         TEXT PRIMARY KEY,
+            value       TEXT NOT NULL
+        )
+    """)
+
     conn.commit()
     logger.info("Banco de dados inicializado | path={}", Config.DB_PATH)
     conn.close()
