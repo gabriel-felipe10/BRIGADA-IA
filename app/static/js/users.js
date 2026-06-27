@@ -71,9 +71,15 @@ window.BrigadaUsers = {
                   </select>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">E-mail *</label>
-                <input type="email" id="user-field-email" class="form-input" placeholder="email@brigada.com" required>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">E-mail *</label>
+                  <input type="email" id="user-field-email" class="form-input" placeholder="email@brigada.com" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">📱 WhatsApp</label>
+                  <input type="tel" id="user-field-whatsapp" class="form-input" placeholder="(00) 00000-0000">
+                </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -173,6 +179,7 @@ window.BrigadaUsers = {
               <div>
                 <div class="user-name">${u.name} ${isCurrentUser ? '<span class="badge badge--you">Você</span>' : ''}</div>
                 <div class="user-email">${u.email}</div>
+                ${u.whatsapp ? `<div class="user-email" style="color:var(--success);">📱 ${u.whatsapp}</div>` : ''}
               </div>
             </div>
           </td>
@@ -312,6 +319,7 @@ window.BrigadaUsers = {
     container.querySelector('#user-modal-title').textContent = 'Novo Usuário';
     container.querySelector('#user-form').reset();
     container.querySelector('#user-field-id').value = '';
+    container.querySelector('#user-field-whatsapp').value = '';
     container.querySelector('#user-pwd-label').textContent = 'Senha *';
 
     const fileInput = container.querySelector('#user-field-avatar-file');
@@ -337,6 +345,7 @@ window.BrigadaUsers = {
     container.querySelector('#user-field-id').value = user.id;
     container.querySelector('#user-field-name').value = user.name;
     container.querySelector('#user-field-email').value = user.email;
+    container.querySelector('#user-field-whatsapp').value = user.whatsapp || '';
     container.querySelector('#user-field-role').value = user.role;
     container.querySelector('#user-field-status').value = user.status;
     container.querySelector('#user-field-password').value = '';
@@ -397,6 +406,7 @@ window.BrigadaUsers = {
   async saveUser(container) {
     const name = container.querySelector('#user-field-name').value.trim();
     const email = container.querySelector('#user-field-email').value.trim();
+    const whatsapp = container.querySelector('#user-field-whatsapp').value.trim();
     const role = container.querySelector('#user-field-role').value;
     const status = container.querySelector('#user-field-status').value;
     const password = container.querySelector('#user-field-password').value;
@@ -426,7 +436,7 @@ window.BrigadaUsers = {
     const base64Avatar = container.querySelector('#user-field-avatar-base64')?.value;
     const avatar = base64Avatar || name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const payload = {
-      name, email, role, status, avatar,
+      name, email, whatsapp, role, status, avatar,
       ...(password ? { password } : {})
     };
 
