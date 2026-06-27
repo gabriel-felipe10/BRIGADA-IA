@@ -741,6 +741,9 @@ input[type="number"].form-input {
     min-width: 0;
   }
   .mobile-menu-btn { display: flex; }
+  .sidebar__brand {
+    padding-left: 4.5rem !important;
+  }
 
   .page-container {
     padding: var(--sp-md);

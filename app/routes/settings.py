@@ -95,33 +95,28 @@ def test_whatsapp():
             })
 
         # Caso contrário, tentamos disparar uma chamada HTTP real
-        # Suporta o formato padrão de query parameters ou JSON body dependendo da API
-        # Vamos tentar um envio simples via POST JSON
         try:
             # Limpa o telefone
             clean_phone = "".join(filter(str.isdigit, phone))
             
-            # Monta payload flexível
+            # Monta payload para Pastorini API
             payload = {
-                "number": clean_phone,
-                "message": msg,
-                "text": msg  # compatibilidade com alguns gateways
+                "jid": f"{clean_phone}@s.whatsapp.net",
+                "text": msg
             }
             req_data = json.dumps(payload).encode('utf-8')
             
             # Remove barras extras da URL
             base_url = api_url.rstrip("/")
-            # Suporte a padrão de URL de Evolution API e similares:
-            # POST /message/sendText/{instance}
-            full_url = f"{base_url}/message/sendText/{instance_id}"
+            # Endpoint Pastorini API: /api/instances/{id}/send-text
+            full_url = f"{base_url}/api/instances/{instance_id}/send-text"
             
             req = urllib.request.Request(
                 full_url,
                 data=req_data,
                 headers={
                     "Content-Type": "application/json",
-                    "apikey": api_token,  # Cabeçalho comum em gateways
-                    "Authorization": f"Bearer {api_token}" # Padrão alternativo
+                    "x-api-key": api_token
                 },
                 method="POST"
             )
@@ -148,3 +143,147 @@ def test_whatsapp():
     except Exception as e:
         logger.exception("Erro ao processar teste do WhatsApp")
         return jsonify({"error": "Erro no servidor ao processar teste", "details": str(e)}), 500
+
+
+@settings_bp.route("/whatsapp/instance-status", methods=["GET"])
+def whatsapp_instance_status():
+    """Retorna o status atual da instância e tenta obter o QR code se necessário."""
+    try:
+        # Busca a configuração salva no banco
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM settings WHERE key = 'whatsapp'")
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return jsonify({"status": "DISCONNECTED", "message": "WhatsApp não configurado."})
+            
+        config = json.loads(row["value"])
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
+        
+        if not api_url or not instance_id:
+            return jsonify({"status": "DISCONNECTED", "message": "Configurações incompletas."})
+            
+        # 1. Busca status da instância no Pastorini API
+        status_url = f"{api_url}/api/instances/{instance_id}/status"
+        try:
+            req = urllib.request.Request(
+                status_url,
+                headers={"x-api-key": api_token}
+            )
+            with urllib.request.urlopen(req, timeout=5) as response:
+                status_data = json.loads(response.read().decode('utf-8'))
+                status = status_data.get("status", "DISCONNECTED")
+                
+                qr_code = None
+                # Se estiver em QR_READY, buscamos o QR code
+                if status == "QR_READY":
+                    qr_url = f"{api_url}/api/instances/{instance_id}/qr"
+                    qr_req = urllib.request.Request(qr_url, headers={"x-api-key": api_token})
+                    with urllib.request.urlopen(qr_req, timeout=5) as qr_res:
+                        qr_data = json.loads(qr_res.read().decode('utf-8'))
+                        qr_code = qr_data.get("qrImage")
+                        
+                return jsonify({
+                    "success": True,
+                    "status": status,
+                    "qrImage": qr_code,
+                    "details": status_data
+                })
+        except Exception as e:
+            logger.warning("Erro ao consultar status da instância na API Pastorini: {}", e)
+            return jsonify({"success": False, "status": "DISCONNECTED", "error": str(e)})
+            
+    except Exception as e:
+        logger.exception("Erro ao obter status do WhatsApp")
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/whatsapp/connect", methods=["POST"])
+def whatsapp_connect():
+    """Tenta criar ou conectar a instância no gateway Pastorini API."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM settings WHERE key = 'whatsapp'")
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return jsonify({"error": "Configurações de WhatsApp não encontradas"}), 400
+            
+        config = json.loads(row["value"])
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
+        
+        if not api_url or not instance_id:
+            return jsonify({"error": "URL ou ID da Instância não informados"}), 400
+
+        # Cria a instância (POST /api/instances)
+        create_url = f"{api_url}/api/instances"
+        payload = {"id": instance_id}
+        req_data = json.dumps(payload).encode('utf-8')
+        
+        try:
+            req = urllib.request.Request(
+                create_url,
+                data=req_data,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": api_token
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=6) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                logger.info("Instância {} criada/iniciada: {}", instance_id, res_data)
+        except Exception as e:
+            # Pode já estar criada, prossegue para checar status
+            logger.info("Tentativa de criação de instância retornou: {}", e)
+
+        # Retorna o status atual
+        return whatsapp_instance_status()
+    except Exception as e:
+        logger.exception("Erro ao tentar conectar WhatsApp")
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/whatsapp/disconnect", methods=["POST"])
+def whatsapp_disconnect():
+    """Realiza o logout/desconexão da instância no gateway Pastorini API."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM settings WHERE key = 'whatsapp'")
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return jsonify({"error": "Configurações de WhatsApp não encontradas"}), 400
+            
+        config = json.loads(row["value"])
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
+        
+        if not api_url or not instance_id:
+            return jsonify({"error": "Configurações incompletas"}), 400
+            
+        logout_url = f"{api_url}/api/instances/{instance_id}/logout"
+        req = urllib.request.Request(
+            logout_url,
+            headers={"x-api-key": api_token},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=6) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            logger.info("Instância {} desconectada: {}", instance_id, res_data)
+            
+        return jsonify({"success": True, "message": "Instância desconectada com sucesso."})
+    except Exception as e:
+        logger.exception("Erro ao desconectar instância de WhatsApp")
+        return jsonify({"error": str(e)}), 500
