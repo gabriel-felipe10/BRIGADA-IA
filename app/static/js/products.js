@@ -15,18 +15,35 @@ window.BrigadaProducts = {
 
   buildHTML() {
     const canAddProduct = window.BrigadaAuth.canAddProduct();
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
     return `
       <div class="panel-header">
         <div class="panel-header__left">
           <h2 class="panel-title">📦 Gestão de Produtos</h2>
           <p class="panel-subtitle">Controle completo do estoque por categoria</p>
         </div>
-        ${canAddProduct ? `
-        <button class="btn btn--primary" id="btn-add-product">
-          <span>＋</span> Novo Produto
-        </button>
-        ` : ''}
+        <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
+          ${isSuperAdmin ? `
+          <button class="btn btn--ghost" id="btn-import-csv" title="Importar produtos via CSV">
+            <span>📥</span> Importar
+          </button>
+          ` : ''}
+          <button class="btn btn--ghost" id="btn-export-excel" title="Exportar para Excel">
+            <span>📗</span> Excel
+          </button>
+          <button class="btn btn--ghost" id="btn-export-pdf" title="Exportar para PDF">
+            <span>📄</span> PDF
+          </button>
+          ${canAddProduct ? `
+          <button class="btn btn--primary" id="btn-add-product">
+            <span>＋</span> Novo Produto
+          </button>
+          ` : ''}
+        </div>
       </div>
+
+      <!-- Hidden file input for CSV import -->
+      <input type="file" id="import-file-input" accept=".csv" style="display:none;">
 
       <div class="category-tabs" id="category-tabs">
         <button class="cat-tab cat-tab--active" data-cat="all">🏪 Todos</button>
@@ -290,6 +307,16 @@ window.BrigadaProducts = {
       this.openAddModal(container);
     });
 
+    // Export / Import buttons
+    container.querySelector('#btn-export-excel')?.addEventListener('click', () => this.exportExcel());
+    container.querySelector('#btn-export-pdf')?.addEventListener('click', () => this.exportPDF());
+    container.querySelector('#btn-import-csv')?.addEventListener('click', () => {
+      container.querySelector('#import-file-input')?.click();
+    });
+    container.querySelector('#import-file-input')?.addEventListener('change', (e) => {
+      this.importCSV(e, container);
+    });
+
     // Modal close
     container.querySelector('#modal-close')?.addEventListener('click', () => this.closeModal(container));
     container.querySelector('#btn-cancel-modal')?.addEventListener('click', () => this.closeModal(container));
@@ -439,5 +466,239 @@ window.BrigadaProducts = {
     window.BrigadaUI.showToast('Produto removido.', 'success');
     this.closeDeleteModal(container);
     this.renderTable(container);
+  },
+
+  // ── Export Excel (CSV com BOM UTF-8) ──────────────────────────────────────
+  exportExcel() {
+    const products = this.getFilteredProducts();
+    if (products.length === 0) {
+      window.BrigadaUI.showToast('Nenhum produto para exportar.', 'error');
+      return;
+    }
+
+    const catMap = { aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado' };
+    const header = ['PLU', 'Produto', 'Quantidade', 'Unidade', 'Categoria', 'Data Inicial', 'Validade', 'Status', 'Fornecedor', 'Localização'];
+
+    const rows = products.map(p => {
+      const s = window.BrigadaData.getProductStatus(p);
+      return [
+        p.plu,
+        p.name,
+        p.quantity !== undefined ? p.quantity : 0,
+        p.unit || 'kg',
+        catMap[p.category] || p.category,
+        p.startDate || '',
+        p.endDate,
+        s.label,
+        p.supplier || '',
+        p.location === 'resfriado' ? 'Resfriado' : p.location === 'congelado' ? 'Congelado' : (p.location || '')
+      ];
+    });
+
+    const csvContent = [header, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+      .join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `produtos_brigada_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    window.BrigadaUI.showToast(`${products.length} produtos exportados para Excel!`, 'success');
+  },
+
+  // ── Export PDF ────────────────────────────────────────────────────────────
+  exportPDF() {
+    const products = this.getFilteredProducts();
+    if (products.length === 0) {
+      window.BrigadaUI.showToast('Nenhum produto para exportar.', 'error');
+      return;
+    }
+
+    const catMap = { aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado' };
+    const now = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    const rows = products.map(p => {
+      const s = window.BrigadaData.getProductStatus(p);
+      const statusColor = s.days < 0 ? '#ef4444' : s.days === 0 ? '#f97316' : s.days <= 3 ? '#f59e0b' : '#22c55e';
+      return `
+        <tr>
+          <td style="font-family:monospace;color:#6366f1;font-weight:600;">${p.plu}</td>
+          <td style="font-weight:500;">${p.name}</td>
+          <td style="text-align:center;">${p.quantity !== undefined ? p.quantity : 0} ${p.unit || 'kg'}</td>
+          <td>${catMap[p.category] || p.category}</td>
+          <td>${window.BrigadaData.formatDate(p.endDate)}</td>
+          <td style="color:${statusColor};font-weight:700;">${s.label}</td>
+          <td>${p.location === 'resfriado' ? 'Resfriado' : p.location === 'congelado' ? 'Congelado' : (p.location || '—')}</td>
+        </tr>`;
+    }).join('');
+
+    const stats = window.BrigadaData.getStats();
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório de Produtos — BRIGADA-IA</title>
+        <style>
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; padding:24px; font-size:11px; }
+          .header { text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #6366f1; }
+          .header h1 { font-size:20px; color:#6366f1; margin-bottom:4px; }
+          .header p { color:#64748b; font-size:12px; }
+          .summary { display:flex; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
+          .summary-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 16px; text-align:center; }
+          .summary-item .num { font-size:18px; font-weight:800; }
+          .summary-item .label { font-size:9px; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
+          .num-total { color:#6366f1; }
+          .num-ok { color:#22c55e; }
+          .num-warn { color:#f59e0b; }
+          .num-exp { color:#ef4444; }
+          table { width:100%; border-collapse:collapse; margin-top:8px; }
+          th { background:#6366f1; color:#fff; padding:8px 6px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
+          td { padding:6px; border-bottom:1px solid #e2e8f0; font-size:11px; }
+          tr:nth-child(even) td { background:#f8fafc; }
+          .footer { margin-top:20px; text-align:center; color:#94a3b8; font-size:9px; border-top:1px solid #e2e8f0; padding-top:12px; }
+          @media print { body { padding:12px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🛡️ BRIGADA-IA — Relatório de Produtos</h1>
+          <p>Gerado em ${now} · Açougue Varejo</p>
+        </div>
+        <div class="summary">
+          <div class="summary-item"><div class="num num-total">${stats.total}</div><div class="label">Total</div></div>
+          <div class="summary-item"><div class="num num-ok">${stats.ok}</div><div class="label">OK</div></div>
+          <div class="summary-item"><div class="num num-warn">${stats.expiresSoon}</div><div class="label">Atenção</div></div>
+          <div class="summary-item"><div class="num num-exp">${stats.expired}</div><div class="label">Vencidos</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>PLU</th><th>Produto</th><th>Qtd</th><th>Categoria</th><th>Validade</th><th>Status</th><th>Local</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="footer">BRIGADA-IA v1.0 · Brigada de Validade · ${products.length} produtos listados</div>
+      </body>
+      </html>`;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 400);
+    window.BrigadaUI.showToast('PDF gerado! Use "Salvar como PDF" na janela de impressão.', 'success');
+  },
+
+  // ── Import CSV ────────────────────────────────────────────────────────────
+  async importCSV(event, container) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+
+    if (lines.length < 2) {
+      window.BrigadaUI.showToast('Arquivo CSV vazio ou sem dados.', 'error');
+      event.target.value = '';
+      return;
+    }
+
+    // Detect separator
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const parseRow = (line) => {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (ch === sep && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-záéíóúãõâêôç]/g, ''));
+
+    // Map header names
+    const findCol = (...names) => headers.findIndex(h => names.some(n => h.includes(n)));
+    const colPlu = findCol('plu', 'codigo', 'cdigo');
+    const colName = findCol('produto', 'nome', 'name');
+    const colCategory = findCol('categoria', 'category');
+    const colEndDate = findCol('validade', 'datafinal', 'enddate', 'vencimento');
+    const colStartDate = findCol('datainicial', 'startdate', 'inicio');
+    const colSupplier = findCol('fornecedor', 'supplier');
+    const colLocation = findCol('localizao', 'localizacao', 'location', 'local');
+    const colQty = findCol('quantidade', 'qtd', 'qty', 'quantity');
+    const colUnit = findCol('unidade', 'unit');
+
+    if (colPlu === -1 || colName === -1 || colEndDate === -1) {
+      window.BrigadaUI.showToast('CSV deve ter colunas: PLU, Produto/Nome e Validade/DataFinal.', 'error');
+      event.target.value = '';
+      return;
+    }
+
+    const catMap = { aves: 'aves', suino: 'suino', suno: 'suino', bovino: 'bovino', pescado: 'pescado' };
+    let imported = 0;
+    let skipped = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseRow(lines[i]);
+      const plu = cols[colPlu] || '';
+      const name = cols[colName] || '';
+      const endDate = cols[colEndDate] || '';
+
+      if (!plu || !name || !endDate) { skipped++; continue; }
+
+      // Check duplicate PLU
+      if (window.BrigadaData.products.find(p => p.plu.trim().toLowerCase() === plu.toLowerCase())) {
+        skipped++;
+        continue;
+      }
+
+      const rawCat = colCategory !== -1 ? (cols[colCategory] || '').toLowerCase().replace(/[^a-z]/g, '') : '';
+      const category = catMap[rawCat] || 'aves';
+
+      const rawLoc = colLocation !== -1 ? (cols[colLocation] || '').toLowerCase() : '';
+      const location = rawLoc.includes('congelado') ? 'congelado' : 'resfriado';
+
+      const payload = {
+        plu,
+        name,
+        category,
+        endDate,
+        startDate: colStartDate !== -1 ? (cols[colStartDate] || '') : '',
+        supplier: colSupplier !== -1 ? (cols[colSupplier] || '') : '',
+        location,
+        quantity: colQty !== -1 ? (parseFloat(cols[colQty]) || 0) : 0,
+        unit: colUnit !== -1 ? (cols[colUnit] || 'kg') : 'kg',
+      };
+
+      try {
+        await window.BrigadaData.addProduct(payload);
+        imported++;
+      } catch {
+        skipped++;
+      }
+    }
+
+    event.target.value = '';
+    this.renderTable(container);
+    window.BrigadaUI.showToast(`Importação concluída: ${imported} adicionados, ${skipped} ignorados.`, imported > 0 ? 'success' : 'error');
   },
 };
