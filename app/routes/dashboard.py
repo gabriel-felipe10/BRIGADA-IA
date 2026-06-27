@@ -21,6 +21,12 @@ def serve_manifest():
     return current_app.send_static_file("manifest.json")
 
 
+@dashboard_bp.route("/favicon.ico")
+def serve_favicon():
+    """Serve o favicon oficial a partir da raiz."""
+    return current_app.send_static_file("icon.jpg")
+
+
 @dashboard_bp.route("/")
 def index():
     """Renderiza a SPA — Brigada de Validade."""
