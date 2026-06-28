@@ -22,6 +22,7 @@ def get_users():
                 "role": u.get("role"),
                 "avatar": u.get("avatar"),
                 "status": u.get("status"),
+                "sector": u.get("sector") or "todos",
                 "createdAt": u.get("created_at"),
                 "lastLogin": u.get("last_login")
             })
@@ -51,7 +52,8 @@ def create_user():
             "password": data.get("password"),
             "role": data.get("role", "user"),
             "avatar": data.get("avatar", "US"),
-            "status": data.get("status", "active")
+            "status": data.get("status", "active"),
+            "sector": data.get("sector", "todos")
         }
         
         response = supabase.table("usuarios").insert(db_data).execute()
@@ -67,6 +69,7 @@ def create_user():
             "role": u.get("role"),
             "avatar": u.get("avatar"),
             "status": u.get("status"),
+            "sector": u.get("sector") or "todos",
             "createdAt": u.get("created_at"),
             "lastLogin": u.get("last_login")
         }
@@ -92,6 +95,7 @@ def update_user(user_id):
         if "role" in data: db_data["role"] = data["role"]
         if "avatar" in data: db_data["avatar"] = data["avatar"]
         if "status" in data: db_data["status"] = data["status"]
+        if "sector" in data: db_data["sector"] = data["sector"]
         if "lastLogin" in data: db_data["last_login"] = data["lastLogin"]
         
         response = supabase.table("usuarios").update(db_data).eq("id", user_id).execute()
@@ -107,6 +111,7 @@ def update_user(user_id):
             "role": u.get("role"),
             "avatar": u.get("avatar"),
             "status": u.get("status"),
+            "sector": u.get("sector") or "todos",
             "createdAt": u.get("created_at"),
             "lastLogin": u.get("last_login")
         }

@@ -4,3 +4,5 @@ loguru>=0.7
 pytest>=8.0
 supabase
 python-dotenv
+pywebpush
+

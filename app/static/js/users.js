@@ -77,8 +77,24 @@ window.BrigadaUsers = {
                   <input type="email" id="user-field-email" class="form-input" placeholder="email@brigada.com" required>
                 </div>
                 <div class="form-group">
+                  <label class="form-label">Setor *</label>
+                  <select id="user-field-sector" class="form-input" required>
+                    <option value="todos">🌍 Todos os Setores</option>
+                    <option value="açougue">🥩 Açougue</option>
+                    <option value="pereciveis">🍎 Perecíveis</option>
+                    <option value="padaria">🍞 Padaria</option>
+                    <option value="hortifruti">🥦 Hortifruti</option>
+                    <option value="mercearia">🛒 Mercearia</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
                   <label class="form-label">📱 WhatsApp</label>
                   <input type="tel" id="user-field-whatsapp" class="form-input" placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                  <!-- Empty for alignment -->
                 </div>
               </div>
               <div class="form-row">
@@ -184,6 +200,7 @@ window.BrigadaUsers = {
             </div>
           </td>
           <td data-label="Perfil"><span class="badge ${roleClass[u.role]}">${roleLabel[u.role]}</span></td>
+          <td data-label="Setor"><span class="badge" style="background:rgba(99,102,241,0.1); color:#818cf8; border:1px solid rgba(99,102,241,0.2);">${u.sector === 'todos' ? '🌍 Todos' : u.sector === 'açougue' ? '🥩 Açougue' : u.sector === 'pereciveis' ? '🍎 Perecíveis' : u.sector === 'padaria' ? '🍞 Padaria' : u.sector === 'hortifruti' ? '🥦 Hortifruti' : '🛒 Mercearia'}</span></td>
           <td data-label="Status"><span class="badge ${u.status === 'active' ? 'badge--ok' : 'badge--expired'}">${u.status === 'active' ? '✅ Ativo' : '⛔ Inativo'}</span></td>
           <td data-label="Criado Em">${window.BrigadaData.formatDate(u.createdAt)}</td>
           <td data-label="Último Login">${window.BrigadaData.formatDateTime(u.lastLogin)}</td>
@@ -206,6 +223,7 @@ window.BrigadaUsers = {
             <tr>
               <th>Usuário</th>
               <th>Perfil</th>
+              <th>Setor</th>
               <th>Status</th>
               <th>Cadastrado em</th>
               <th>Último Acesso</th>
@@ -320,6 +338,7 @@ window.BrigadaUsers = {
     container.querySelector('#user-form').reset();
     container.querySelector('#user-field-id').value = '';
     container.querySelector('#user-field-whatsapp').value = '';
+    container.querySelector('#user-field-sector').value = 'todos';
     container.querySelector('#user-pwd-label').textContent = 'Senha *';
 
     const fileInput = container.querySelector('#user-field-avatar-file');
@@ -348,6 +367,7 @@ window.BrigadaUsers = {
     container.querySelector('#user-field-whatsapp').value = user.whatsapp || '';
     container.querySelector('#user-field-role').value = user.role;
     container.querySelector('#user-field-status').value = user.status;
+    container.querySelector('#user-field-sector').value = user.sector || 'todos';
     container.querySelector('#user-field-password').value = '';
     container.querySelector('#user-pwd-label').textContent = 'Nova Senha (deixe em branco para manter)';
 
@@ -433,10 +453,11 @@ window.BrigadaUsers = {
       return;
     }
 
+    const sector = container.querySelector('#user-field-sector').value;
     const base64Avatar = container.querySelector('#user-field-avatar-base64')?.value;
     const avatar = base64Avatar || name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const payload = {
-      name, email, whatsapp, role, status, avatar,
+      name, email, whatsapp, role, status, avatar, sector,
       ...(password ? { password } : {})
     };
 

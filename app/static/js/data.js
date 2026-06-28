@@ -13,6 +13,7 @@ const USERS_DB = [
     role: 'superadmin',
     avatar: 'AD',
     status: 'active',
+    sector: 'todos',
     createdAt: '2026-06-24',
     lastLogin: new Date().toISOString(),
   },
@@ -24,6 +25,7 @@ const USERS_DB = [
     role: 'gestao',
     avatar: 'MA',
     status: 'active',
+    sector: 'todos',
     createdAt: '2026-06-24',
     lastLogin: null,
   },
@@ -35,6 +37,7 @@ const USERS_DB = [
     role: 'gestao',
     avatar: 'JE',
     status: 'active',
+    sector: 'pereciveis',
     createdAt: '2026-06-24',
     lastLogin: null,
   },
@@ -599,6 +602,67 @@ const PRODUCTS_DB = [
     supplier: 'Minerva Foods',
     location: 'Vitrine de Bovinos',
   },
+  // ── PEREÇÍVEIS ────────────────────────────────────────────────────────────
+  {
+    id: 100,
+    plu: '5001',
+    name: 'Queijo Muçarela Fatiado Sadia 150g',
+    category: 'laticinios',
+    startDate: daysAgo(5),
+    endDate: daysFromNow(4),
+    unit: 'pct',
+    supplier: 'BRF S.A. (Sadia)',
+    location: 'Gôndola Fria 01',
+    quantity: 15
+  },
+  {
+    id: 101,
+    plu: '5002',
+    name: 'Iogurte Natural Integral Nestlé 170g',
+    category: 'laticinios',
+    startDate: daysAgo(10),
+    endDate: daysFromNow(2),
+    unit: 'un',
+    supplier: 'Nestlé Brasil',
+    location: 'Geladeira Laticínios',
+    quantity: 24
+  },
+  {
+    id: 102,
+    plu: '6001',
+    name: 'Margarina com Sal Qualy Pote 500g',
+    category: 'frios',
+    startDate: daysAgo(30),
+    endDate: daysFromNow(12),
+    unit: 'un',
+    supplier: 'BRF S.A. (Qualy)',
+    location: 'Gôndola Fria 02',
+    quantity: 8
+  },
+  {
+    id: 103,
+    plu: '7001',
+    name: 'Pão de Forma Tradicional Wickbold 500g',
+    category: 'padaria',
+    startDate: daysAgo(2),
+    endDate: daysFromNow(1),
+    unit: 'pct',
+    supplier: 'Wickbold & Nosso Pão',
+    location: 'Prateleira Padaria',
+    quantity: 10
+  },
+  {
+    id: 104,
+    plu: '8001',
+    name: 'Salada de Frutas Higienizada Pote 300g',
+    category: 'hortifruti',
+    startDate: daysAgo(1),
+    endDate: daysFromNow(0),
+    unit: 'pct',
+    supplier: 'Hortifruti Distribuidora',
+    location: 'Expositor Frio',
+    quantity: 6
+  }
 ];
 
 // ── Helpers de Estado e Sincronização ─────────────────────────────────────────
@@ -789,8 +853,28 @@ window.BrigadaData = {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    let allowedProducts = this.products;
+    if (window.BrigadaAuth && window.BrigadaAuth.currentUser) {
+      const email = window.BrigadaAuth.currentUser.email.toLowerCase();
+      const isRestricted = !(email === 'admin@brigada.com' || email === 'marcos@brigada.com' || window.BrigadaAuth.isSuperAdmin());
+      if (isRestricted) {
+        const sector = window.BrigadaAuth.currentUser.sector;
+        if (sector === 'açougue') {
+          allowedProducts = this.products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
+        } else if (sector === 'pereciveis') {
+          allowedProducts = this.products.filter(p => ['laticinios', 'frios'].includes(p.category));
+        } else if (sector === 'padaria') {
+          allowedProducts = this.products.filter(p => ['padaria'].includes(p.category));
+        } else if (sector === 'hortifruti') {
+          allowedProducts = this.products.filter(p => ['hortifruti'].includes(p.category));
+        } else if (sector === 'mercearia') {
+          allowedProducts = this.products.filter(p => ['mercearia'].includes(p.category));
+        }
+      }
+    }
+
     let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0;
-    this.products.forEach(p => {
+    allowedProducts.forEach(p => {
       const s = this.getProductStatus(p);
       if (s.days < 0) expired++;
       else if (s.days === 0) expiresToday++;
@@ -799,7 +883,7 @@ window.BrigadaData = {
     });
 
     return {
-      total: this.products.length,
+      total: allowedProducts.length,
       expired,
       expiresToday,
       expiresSoon,

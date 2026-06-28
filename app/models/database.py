@@ -60,6 +60,14 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            subscription_json TEXT NOT NULL UNIQUE,
+            created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     logger.info("Banco de dados inicializado | path={}", Config.DB_PATH)
     conn.close()

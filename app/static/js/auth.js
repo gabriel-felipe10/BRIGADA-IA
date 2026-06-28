@@ -54,6 +54,15 @@ window.BrigadaAuth = {
     return this.currentUser?.role === 'gestao';
   },
 
+  hasSectorAccess(sector) {
+    if (!this.currentUser) return false;
+    const email = this.currentUser.email.toLowerCase();
+    if (email === 'admin@brigada.com' || email === 'marcos@brigada.com' || this.isSuperAdmin()) {
+      return true;
+    }
+    return this.currentUser.sector === sector || this.currentUser.sector === 'todos';
+  },
+
   canAddProduct() {
     return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user';
   },

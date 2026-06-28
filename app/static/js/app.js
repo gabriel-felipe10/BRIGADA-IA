@@ -214,10 +214,36 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📊</span>
               <span>Dashboard</span>
             </a>
+            ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
-              <span class="sidebar__link-icon">📦</span>
-              <span>Produtos</span>
+              <span class="sidebar__link-icon">🥩</span>
+              <span>Açougue</span>
             </a>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
+              <span class="sidebar__link-icon">🍎</span>
+              <span>Perecíveis</span>
+            </a>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('padaria') ? `
+            <a class="sidebar__link ${activePage === 'padaria' ? 'sidebar__link--active' : ''}" data-page="padaria" href="#">
+              <span class="sidebar__link-icon">🍞</span>
+              <span>Padaria</span>
+            </a>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
+            <a class="sidebar__link ${activePage === 'hortifruti' ? 'sidebar__link--active' : ''}" data-page="hortifruti" href="#">
+              <span class="sidebar__link-icon">🥦</span>
+              <span>Hortifruti</span>
+            </a>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('mercearia') ? `
+            <a class="sidebar__link ${activePage === 'mercearia' ? 'sidebar__link--active' : ''}" data-page="mercearia" href="#">
+              <span class="sidebar__link-icon">🛒</span>
+              <span>Mercearia</span>
+            </a>
+            ` : ''}
             ${isSuperAdmin ? `
             <div class="sidebar__section-label">Administração</div>
             <a class="sidebar__link ${activePage === 'users' ? 'sidebar__link--active' : ''}" data-page="users" href="#">
@@ -495,7 +521,35 @@ window.BrigadaRouter = {
     if (page === 'dashboard') {
       window.BrigadaDashboard.render(container, user.role);
     } else if (page === 'products') {
+      if (!window.BrigadaAuth.hasSectorAccess('açougue')) {
+        this.navigate('dashboard');
+        return;
+      }
       window.BrigadaProducts.render(container);
+    } else if (page === 'pereciveis') {
+      if (!window.BrigadaAuth.hasSectorAccess('pereciveis')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaPereciveis.render(container);
+    } else if (page === 'padaria') {
+      if (!window.BrigadaAuth.hasSectorAccess('padaria')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaPadaria.render(container);
+    } else if (page === 'hortifruti') {
+      if (!window.BrigadaAuth.hasSectorAccess('hortifruti')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaHortifruti.render(container);
+    } else if (page === 'mercearia') {
+      if (!window.BrigadaAuth.hasSectorAccess('mercearia')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaMercearia.render(container);
     } else if (page === 'users') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       window.BrigadaUsers.render(container);

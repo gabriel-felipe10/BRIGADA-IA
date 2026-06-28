@@ -8,6 +8,23 @@ window.BrigadaDashboard = {
   editingId: null,
   deletingId: null,
 
+  getAllowedProducts() {
+    let products = window.BrigadaData.products;
+    if (window.BrigadaAuth.currentUser) {
+      const email = window.BrigadaAuth.currentUser.email.toLowerCase();
+      const isRestricted = !(email === 'admin@brigada.com' || email === 'marcos@brigada.com' || window.BrigadaAuth.isSuperAdmin());
+      if (isRestricted) {
+        const sector = window.BrigadaAuth.currentUser.sector;
+        if (sector === 'açougue') {
+          products = products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
+        } else if (sector === 'pereciveis') {
+          products = products.filter(p => ['laticinios', 'frios', 'padaria', 'hortifruti'].includes(p.category));
+        }
+      }
+    }
+    return products;
+  },
+
   render(container, role) {
     this.currentFilter = 'all';
     this.currentStatusFilter = 'all';
@@ -143,10 +160,18 @@ window.BrigadaDashboard = {
           </div>
           <div class="cat-quick-tabs" id="dash-cat-tabs">
             <button class="cat-tab cat-tab--sm cat-tab--active" data-cat="all">Todos</button>
+            ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <button class="cat-tab cat-tab--sm" data-cat="aves">🐔 Aves</button>
             <button class="cat-tab cat-tab--sm" data-cat="suino">🐷 Suíno</button>
             <button class="cat-tab cat-tab--sm" data-cat="bovino">🐮 Bovino</button>
             <button class="cat-tab cat-tab--sm" data-cat="pescado">🐟 Pescado</button>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <button class="cat-tab cat-tab--sm" data-cat="laticinios">🧀 Laticínios</button>
+            <button class="cat-tab cat-tab--sm" data-cat="frios">🥓 Frios</button>
+            <button class="cat-tab cat-tab--sm" data-cat="padaria">🍞 Padaria</button>
+            <button class="cat-tab cat-tab--sm" data-cat="hortifruti">🥦 Hortifruti</button>
+            ` : ''}
           </div>
         </div>
         <div id="dash-products-table" class="table-scroll"></div>
@@ -204,6 +229,16 @@ window.BrigadaDashboard = {
                     <option value="resfriado">❄️ Resfriado</option>
                     <option value="congelado">🥶 Congelado</option>
                   </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Coluna</label>
+                  <input type="text" id="field-column" class="form-input" placeholder="ex: A">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Número da Coluna</label>
+                  <input type="number" id="field-column-number" class="form-input" placeholder="ex: 3" min="1">
                 </div>
               </div>
               <div class="form-row">
@@ -346,7 +381,7 @@ window.BrigadaDashboard = {
     const timeline = container.querySelector('#alerts-timeline');
     if (!timeline) return;
 
-    const products = window.BrigadaData.products
+    const products = this.getAllowedProducts()
       .map(p => ({ ...p, status: window.BrigadaData.getProductStatus(p) }))
       .filter(p => p.status.days <= 3)
       .sort((a, b) => a.status.days - b.status.days)
@@ -364,7 +399,7 @@ window.BrigadaDashboard = {
         <div class="alert-item__icon">${catIcon[p.category]}</div>
         <div class="alert-item__body">
           <p class="alert-item__name">${p.name}</p>
-          <p class="alert-item__meta">PLU: ${p.plu} · ${p.location === 'resfriado' ? '❄️ Resfriado' : p.location === 'congelado' ? '🥶 Congelado' : p.location || '—'}</p>
+          <p class="alert-item__meta">PLU: ${p.plu} · ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}</p>
         </div>
         <div class="alert-item__status">
           <span class="badge ${p.status.class}">${p.status.icon} ${p.status.label}</span>
@@ -378,12 +413,25 @@ window.BrigadaDashboard = {
     const chart = container.querySelector('#category-chart');
     if (!chart) return;
 
-    const categories = ['aves', 'suino', 'bovino', 'pescado'];
-    const labels = { aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado' };
-    const colors = { aves: '#f59e0b', suino: '#ef4444', bovino: '#a855f7', pescado: '#3b82f6' };
+    let categories = [];
+    const labels = { 
+      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
+      laticinios: '🧀 Laticínios', frios: '🥓 Frios', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
+    };
+    const colors = { 
+      aves: '#f59e0b', suino: '#ef4444', bovino: '#a855f7', pescado: '#3b82f6',
+      laticinios: '#10b981', frios: '#f59e0b', padaria: '#d97706', hortifruti: '#84cc16'
+    };
+
+    if (window.BrigadaAuth.hasSectorAccess('açougue')) {
+      categories.push('aves', 'suino', 'bovino', 'pescado');
+    }
+    if (window.BrigadaAuth.hasSectorAccess('pereciveis')) {
+      categories.push('laticinios', 'frios', 'padaria', 'hortifruti');
+    }
 
     const data = categories.map(cat => {
-      const products = window.BrigadaData.products.filter(p => p.category === cat);
+      const products = this.getAllowedProducts().filter(p => p.category === cat);
       const expired = products.filter(p => window.BrigadaData.getProductStatus(p).days < 0).length;
       const warning = products.filter(p => {
         const s = window.BrigadaData.getProductStatus(p);
@@ -421,7 +469,7 @@ window.BrigadaDashboard = {
 
     this.currentFilter = cat;
 
-    let products = window.BrigadaData.products;
+    let products = this.getAllowedProducts();
     if (cat !== 'all') products = products.filter(p => p.category === cat);
 
     if (this.currentStatusFilter && this.currentStatusFilter !== 'all') {
@@ -440,7 +488,10 @@ window.BrigadaDashboard = {
       .map(p => ({ ...p, _status: window.BrigadaData.getProductStatus(p) }))
       .sort((a, b) => a._status.days - b._status.days);
 
-    const catMap = { aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado' };
+    const catMap = { 
+      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
+      laticinios: '🧀 Laticínios', frios: '🥓 Frios', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
+    };
     const canEditOrDelete = window.BrigadaAuth.canEditOrDeleteProduct();
 
     tableDiv.innerHTML = `
@@ -469,9 +520,7 @@ window.BrigadaDashboard = {
               <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
               <td data-label="Status"><span class="badge ${p._status.class}">${p._status.icon} ${p._status.label}</span></td>
               <td data-label="Localização">
-                ${p.location === 'resfriado' ? '<span class="badge" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2);">❄️ Resfriado</span>' : 
-                  p.location === 'congelado' ? '<span class="badge" style="background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2);">🥶 Congelado</span>' : 
-                  p.location || '—'}
+                ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}
               </td>
               ${canEditOrDelete ? `
               <td data-label="Ações" class="actions-cell">
@@ -509,6 +558,8 @@ window.BrigadaDashboard = {
     container.querySelector('#field-endDate').value = product.endDate;
     container.querySelector('#field-supplier').value = product.supplier || '';
     container.querySelector('#field-location').value = product.location || '';
+    container.querySelector('#field-column').value = product.column || '';
+    container.querySelector('#field-column-number').value = product.columnNumber || '';
     container.querySelector('#field-unit').value = product.unit || 'kg';
     container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
     this.showModal(container);
@@ -558,6 +609,9 @@ window.BrigadaDashboard = {
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+    const column = container.querySelector('#field-column').value.trim() || null;
+    const colNumVal = container.querySelector('#field-column-number').value;
+    const columnNumber = colNumVal !== '' ? parseInt(colNumVal) : null;
 
     if (!plu || !name || !category || !endDate || !location) {
       window.BrigadaUI.showToast('Preencha todos os campos obrigatórios (incluindo Localização).', 'error');
@@ -578,7 +632,7 @@ window.BrigadaDashboard = {
       return;
     }
 
-    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity };
+    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber };
 
     try {
       if (this.editingId) {

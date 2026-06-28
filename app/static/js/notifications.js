@@ -145,6 +145,35 @@ window.BrigadaNotifications = {
           </form>
         </div>
       </div>
+
+      <div class="glass-panel stagger" style="max-width: 800px; margin-bottom: 2rem;">
+        <div style="padding: 1.5rem;">
+          <h3 class="glass-panel__title" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🔔</span> Notificações Push do Navegador (Web Push)
+          </h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Receba alertas de validade diretamente na tela do seu dispositivo através das notificações nativas do navegador.
+          </p>
+
+          <div style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px dashed var(--glass-border); margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 1rem 0; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>Status:</span> <span id="push-status-badge" class="badge badge--expired" style="font-size: 0.8rem; padding: 0.2rem 0.6rem;">Carregando...</span>
+            </h4>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn--primary" id="btn-subscribe-push" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                Ativar neste Navegador
+              </button>
+              <button type="button" class="btn btn--ghost" id="btn-unsubscribe-push" style="font-size: 0.85rem; padding: 0.5rem 1rem; display: none; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
+                Desativar neste Navegador
+              </button>
+              <button type="button" class="btn btn--ghost" id="btn-test-push" style="font-size: 0.85rem; padding: 0.5rem 1rem; display: none;">
+                ⚡ Testar Notificação Push
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
 
     await this.loadAndFillForm(container);
@@ -183,6 +212,7 @@ window.BrigadaNotifications = {
     if (this.config && this.config.enabled) {
       this.updateConnectionStatus(container);
     }
+    this.checkPushSubscription(container);
   },
 
   toggleSections(container) {
@@ -352,6 +382,25 @@ window.BrigadaNotifications = {
         window.BrigadaUI.showToast(err.message || 'Falha ao processar teste.', 'error');
       }
     });
+
+    const btnSubscribePush = container.querySelector('#btn-subscribe-push');
+    const btnUnsubscribePush = container.querySelector('#btn-unsubscribe-push');
+    const btnTestPush = container.querySelector('#btn-test-push');
+
+    btnSubscribePush.addEventListener('click', () => this.subscribePush(container));
+    btnUnsubscribePush.addEventListener('click', () => this.unsubscribePush(container));
+    btnTestPush.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/settings/push/test', { method: 'POST' }).then(r => r.json());
+        if (res.success) {
+          window.BrigadaUI.showToast(res.message, 'success');
+        } else {
+          window.BrigadaUI.showToast(res.error || 'Erro ao enviar notificação de teste.', 'error');
+        }
+      } catch (err) {
+        window.BrigadaUI.showToast('Erro de conexão ao enviar teste.', 'error');
+      }
+    });
   },
 
   gatherFormData(container) {
@@ -367,5 +416,120 @@ window.BrigadaNotifications = {
       reminderTime: container.querySelector('#field-reminder-time').value,
       reminderMsg: container.querySelector('#field-reminder-msg').value.trim()
     };
+  },
+
+  async checkPushSubscription(container) {
+    const badge = container.querySelector('#push-status-badge');
+    const btnSub = container.querySelector('#btn-subscribe-push');
+    const btnUnsub = container.querySelector('#btn-unsubscribe-push');
+    const btnTest = container.querySelector('#btn-test-push');
+
+    if (!badge) return;
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      badge.textContent = 'NÃO SUPORTADO 🔴';
+      badge.className = 'badge badge--expired';
+      btnSub.style.display = 'none';
+      btnUnsub.style.display = 'none';
+      btnTest.style.display = 'none';
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      
+      if (sub) {
+        badge.textContent = 'ATIVADO 🟢';
+        badge.className = 'badge badge--ok';
+        btnSub.style.display = 'none';
+        btnUnsub.style.display = 'inline-block';
+        btnTest.style.display = 'inline-block';
+      } else {
+        badge.textContent = 'DESATIVADO 🟡';
+        badge.className = 'badge badge--warning';
+        btnSub.style.display = 'inline-block';
+        btnUnsub.style.display = 'none';
+        btnTest.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('Erro ao verificar inscrição push:', err);
+      badge.textContent = 'ERRO AO VERIFICAR 🔴';
+      badge.className = 'badge badge--expired';
+    }
+  },
+
+  async subscribePush(container) {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        window.BrigadaUI.showToast('Permissão de notificação negada pelo usuário.', 'error');
+        return;
+      }
+
+      window.BrigadaUI.showToast('Obtendo chaves do servidor...', 'info');
+      const { publicKey } = await fetch('/api/settings/push/public-key').then(r => r.json());
+      const applicationServerKey = this.urlBase64ToUint8Array(publicKey);
+
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey
+      });
+
+      window.BrigadaUI.showToast('Registrando inscrição no servidor...', 'info');
+      const res = await fetch('/api/settings/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription)
+      }).then(r => r.json());
+
+      if (res.success) {
+        window.BrigadaUI.showToast('Notificações ativadas neste navegador!', 'success');
+        this.checkPushSubscription(container);
+      } else {
+        window.BrigadaUI.showToast(res.error || 'Erro ao registrar notificações.', 'error');
+      }
+    } catch (err) {
+      console.error('Erro ao se inscrever no push:', err);
+      window.BrigadaUI.showToast('Falha ao ativar notificações push.', 'error');
+    }
+  },
+
+  async unsubscribePush(container) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        
+        await fetch('/api/settings/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub)
+        });
+      }
+      
+      window.BrigadaUI.showToast('Notificações desativadas para este navegador.', 'success');
+      this.checkPushSubscription(container);
+    } catch (err) {
+      console.error('Erro ao cancelar inscrição:', err);
+      window.BrigadaUI.showToast('Erro ao desativar notificações.', 'error');
+    }
+  },
+
+  urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   }
 };

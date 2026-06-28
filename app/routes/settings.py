@@ -1,6 +1,10 @@
 import json
 import urllib.request
 import urllib.error
+import base64
+from py_vapid import Vapid
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from pywebpush import webpush, WebPushException
 from flask import Blueprint, request, jsonify
 from app.models.database import get_db_connection
 from app.logging_config import logger
@@ -287,3 +291,172 @@ def whatsapp_disconnect():
     except Exception as e:
         logger.exception("Erro ao desconectar instância de WhatsApp")
         return jsonify({"error": str(e)}), 500
+
+
+def get_or_create_vapid_keys():
+    """Busca as chaves VAPID no banco ou gera um novo par se não existir."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key = 'vapid_private_key'")
+    row = cursor.fetchone()
+    
+    if row:
+        private_pem = row["value"].encode('utf-8')
+        vapid = Vapid.from_pem(private_pem)
+        conn.close()
+        return vapid
+    else:
+        vapid = Vapid()
+        vapid.generate_keys()
+        private_pem = vapid.private_pem().decode('utf-8')
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('vapid_private_key', ?)", (private_pem,))
+        conn.commit()
+        conn.close()
+        return vapid
+
+
+@settings_bp.route("/push/public-key", methods=["GET"])
+def get_push_public_key():
+    """Retorna a chave pública VAPID para registro do Service Worker."""
+    try:
+        vapid = get_or_create_vapid_keys()
+        pub_bytes = vapid.public_key.public_bytes(
+            encoding=Encoding.X962,
+            format=PublicFormat.UncompressedPoint
+        )
+        public_key_base64 = base64.urlsafe_b64encode(pub_bytes).decode('utf-8').rstrip('=')
+        return jsonify({"publicKey": public_key_base64})
+    except Exception as e:
+        logger.exception("Erro ao obter chave pública VAPID")
+        return jsonify({"error": "Erro ao obter chave pública", "details": str(e)}), 500
+
+
+@settings_bp.route("/push/subscribe", methods=["POST"])
+def push_subscribe():
+    """Registra uma nova inscrição push do navegador no banco de dados."""
+    try:
+        subscription = request.get_json(force=True)
+        if not subscription or "endpoint" not in subscription:
+            return jsonify({"error": "Inscrição inválida"}), 400
+        
+        subscription_str = json.dumps(subscription)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR IGNORE INTO push_subscriptions (subscription_json) VALUES (?)",
+            (subscription_str,)
+        )
+        conn.commit()
+        conn.close()
+        
+        logger.info("Nova inscrição push registrada")
+        return jsonify({"success": True, "message": "Inscrição push registrada com sucesso!"})
+    except Exception as e:
+        logger.exception("Erro ao registrar inscrição push")
+        return jsonify({"error": "Erro ao registrar inscrição push", "details": str(e)}), 500
+
+
+@settings_bp.route("/push/unsubscribe", methods=["POST"])
+def push_unsubscribe():
+    """Remove uma inscrição push correspondente ao endpoint informado."""
+    try:
+        subscription = request.get_json(force=True)
+        if not subscription or "endpoint" not in subscription:
+            return jsonify({"error": "Inscrição inválida"}), 400
+        
+        endpoint = subscription["endpoint"]
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, subscription_json FROM push_subscriptions")
+        rows = cursor.fetchall()
+        to_delete = []
+        for row in rows:
+            try:
+                data = json.loads(row["subscription_json"])
+                if data.get("endpoint") == endpoint:
+                    to_delete.append(row["id"])
+            except Exception:
+                pass
+        
+        for sub_id in to_delete:
+            cursor.execute("DELETE FROM push_subscriptions WHERE id = ?", (sub_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info("Inscrição push removida")
+        return jsonify({"success": True, "message": "Inscrição push removida com sucesso!"})
+    except Exception as e:
+        logger.exception("Erro ao remover inscrição push")
+        return jsonify({"error": "Erro ao remover inscrição push", "details": str(e)}), 500
+
+
+@settings_bp.route("/push/test", methods=["POST"])
+def push_test():
+    """Envia uma notificação push de teste para todos os navegadores inscritos."""
+    try:
+        vapid = get_or_create_vapid_keys()
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT subscription_json FROM push_subscriptions")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        if not rows:
+            return jsonify({"error": "Nenhum navegador inscrito para receber notificações neste dispositivo."}), 400
+            
+        payload = json.dumps({
+            "title": "BRIGADA-IA 🛡️",
+            "body": "Suas notificações push do navegador estão funcionando perfeitamente!",
+            "icon": "/static/icon.svg",
+            "badge": "/static/icon.svg",
+            "data": {
+                "url": "/"
+            }
+        })
+        
+        claims = {
+            "sub": "mailto:suporte@brigadaia.com"
+        }
+        
+        success_count = 0
+        error_count = 0
+        
+        for row in rows:
+            try:
+                sub_data = json.loads(row["subscription_json"])
+                webpush(
+                    subscription_info=sub_data,
+                    data=payload,
+                    vapid_private_key=vapid,
+                    vapid_claims=claims,
+                    ttl=3600
+                )
+                success_count += 1
+            except WebPushException as ex:
+                logger.warning("Falha ao enviar push para inscrição: {}", ex)
+                error_count += 1
+                if ex.response is not None and ex.response.status_code == 410:
+                    try:
+                        conn = get_db_connection()
+                        cursor = conn.cursor()
+                        cursor.execute("DELETE FROM push_subscriptions WHERE subscription_json = ?", (row["subscription_json"],))
+                        conn.commit()
+                        conn.close()
+                        logger.info("Removida inscrição expirada (410)")
+                    except Exception:
+                        pass
+            except Exception as e:
+                logger.warning("Erro desconhecido ao enviar push: {}", e)
+                error_count += 1
+                
+        return jsonify({
+            "success": True,
+            "message": f"Envio concluído: {success_count} sucesso(s), {error_count} erro(s)."
+        })
+    except Exception as e:
+        logger.exception("Erro ao processar envio de push teste")
+        return jsonify({"error": "Erro interno ao processar teste", "details": str(e)}), 500

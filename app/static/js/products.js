@@ -129,6 +129,16 @@ window.BrigadaProducts = {
               </div>
               <div class="form-row">
                 <div class="form-group">
+                  <label class="form-label">Coluna</label>
+                  <input type="text" id="field-column" class="form-input" placeholder="ex: A">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Número da Coluna</label>
+                  <input type="number" id="field-column-number" class="form-input" placeholder="ex: 3" min="1">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
                   <label class="form-label">Quantidade</label>
                   <input type="number" id="field-quantity" class="form-input" placeholder="ex: 10.5" step="any" min="0">
                 </div>
@@ -172,7 +182,7 @@ window.BrigadaProducts = {
   },
 
   getFilteredProducts() {
-    let products = window.BrigadaData.products;
+    let products = window.BrigadaData.products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
 
     if (this.currentFilter !== 'all') {
       products = products.filter(p => p.category === this.currentFilter);
@@ -233,9 +243,7 @@ window.BrigadaProducts = {
           <td data-label="Status"><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
           <td data-label="Fornecedor">${p.supplier || '—'}</td>
           <td data-label="Localização">
-            ${p.location === 'resfriado' ? '<span class="badge" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2);">❄️ Resfriado</span>' : 
-              p.location === 'congelado' ? '<span class="badge" style="background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2);">🥶 Congelado</span>' : 
-              p.location || '—'}
+            ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}
           </td>
           ${canEditOrDelete ? `
           <td data-label="Ações" class="actions-cell">
@@ -346,6 +354,8 @@ window.BrigadaProducts = {
     container.querySelector('#field-id').value = '';
     container.querySelector('#field-startDate').value = '';
     container.querySelector('#field-quantity').value = '';
+    container.querySelector('#field-column').value = '';
+    container.querySelector('#field-column-number').value = '';
     this.showModal(container);
   },
 
@@ -363,6 +373,8 @@ window.BrigadaProducts = {
     container.querySelector('#field-endDate').value = product.endDate;
     container.querySelector('#field-supplier').value = product.supplier || '';
     container.querySelector('#field-location').value = product.location || '';
+    container.querySelector('#field-column').value = product.column || '';
+    container.querySelector('#field-column-number').value = product.columnNumber || '';
     container.querySelector('#field-unit').value = product.unit || 'kg';
     container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
     this.showModal(container);
@@ -420,6 +432,9 @@ window.BrigadaProducts = {
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+    const column = container.querySelector('#field-column').value.trim() || null;
+    const colNumVal = container.querySelector('#field-column-number').value;
+    const columnNumber = colNumVal !== '' ? parseInt(colNumVal) : null;
 
     if (!plu || !name || !category || !endDate || !location) {
       window.BrigadaUI.showToast('Preencha todos os campos obrigatórios (incluindo Localização).', 'error');
@@ -440,7 +455,7 @@ window.BrigadaProducts = {
       return;
     }
 
-    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity };
+    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber };
 
     try {
       if (this.editingId) {

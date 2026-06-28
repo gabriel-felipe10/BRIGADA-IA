@@ -24,7 +24,9 @@ def get_products():
                 "unit": p.get("unit"),
                 "supplier": p.get("supplier"),
                 "location": p.get("location"),
-                "quantity": p.get("quantity", 0)
+                "quantity": p.get("quantity", 0),
+                "column": p.get("column"),
+                "columnNumber": p.get("column_number")
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -63,10 +65,19 @@ def create_product():
             "unit": data.get("unit", "kg"),
             "supplier": data.get("supplier"),
             "location": data.get("location"),
-            "quantity": float(data.get("quantity", 0)) if data.get("quantity") is not None else 0.0
+            "quantity": float(data.get("quantity", 0)) if data.get("quantity") is not None else 0.0,
+            "column": data.get("column"),
+            "column_number": data.get("columnNumber")
         }
         
-        response = supabase.table("produtos").insert(db_data).execute()
+        try:
+            response = supabase.table("produtos").insert(db_data).execute()
+        except Exception as e:
+            logger.warning("Erro ao salvar produto com campos extras (column/column_number), tentando sem eles: {}", e)
+            db_data.pop("column", None)
+            db_data.pop("column_number", None)
+            response = supabase.table("produtos").insert(db_data).execute()
+            
         if not response.data:
             return jsonify({"error": "Erro ao salvar produto no Supabase"}), 500
         
@@ -81,7 +92,9 @@ def create_product():
             "unit": p.get("unit"),
             "supplier": p.get("supplier"),
             "location": p.get("location"),
-            "quantity": p.get("quantity", 0)
+            "quantity": p.get("quantity", 0),
+            "column": p.get("column"),
+            "columnNumber": p.get("column_number")
         }
         
         logger.info("Produto criado no Supabase | id={} plu={}", created["id"], created["plu"])
@@ -117,8 +130,17 @@ def update_product(product_id):
         if "supplier" in data: db_data["supplier"] = data["supplier"]
         if "location" in data: db_data["location"] = data["location"]
         if "quantity" in data: db_data["quantity"] = float(data["quantity"]) if data["quantity"] is not None else 0.0
+        if "column" in data: db_data["column"] = data["column"]
+        if "columnNumber" in data: db_data["column_number"] = data["columnNumber"]
         
-        response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
+        try:
+            response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
+        except Exception as e:
+            logger.warning("Erro ao atualizar produto com campos extras, tentando sem eles: {}", e)
+            db_data.pop("column", None)
+            db_data.pop("column_number", None)
+            response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
+            
         if not response.data:
             return jsonify({"error": "Produto não encontrado ou erro ao atualizar"}), 404
         
@@ -133,7 +155,9 @@ def update_product(product_id):
             "unit": p.get("unit"),
             "supplier": p.get("supplier"),
             "location": p.get("location"),
-            "quantity": p.get("quantity", 0)
+            "quantity": p.get("quantity", 0),
+            "column": p.get("column"),
+            "columnNumber": p.get("column_number")
         }
         
         logger.info("Produto atualizado no Supabase | id={}", updated["id"])

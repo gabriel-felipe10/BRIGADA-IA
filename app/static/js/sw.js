@@ -60,3 +60,53 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+
+// Push Event
+self.addEventListener('push', (e) => {
+  let data = { title: 'BRIGADA-IA', body: 'Nova notificação recebida.' };
+  if (e.data) {
+    try {
+      data = e.data.json();
+    } catch (err) {
+      data = { title: 'BRIGADA-IA', body: e.data.text() };
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/static/icon.jpg',
+    badge: data.badge || '/static/icon.jpg',
+    data: data.data || { url: '/' },
+    vibrate: [100, 50, 100],
+    actions: data.actions || []
+  };
+
+  e.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification Click Event
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+
+  let targetUrl = '/';
+  if (e.notification.data && e.notification.data.url) {
+    targetUrl = e.notification.data.url;
+  }
+
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Procura se já existe uma aba aberta da aplicação
+      for (const client of clientList) {
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      // Caso contrário, abre uma nova aba
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
