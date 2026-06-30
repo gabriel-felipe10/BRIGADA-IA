@@ -217,14 +217,17 @@ window.BrigadaPadaria = {
       return;
     }
 
-    const canEditOrDelete = window.BrigadaAuth.canEditOrDeleteProduct();
+    const showActions = products.some(p => window.BrigadaAuth.canEditProduct(p) || window.BrigadaAuth.canDeleteProduct(p));
     const rows = products.map(p => {
       const status = window.BrigadaData.getProductStatus(p);
       const qty = p.quantity !== undefined ? p.quantity : 0;
       const unit = p.unit || 'un';
       const locDisplay = locMap[p.location] || p.location || '—';
+      const canEditThis = window.BrigadaAuth.canEditProduct(p);
+      const canDeleteThis = window.BrigadaAuth.canDeleteProduct(p);
       return `
         <tr data-id="${p.id}">
+          <td style="text-align: center;"><input type="checkbox" class="select-product-checkbox" data-id="${p.id}" style="cursor:pointer; width:16px; height:16px;"></td>
           <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
           <td data-label="Produto" class="product-name">${p.name}</td>
           <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
@@ -232,14 +235,17 @@ window.BrigadaPadaria = {
           <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
           <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
           <td data-label="Status"><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
-          <td data-label="Fornecedor">${p.supplier || '—'}</td>
+          <td data-label="Fornecedor">
+            <div>${p.supplier || '—'}</div>
+            ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
+          </td>
           <td data-label="Localização">
             ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}
           </td>
-          ${canEditOrDelete ? `
+          ${showActions ? `
           <td data-label="Ações" class="actions-cell">
-            <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>
-            <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>
+            ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
+            ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
           </td>` : ''}
         </tr>`;
     }).join('');
@@ -252,6 +258,7 @@ window.BrigadaPadaria = {
         <table class="data-table">
           <thead>
             <tr>
+              <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-products" style="cursor:pointer; width:16px; height:16px;"></th>
               <th>PLU</th>
               <th>Nome do Produto</th>
               <th>Qtd</th>
@@ -261,7 +268,7 @@ window.BrigadaPadaria = {
               <th>Status</th>
               <th>Fornecedor</th>
               <th>Localização</th>
-              ${canEditOrDelete ? '<th>Ações</th>' : ''}
+              ${showActions ? '<th>Ações</th>' : ''}
             </tr>
           </thead>
           <tbody>
@@ -270,6 +277,15 @@ window.BrigadaPadaria = {
         </table>
       </div>
     `;
+
+    // Bind select all checkbox
+    const selectAllCb = container.querySelector('#select-all-products');
+    selectAllCb?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      container.querySelectorAll('.select-product-checkbox').forEach(cb => {
+        cb.checked = checked;
+      });
+    });
   },
 
   bindEvents(container) {
@@ -342,8 +358,9 @@ window.BrigadaPadaria = {
     container.querySelector('#field-column-number-padaria').value = '';
 
     if (id) {
-      title.textContent = 'Editar Produto da Padaria';
       const p = window.BrigadaData.products.find(x => x.id === id);
+      if (!p || !window.BrigadaAuth.canEditProduct(p)) return;
+      title.textContent = 'Editar Produto da Padaria';
       if (p) {
         container.querySelector('#field-plu-padaria').value = p.plu;
         container.querySelector('#field-category-padaria').value = p.category;
@@ -397,8 +414,13 @@ window.BrigadaPadaria = {
 
     try {
       if (id) {
+        const product = window.BrigadaData.products.find(x => x.id === id);
+        if (!product || !window.BrigadaAuth.canEditProduct(product)) {
+          window.BrigadaUI.showToast('Permissão negada. Você não tem permissão para editar este produto.', 'error');
+          return;
+        }
         await window.BrigadaData.updateProduct(id, payload);
-        window.BrigadaUI.showToast('Produto de padaria atualizado!', 'success');
+        window.BrigadaUI.showToast('Produto de padaria updated!', 'success');
       } else {
         await window.BrigadaData.addProduct(payload);
         window.BrigadaUI.showToast('Produto de padaria cadastrado!', 'success');
@@ -412,7 +434,7 @@ window.BrigadaPadaria = {
 
   openDeleteModal(container, id) {
     const p = window.BrigadaData.products.find(x => x.id === id);
-    if (!p) return;
+    if (!p || !window.BrigadaAuth.canDeleteProduct(p)) return;
 
     const modal = container.querySelector('#delete-modal-padaria');
     container.querySelector('#delete-product-name-padaria').textContent = p.name;
@@ -499,7 +521,12 @@ window.BrigadaPadaria = {
   },
 
   exportExcel() {
-    const products = this.getFilteredProducts();
+    const checkboxes = document.querySelectorAll('.select-product-checkbox:checked');
+    const ids = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+    let products = this.getFilteredProducts();
+    if (ids.length > 0) {
+      products = products.filter(p => ids.includes(p.id));
+    }
     let csvContent = 'data:text/csv;charset=utf-8,';
     csvContent += 'PLU,Nome,Categoria,Data Fabricação,Vencimento,Quantidade,Unidade,Localização,Fornecedor\n';
 
@@ -517,7 +544,12 @@ window.BrigadaPadaria = {
   },
 
   exportPDF() {
-    const products = this.getFilteredProducts();
+    const checkboxes = document.querySelectorAll('.select-product-checkbox:checked');
+    const ids = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+    let products = this.getFilteredProducts();
+    if (ids.length > 0) {
+      products = products.filter(p => ids.includes(p.id));
+    }
     const now = new Date().toLocaleString('pt-BR');
     
     let htmlContent = `

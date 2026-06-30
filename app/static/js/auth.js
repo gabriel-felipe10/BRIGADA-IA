@@ -64,11 +64,33 @@ window.BrigadaAuth = {
   },
 
   canAddProduct() {
-    return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user';
+    return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user' || this.currentUser?.role === 'lider';
   },
 
-  canEditOrDeleteProduct() {
-    return this.currentUser?.role === 'superadmin';
+  canEditProduct(product) {
+    if (!this.currentUser) return false;
+    if (this.isSuperAdmin()) return true;
+
+    if (product && product.createdBy) {
+      const email = this.currentUser.email.toLowerCase();
+      if (product.createdBy.toLowerCase() === email) {
+        return true;
+      }
+    }
+
+    if (!product || !product.createdBy) {
+      return this.currentUser.role === 'superadmin' || this.currentUser.role === 'lider';
+    }
+
+    return false;
+  },
+
+  canDeleteProduct(product) {
+    return this.isSuperAdmin();
+  },
+
+  canEditOrDeleteProduct(product) {
+    return this.canEditProduct(product) || this.canDeleteProduct(product);
   },
 
   requireAuth() {

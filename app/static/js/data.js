@@ -670,6 +670,27 @@ window.BrigadaData = {
   users: [],
   products: [],
 
+  parseProductCreator(p) {
+    if (!p.supplier) {
+      return { ...p, createdBy: null };
+    }
+    const match = p.supplier.match(/(.*?)\s*\[Criado por:\s*(.*?)\]\s*$/);
+    if (match) {
+      return {
+        ...p,
+        supplier: match[1].trim() || '',
+        createdBy: match[2].trim()
+      };
+    }
+    return { ...p, createdBy: null };
+  },
+
+  getUserNameByEmail(email) {
+    if (!email) return '—';
+    const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return user ? user.name : email.split('@')[0];
+  },
+
   // Carrega todos os produtos e usuários do Supabase via backend Flask
   async load() {
     try {
@@ -684,14 +705,14 @@ window.BrigadaData = {
         })
       ]);
       
-      this.products = resProd;
+      this.products = resProd.map(p => this.parseProductCreator(p));
       this.users = resUsers;
       console.log('Dados carregados com sucesso do Supabase via API');
       return true;
     } catch (err) {
       console.warn("Erro ao carregar do Supabase (usando fallback local em memória):", err);
       // Se falhar (por exemplo, sem tabelas criadas no banco), usa os dados locais mockados
-      this.products = [...PRODUCTS_DB];
+      this.products = PRODUCTS_DB.map(p => this.parseProductCreator(p));
       this.users = [...USERS_DB];
       return false;
     }
@@ -699,26 +720,32 @@ window.BrigadaData = {
 
   // Adiciona produto no backend
   async addProduct(p) {
+    const creatorEmail = window.BrigadaAuth.currentUser?.email || 'sistema';
+    const payload = {
+      ...p,
+      supplier: p.supplier ? `${p.supplier} [Criado por: ${creatorEmail}]` : `[Criado por: ${creatorEmail}]`
+    };
     try {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Erro ao salvar produto no servidor');
       }
       const created = await res.json();
-      this.products.push(created);
-      return created;
+      const parsed = this.parseProductCreator(created);
+      this.products.push(parsed);
+      return parsed;
     } catch (err) {
       // Se for um erro de validação do próprio backend, repassa para o front exibir
       if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
         throw err;
       }
       console.error("Erro na API ao criar produto (usando fallback local):", err);
-      const local = { id: this.nextProductId(), ...p };
+      const local = { id: this.nextProductId(), ...p, createdBy: creatorEmail };
       this.products.push(local);
       return local;
     }
@@ -726,20 +753,27 @@ window.BrigadaData = {
 
   // Atualiza produto no backend
   async updateProduct(id, p) {
+    const original = this.products.find(x => x.id === id);
+    const creatorEmail = original?.createdBy || window.BrigadaAuth.currentUser?.email || 'sistema';
+    const payload = {
+      ...p,
+      supplier: p.supplier ? `${p.supplier} [Criado por: ${creatorEmail}]` : `[Criado por: ${creatorEmail}]`
+    };
     try {
       const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Erro ao atualizar produto no servidor');
       }
       const updated = await res.json();
+      const parsed = this.parseProductCreator(updated);
       const idx = this.products.findIndex(x => x.id === id);
-      if (idx !== -1) this.products[idx] = updated;
-      return updated;
+      if (idx !== -1) this.products[idx] = parsed;
+      return parsed;
     } catch (err) {
       if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
         throw err;
@@ -747,7 +781,7 @@ window.BrigadaData = {
       console.error("Erro na API ao atualizar produto (usando fallback local):", err);
       const idx = this.products.findIndex(x => x.id === id);
       if (idx !== -1) {
-        this.products[idx] = { ...this.products[idx], ...p };
+        this.products[idx] = { ...this.products[idx], ...p, createdBy: creatorEmail };
         return this.products[idx];
       }
       return null;

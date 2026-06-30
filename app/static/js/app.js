@@ -194,12 +194,20 @@ window.BrigadaRouter = {
     const hasImageAvatar = user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http'));
     const avatarHTML = hasImageAvatar ? `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : user.avatar;
 
+    const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+    const collapsedClass = isCollapsed ? 'sidebar-collapsed' : '';
+    const toggleIcon = isCollapsed ? '▶' : '◀';
+    const toggleTitle = isCollapsed ? 'Expandir menu' : 'Recolher menu';
+
     root.innerHTML = `
-      <div class="app-shell">
+      <div class="app-shell ${collapsedClass}">
         <!-- Sidebar Overlay -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
+          <button class="sidebar__toggle" id="sidebar-toggle" title="${toggleTitle}">
+            <span class="sidebar__toggle-icon" id="sidebar-toggle-icon">${toggleIcon}</span>
+          </button>
           <div class="sidebar__brand">
             <img src="/static/icon.jpg" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.08);">
             <div>
@@ -266,11 +274,11 @@ window.BrigadaRouter = {
               <div class="sidebar__avatar" id="sidebar-user-avatar" style="${hasImageAvatar ? '' : `background:${avatarColor}`}">${avatarHTML}</div>
               <div class="sidebar__user-info">
                 <p class="sidebar__user-name" id="sidebar-user-name">${user.name}</p>
-                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : '👤 Usuário'}</p>
+                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}</p>
               </div>
             </div>
             <button class="btn-logout" id="btn-logout" title="Sair do Sistema">
-              <span>🚪</span> Sair do Sistema
+              <span>🚪</span> <span class="logout-text">Sair do Sistema</span>
             </button>
           </div>
         </aside>
@@ -357,6 +365,24 @@ window.BrigadaRouter = {
     document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
       sidebar?.classList.toggle('sidebar--open');
       overlay?.classList.toggle('sidebar-overlay--visible');
+    });
+
+    // Sidebar toggle (desktop collapse/expand)
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const appShell = root.querySelector('.app-shell');
+    const toggleIconEl = document.getElementById('sidebar-toggle-icon');
+
+    toggleBtn?.addEventListener('click', () => {
+      if (appShell) {
+        const isCurrentlyCollapsed = appShell.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebar-collapsed', isCurrentlyCollapsed ? 'true' : 'false');
+        if (toggleIconEl) {
+          toggleIconEl.textContent = isCurrentlyCollapsed ? '▶' : '◀';
+        }
+        if (toggleBtn) {
+          toggleBtn.title = isCurrentlyCollapsed ? 'Expandir menu' : 'Recolher menu';
+        }
+      }
     });
 
     // Close on overlay click

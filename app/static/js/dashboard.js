@@ -492,7 +492,7 @@ window.BrigadaDashboard = {
       aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
       laticinios: '🧀 Laticínios', frios: '🥓 Frios', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
     };
-    const canEditOrDelete = window.BrigadaAuth.canEditOrDeleteProduct();
+    const showActions = products.some(p => window.BrigadaAuth.canEditProduct(p) || window.BrigadaAuth.canDeleteProduct(p));
 
     tableDiv.innerHTML = `
       <table class="data-table">
@@ -506,14 +506,20 @@ window.BrigadaDashboard = {
             <th>Validade</th>
             <th>Status</th>
             <th>Localização</th>
-            ${canEditOrDelete ? '<th>Ações</th>' : ''}
+            ${showActions ? '<th>Ações</th>' : ''}
           </tr>
         </thead>
         <tbody>
-          ${products.map(p => `
+          ${products.map(p => {
+            const canEditThis = window.BrigadaAuth.canEditProduct(p);
+            const canDeleteThis = window.BrigadaAuth.canDeleteProduct(p);
+            return `
             <tr>
               <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-              <td data-label="Produto" class="product-name">${p.name}</td>
+              <td data-label="Produto" class="product-name">
+                <div>${p.name}</div>
+                ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
+              </td>
               <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${p.quantity !== undefined ? p.quantity : 0}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${p.unit || 'kg'}</span></td>
               <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
               <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
@@ -522,13 +528,13 @@ window.BrigadaDashboard = {
               <td data-label="Localização">
                 ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}
               </td>
-              ${canEditOrDelete ? `
+              ${showActions ? `
               <td data-label="Ações" class="actions-cell">
-                <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>
-                <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>
+                ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
+                ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
               </td>` : ''}
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     `;
@@ -545,9 +551,8 @@ window.BrigadaDashboard = {
   },
 
   openEditModal(id, container) {
-    if (!window.BrigadaAuth.canEditOrDeleteProduct()) return;
     const product = window.BrigadaData.products.find(p => p.id === id);
-    if (!product) return;
+    if (!product || !window.BrigadaAuth.canEditProduct(product)) return;
     this.editingId = id;
     container.querySelector('#modal-title').textContent = 'Editar Produto';
     container.querySelector('#field-id').value = product.id;
@@ -578,9 +583,8 @@ window.BrigadaDashboard = {
   },
 
   openDeleteModal(id, container) {
-    if (!window.BrigadaAuth.canEditOrDeleteProduct()) return;
     const product = window.BrigadaData.products.find(p => p.id === id);
-    if (!product) return;
+    if (!product || !window.BrigadaAuth.canDeleteProduct(product)) return;
     this.deletingId = id;
     container.querySelector('#delete-product-name').textContent = product.name;
     const modal = container.querySelector('#delete-modal');
@@ -595,9 +599,13 @@ window.BrigadaDashboard = {
   },
 
   async saveProduct(container) {
-    if (!window.BrigadaAuth.canEditOrDeleteProduct()) {
-      window.BrigadaUI.showToast('Permissão negada. Apenas Super Administradores podem salvar produtos.', 'error');
-      return;
+    const isEditing = !!this.editingId;
+    if (isEditing) {
+      const product = window.BrigadaData.products.find(p => p.id === this.editingId);
+      if (!product || !window.BrigadaAuth.canEditProduct(product)) {
+        window.BrigadaUI.showToast('Permissão negada. Você não tem permissão para salvar este produto.', 'error');
+        return;
+      }
     }
     const plu = container.querySelector('#field-plu').value.trim();
     const name = container.querySelector('#field-name').value.trim();
@@ -650,7 +658,8 @@ window.BrigadaDashboard = {
   },
 
   async confirmDelete(container) {
-    if (!window.BrigadaAuth.canEditOrDeleteProduct()) {
+    const product = window.BrigadaData.products.find(p => p.id === this.deletingId);
+    if (!product || !window.BrigadaAuth.canDeleteProduct(product)) {
       window.BrigadaUI.showToast('Permissão negada. Apenas Super Administradores podem excluir produtos.', 'error');
       return;
     }
