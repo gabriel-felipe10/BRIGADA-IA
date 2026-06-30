@@ -23,6 +23,7 @@ def get_users():
                 "avatar": u.get("avatar"),
                 "status": u.get("status"),
                 "sector": u.get("sector") or "todos",
+                "whatsapp": u.get("whatsapp"),
                 "createdAt": u.get("created_at"),
                 "lastLogin": u.get("last_login")
             })
@@ -53,10 +54,21 @@ def create_user():
             "role": data.get("role", "user"),
             "avatar": data.get("avatar", "US"),
             "status": data.get("status", "active"),
-            "sector": data.get("sector", "todos")
+            "sector": data.get("sector", "todos"),
+            "whatsapp": data.get("whatsapp")
         }
         
-        response = supabase.table("usuarios").insert(db_data).execute()
+        try:
+            response = supabase.table("usuarios").insert(db_data).execute()
+        except Exception as e:
+            if "sector" in str(e) or "whatsapp" in str(e):
+                logger.warning("Coluna 'sector' ou 'whatsapp' não encontrada no Supabase. Tentando cadastrar sem elas.")
+                db_data.pop("sector", None)
+                db_data.pop("whatsapp", None)
+                response = supabase.table("usuarios").insert(db_data).execute()
+            else:
+                raise e
+
         if not response.data:
             return jsonify({"error": "Erro ao criar usuário no Supabase"}), 500
         
@@ -70,6 +82,7 @@ def create_user():
             "avatar": u.get("avatar"),
             "status": u.get("status"),
             "sector": u.get("sector") or "todos",
+            "whatsapp": u.get("whatsapp"),
             "createdAt": u.get("created_at"),
             "lastLogin": u.get("last_login")
         }
@@ -96,9 +109,20 @@ def update_user(user_id):
         if "avatar" in data: db_data["avatar"] = data["avatar"]
         if "status" in data: db_data["status"] = data["status"]
         if "sector" in data: db_data["sector"] = data["sector"]
+        if "whatsapp" in data: db_data["whatsapp"] = data["whatsapp"]
         if "lastLogin" in data: db_data["last_login"] = data["lastLogin"]
         
-        response = supabase.table("usuarios").update(db_data).eq("id", user_id).execute()
+        try:
+            response = supabase.table("usuarios").update(db_data).eq("id", user_id).execute()
+        except Exception as e:
+            if "sector" in str(e) or "whatsapp" in str(e):
+                logger.warning("Coluna 'sector' ou 'whatsapp' não encontrada no Supabase. Tentando atualizar sem elas.")
+                db_data.pop("sector", None)
+                db_data.pop("whatsapp", None)
+                response = supabase.table("usuarios").update(db_data).eq("id", user_id).execute()
+            else:
+                raise e
+
         if not response.data:
             return jsonify({"error": "Usuário não encontrado ou erro ao atualizar"}), 404
         
@@ -112,6 +136,7 @@ def update_user(user_id):
             "avatar": u.get("avatar"),
             "status": u.get("status"),
             "sector": u.get("sector") or "todos",
+            "whatsapp": u.get("whatsapp"),
             "createdAt": u.get("created_at"),
             "lastLogin": u.get("last_login")
         }
