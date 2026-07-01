@@ -252,15 +252,18 @@ window.BrigadaRouter = {
               <span>Mercearia</span>
             </a>
             ` : ''}
+
+            <div class="sidebar__section-label">Configurações</div>
+            <a class="sidebar__link ${activePage === 'notifications' ? 'sidebar__link--active' : ''}" data-page="notifications" href="#">
+              <span class="sidebar__link-icon">🔔</span>
+              <span>Notificações</span>
+            </a>
+
             ${isSuperAdmin ? `
             <div class="sidebar__section-label">Administração</div>
             <a class="sidebar__link ${activePage === 'users' ? 'sidebar__link--active' : ''}" data-page="users" href="#">
               <span class="sidebar__link-icon">👥</span>
               <span>Usuários</span>
-            </a>
-            <a class="sidebar__link ${activePage === 'notifications' ? 'sidebar__link--active' : ''}" data-page="notifications" href="#">
-              <span class="sidebar__link-icon">🔔</span>
-              <span>Notificações</span>
             </a>
             <a class="sidebar__link ${activePage === 'admin' ? 'sidebar__link--active' : ''}" data-page="admin" href="#">
               <span class="sidebar__link-icon">🛡️</span>
@@ -277,9 +280,14 @@ window.BrigadaRouter = {
                 <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}</p>
               </div>
             </div>
-            <button class="btn-logout" id="btn-logout" title="Sair do Sistema">
-              <span>🚪</span> <span class="logout-text">Sair do Sistema</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem; justify-content: space-between;">
+              <button class="btn-logout" id="btn-theme-toggle" title="Alternar Tema" style="flex: 1; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--glass-border);">
+                <span id="theme-icon">${document.documentElement.classList.contains('light-theme') ? '🌙' : '☀️'}</span> <span class="logout-text" style="font-size: 0.8rem; margin-left: 4px;">Tema</span>
+              </button>
+              <button class="btn-logout" id="btn-logout" title="Sair do Sistema" style="flex: 1; padding: 0.5rem;">
+                <span>🚪</span> <span class="logout-text" style="font-size: 0.8rem; margin-left: 4px;">Sair</span>
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -359,6 +367,16 @@ window.BrigadaRouter = {
       window.BrigadaAuth.logout();
       window.BrigadaUI.showToast('Até logo! 👋', 'success');
       this.navigate('login');
+    });
+
+    // Theme Toggle
+    document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
+      const isLight = document.documentElement.classList.toggle('light-theme');
+      localStorage.setItem('brigada-theme', isLight ? 'light' : 'dark');
+      const themeIcon = document.getElementById('theme-icon');
+      if (themeIcon) {
+        themeIcon.textContent = isLight ? '🌙' : '☀️';
+      }
     });
 
     // Mobile menu
@@ -577,7 +595,6 @@ window.BrigadaRouter = {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       window.BrigadaUsers.render(container);
     } else if (page === 'notifications') {
-      if (!window.BrigadaAuth.requireSuperAdmin()) return;
       window.BrigadaNotifications.render(container);
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;

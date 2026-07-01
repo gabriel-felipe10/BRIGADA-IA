@@ -8,6 +8,7 @@ window.BrigadaNotifications = {
 
   async render(container) {
     this.stopPolling();
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
 
     container.innerHTML = `
       <div class="panel-header">
@@ -17,6 +18,7 @@ window.BrigadaNotifications = {
         </div>
       </div>
 
+      ${isSuperAdmin ? `
       <div class="glass-panel stagger" style="max-width: 800px; margin-bottom: 2rem;">
         <div style="padding: 1.5rem;">
           <h3 class="glass-panel__title" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
@@ -145,6 +147,7 @@ window.BrigadaNotifications = {
           </form>
         </div>
       </div>
+      ` : ''}
 
       <div class="glass-panel stagger" style="max-width: 800px; margin-bottom: 2rem;">
         <div style="padding: 1.5rem;">
@@ -181,36 +184,38 @@ window.BrigadaNotifications = {
   },
 
   async loadAndFillForm(container) {
-    this.config = await window.BrigadaData.loadSettings('whatsapp');
+    if (window.BrigadaAuth.isSuperAdmin()) {
+      this.config = await window.BrigadaData.loadSettings('whatsapp');
 
-    const fieldEnabled = container.querySelector('#field-whatsapp-enabled');
-    const fieldApiUrl = container.querySelector('#field-whatsapp-api-url');
-    const fieldInstanceId = container.querySelector('#field-whatsapp-instance-id');
-    const fieldApiToken = container.querySelector('#field-whatsapp-api-token');
-    const fieldAlertDays = container.querySelector('#field-alert-days');
-    const fieldAlertTime = container.querySelector('#field-alert-time');
-    const fieldAlertPhone = container.querySelector('#field-alert-phone');
-    const fieldReminderActive = container.querySelector('#field-reminder-active');
-    const fieldReminderTime = container.querySelector('#field-reminder-time');
-    const fieldReminderMsg = container.querySelector('#field-reminder-msg');
+      const fieldEnabled = container.querySelector('#field-whatsapp-enabled');
+      const fieldApiUrl = container.querySelector('#field-whatsapp-api-url');
+      const fieldInstanceId = container.querySelector('#field-whatsapp-instance-id');
+      const fieldApiToken = container.querySelector('#field-whatsapp-api-token');
+      const fieldAlertDays = container.querySelector('#field-alert-days');
+      const fieldAlertTime = container.querySelector('#field-alert-time');
+      const fieldAlertPhone = container.querySelector('#field-alert-phone');
+      const fieldReminderActive = container.querySelector('#field-reminder-active');
+      const fieldReminderTime = container.querySelector('#field-reminder-time');
+      const fieldReminderMsg = container.querySelector('#field-reminder-msg');
 
-    if (this.config) {
-      fieldEnabled.checked = !!this.config.enabled;
-      fieldApiUrl.value = this.config.apiUrl || '';
-      fieldInstanceId.value = this.config.instanceId || '';
-      fieldApiToken.value = this.config.apiToken || '';
-      fieldAlertDays.value = this.config.alertDaysBefore !== undefined ? this.config.alertDaysBefore : 3;
-      fieldAlertTime.value = this.config.alertTime || '08:00';
-      fieldAlertPhone.value = this.config.alertPhone || '';
-      fieldReminderActive.checked = !!this.config.reminderActive;
-      fieldReminderTime.value = this.config.reminderTime || '09:00';
-      fieldReminderMsg.value = this.config.reminderMsg || 'Atenção equipe! Favor verificar as validades do setor de aves hoje.';
-    }
+      if (this.config) {
+        fieldEnabled.checked = !!this.config.enabled;
+        fieldApiUrl.value = this.config.apiUrl || '';
+        fieldInstanceId.value = this.config.instanceId || '';
+        fieldApiToken.value = this.config.apiToken || '';
+        fieldAlertDays.value = this.config.alertDaysBefore !== undefined ? this.config.alertDaysBefore : 3;
+        fieldAlertTime.value = this.config.alertTime || '08:00';
+        fieldAlertPhone.value = this.config.alertPhone || '';
+        fieldReminderActive.checked = !!this.config.reminderActive;
+        fieldReminderTime.value = this.config.reminderTime || '09:00';
+        fieldReminderMsg.value = this.config.reminderMsg || 'Atenção equipe! Favor verificar as validades do setor de aves hoje.';
+      }
 
-    this.toggleSections(container);
+      this.toggleSections(container);
 
-    if (this.config && this.config.enabled) {
-      this.updateConnectionStatus(container);
+      if (this.config && this.config.enabled) {
+        this.updateConnectionStatus(container);
+      }
     }
     this.checkPushSubscription(container);
   },
@@ -288,100 +293,102 @@ window.BrigadaNotifications = {
   },
 
   bindEvents(container) {
-    const form = container.querySelector('#whatsapp-settings-form');
-    const fieldEnabled = container.querySelector('#field-whatsapp-enabled');
-    const fieldReminderActive = container.querySelector('#field-reminder-active');
-    const btnTest = container.querySelector('#btn-test-whatsapp');
-    const testSpinner = container.querySelector('#test-spinner');
+    if (window.BrigadaAuth.isSuperAdmin()) {
+      const form = container.querySelector('#whatsapp-settings-form');
+      const fieldEnabled = container.querySelector('#field-whatsapp-enabled');
+      const fieldReminderActive = container.querySelector('#field-reminder-active');
+      const btnTest = container.querySelector('#btn-test-whatsapp');
+      const testSpinner = container.querySelector('#test-spinner');
 
-    const btnConnectInst = container.querySelector('#btn-connect-whatsapp');
-    const btnDisconnectInst = container.querySelector('#btn-disconnect-whatsapp');
-    const btnRefreshStatus = container.querySelector('#btn-refresh-status');
+      const btnConnectInst = container.querySelector('#btn-connect-whatsapp');
+      const btnDisconnectInst = container.querySelector('#btn-disconnect-whatsapp');
+      const btnRefreshStatus = container.querySelector('#btn-refresh-status');
 
-    fieldEnabled.addEventListener('change', () => this.toggleSections(container));
-    fieldReminderActive.addEventListener('change', () => this.toggleSections(container));
+      fieldEnabled.addEventListener('change', () => this.toggleSections(container));
+      fieldReminderActive.addEventListener('change', () => this.toggleSections(container));
 
-    btnConnectInst.addEventListener('click', async () => {
-      window.BrigadaUI.showToast('Iniciando conexão da instância...', 'info');
-      try {
-        const res = await fetch('/api/settings/whatsapp/connect', { method: 'POST' }).then(r => r.json());
-        this.updateConnectionStatus(container);
-        if (res.status === 'QR_READY') {
-          window.BrigadaUI.showToast('Instância pronta para escanear!', 'warning');
-        } else if (res.status === 'CONNECTED') {
-          window.BrigadaUI.showToast('WhatsApp conectado com sucesso!', 'success');
-        }
-      } catch (err) {
-        window.BrigadaUI.showToast('Falha ao tentar conectar a instância.', 'error');
-      }
-    });
-
-    btnDisconnectInst.addEventListener('click', async () => {
-      if (!confirm('Deseja realmente desconectar o WhatsApp do painel?')) return;
-      try {
-        const res = await fetch('/api/settings/whatsapp/disconnect', { method: 'POST' }).then(r => r.json());
-        if (res.success) {
-          window.BrigadaUI.showToast('Desconectado com sucesso!', 'success');
+      btnConnectInst.addEventListener('click', async () => {
+        window.BrigadaUI.showToast('Iniciando conexão da instância...', 'info');
+        try {
+          const res = await fetch('/api/settings/whatsapp/connect', { method: 'POST' }).then(r => r.json());
           this.updateConnectionStatus(container);
-        }
-      } catch (err) {
-        window.BrigadaUI.showToast('Falha ao desconectar instância.', 'error');
-      }
-    });
-
-    btnRefreshStatus.addEventListener('click', () => {
-      this.updateConnectionStatus(container);
-      window.BrigadaUI.showToast('Status atualizado!', 'success');
-    });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = this.gatherFormData(container);
-      try {
-        const res = await window.BrigadaData.saveSettings('whatsapp', data);
-        if (res.success) {
-          window.BrigadaUI.showToast(res.message || 'Configurações salvas com sucesso!', 'success');
-          this.updateConnectionStatus(container);
-        } else {
-          window.BrigadaUI.showToast(res.error || 'Erro ao salvar configurações.', 'error');
-        }
-      } catch (err) {
-        window.BrigadaUI.showToast(err.message || 'Erro ao tentar salvar.', 'error');
-      }
-    });
-
-    btnTest.addEventListener('click', async () => {
-      const phone = container.querySelector('#field-alert-phone').value.trim();
-      if (!phone) {
-        window.BrigadaUI.showToast('Preencha o campo de telefone para testar o envio.', 'error');
-        return;
-      }
-
-      btnTest.disabled = true;
-      testSpinner.style.display = 'inline-block';
-
-      const data = this.gatherFormData(container);
-
-      try {
-        const res = await window.BrigadaData.testWhatsApp(data);
-        testSpinner.style.display = 'none';
-        btnTest.disabled = false;
-
-        if (res.success) {
-          if (res.warning) {
-            window.BrigadaUI.showToast(res.warning, 'info');
-          } else {
-            window.BrigadaUI.showToast(res.message || 'Teste realizado com sucesso!', 'success');
+          if (res.status === 'QR_READY') {
+            window.BrigadaUI.showToast('Instância pronta para escanear!', 'warning');
+          } else if (res.status === 'CONNECTED') {
+            window.BrigadaUI.showToast('WhatsApp conectado com sucesso!', 'success');
           }
-        } else {
-          window.BrigadaUI.showToast(res.error || 'Erro ao realizar teste.', 'error');
+        } catch (err) {
+          window.BrigadaUI.showToast('Falha ao tentar conectar a instância.', 'error');
         }
-      } catch (err) {
-        testSpinner.style.display = 'none';
-        btnTest.disabled = false;
-        window.BrigadaUI.showToast(err.message || 'Falha ao processar teste.', 'error');
-      }
-    });
+      });
+
+      btnDisconnectInst.addEventListener('click', async () => {
+        if (!confirm('Deseja realmente desconectar o WhatsApp do painel?')) return;
+        try {
+          const res = await fetch('/api/settings/whatsapp/disconnect', { method: 'POST' }).then(r => r.json());
+          if (res.success) {
+            window.BrigadaUI.showToast('Desconectado com sucesso!', 'success');
+            this.updateConnectionStatus(container);
+          }
+        } catch (err) {
+          window.BrigadaUI.showToast('Falha ao desconectar instância.', 'error');
+        }
+      });
+
+      btnRefreshStatus.addEventListener('click', () => {
+        this.updateConnectionStatus(container);
+        window.BrigadaUI.showToast('Status atualizado!', 'success');
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = this.gatherFormData(container);
+        try {
+          const res = await window.BrigadaData.saveSettings('whatsapp', data);
+          if (res.success) {
+            window.BrigadaUI.showToast(res.message || 'Configurações salvas com sucesso!', 'success');
+            this.updateConnectionStatus(container);
+          } else {
+            window.BrigadaUI.showToast(res.error || 'Erro ao salvar configurações.', 'error');
+          }
+        } catch (err) {
+          window.BrigadaUI.showToast(err.message || 'Erro ao tentar salvar.', 'error');
+        }
+      });
+
+      btnTest.addEventListener('click', async () => {
+        const phone = container.querySelector('#field-alert-phone').value.trim();
+        if (!phone) {
+          window.BrigadaUI.showToast('Preencha o campo de telefone para testar o envio.', 'error');
+          return;
+        }
+
+        btnTest.disabled = true;
+        testSpinner.style.display = 'inline-block';
+
+        const data = this.gatherFormData(container);
+
+        try {
+          const res = await window.BrigadaData.testWhatsApp(data);
+          testSpinner.style.display = 'none';
+          btnTest.disabled = false;
+
+          if (res.success) {
+            if (res.warning) {
+              window.BrigadaUI.showToast(res.warning, 'info');
+            } else {
+              window.BrigadaUI.showToast(res.message || 'Teste realizado com sucesso!', 'success');
+            }
+          } else {
+            window.BrigadaUI.showToast(res.error || 'Erro ao realizar teste.', 'error');
+          }
+        } catch (err) {
+          testSpinner.style.display = 'none';
+          btnTest.disabled = false;
+          window.BrigadaUI.showToast(err.message || 'Falha ao processar teste.', 'error');
+        }
+      });
+    }
 
     const btnSubscribePush = container.querySelector('#btn-subscribe-push');
     const btnUnsubscribePush = container.querySelector('#btn-unsubscribe-push');

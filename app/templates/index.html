@@ -12,6 +12,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.svg') }}">
+  <script>
+    (function() {
+      const theme = localStorage.getItem('brigada-theme');
+      if (theme === 'light') {
+        document.documentElement.classList.add('light-theme');
+      }
+    })();
+  </script>
 </head>
 <body>
   <!-- App root — SPA injected here -->
