@@ -251,7 +251,7 @@ window.BrigadaProducts = {
           <td data-label="Status">
             <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
               <span class="badge ${status.class}">${status.icon} ${status.label}</span>
-              ${p.isAwaitingReduction ? `<span class="badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.3); font-size:0.65rem;">📉 Em Rebaixa</span>` : ''}
+              ${p.isAwaitingReduction ? `<span class="badge" style="background:${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'}; color:${p.rebaixaStatus === 'ok' ? '#34d399' : '#fbbf24'}; border:1px solid ${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}; font-size:0.65rem;">${p.rebaixaStatus === 'ok' ? '🟢 Rebaixa OK' : '🟡 Aguardando'}</span>` : ''}
             </div>
           </td>
           <td data-label="Fornecedor">
@@ -263,6 +263,7 @@ window.BrigadaProducts = {
           </td>
           ${showActions ? `
           <td data-label="Ações" class="actions-cell">
+            ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}" style="margin-right:4px;">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}</button>` : ''}
             ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
             ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
           </td>` : ''}
@@ -310,6 +311,13 @@ window.BrigadaProducts = {
         const id = parseInt(btn.dataset.id);
         if (action === 'edit') this.openEditModal(id, container);
         if (action === 'delete') this.openDeleteModal(id, container);
+        if (action === 'toggle-rebaixa') {
+          const product = window.BrigadaData.products.find(x => x.id === id);
+          const newStatus = product.rebaixaStatus === 'ok' ? 'aguardando' : 'ok';
+          window.BrigadaData.setAwaitingReduction([id], true, newStatus).then(() => {
+            this.renderTable(container);
+          });
+        }
       });
     });
   },

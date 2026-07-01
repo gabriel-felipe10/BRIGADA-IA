@@ -883,11 +883,12 @@ window.BrigadaData = {
   },
 
   // Define status de aguardando rebaixa (persiste no Supabase)
-  async setAwaitingReduction(ids, status) {
+  async setAwaitingReduction(ids, status, rebaixaStatus = 'aguardando') {
     // Atualiza localmente primeiro para resposta imediata
     this.products.forEach(p => {
       if (ids.includes(p.id)) {
         p.isAwaitingReduction = status;
+        p.rebaixaStatus = rebaixaStatus;
       }
     });
 
@@ -896,7 +897,7 @@ window.BrigadaData = {
       const res = await fetch('/api/products/rebaixa', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids, status })
+        body: JSON.stringify({ ids, status, rebaixaStatus })
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));

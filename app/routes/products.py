@@ -27,7 +27,8 @@ def get_products():
                 "quantity": p.get("quantity", 0),
                 "column": p.get("column"),
                 "columnNumber": p.get("column_number"),
-                "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False))
+                "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
+                "rebaixaStatus": p.get("rebaixa_status", "aguardando")
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -198,18 +199,26 @@ def toggle_rebaixa():
         data = request.get_json(force=True)
         ids = data.get("ids", [])
         status = bool(data.get("status", True))
+        rebaixa_status = data.get("rebaixaStatus", "aguardando")
         
         if not ids:
             return jsonify({"error": "Nenhum ID fornecido"}), 400
         
-        logger.debug("Atualizando rebaixa | ids={} status={}", ids, status)
+        logger.debug("Atualizando rebaixa | ids={} status={} rebaixaStatus={}", ids, status, rebaixa_status)
         
         # Atualiza no Supabase usando in_ filter
-        response = supabase.table("produtos").update(
-            {"is_awaiting_reduction": status}
-        ).in_("id", ids).execute()
+        try:
+            # Tenta atualizar incluindo a nova coluna (pode falhar se não existir no banco)
+            response = supabase.table("produtos").update(
+                {"is_awaiting_reduction": status, "rebaixa_status": rebaixa_status}
+            ).in_("id", ids).execute()
+        except Exception as e:
+            logger.warning(f"Falha ao atualizar rebaixa_status (coluna pode não existir), fazendo fallback: {e}")
+            response = supabase.table("produtos").update(
+                {"is_awaiting_reduction": status}
+            ).in_("id", ids).execute()
         
-        updated_count = len(response.data) if response.data else 0
+        updated_count = len(response.data) if hasattr(response, 'data') and response.data else 0
         logger.info("Rebaixa atualizada | count={} status={}", updated_count, status)
         
         return jsonify({"success": True, "updated": updated_count})
