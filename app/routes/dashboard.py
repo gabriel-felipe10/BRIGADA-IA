@@ -24,7 +24,7 @@ def serve_manifest():
 @dashboard_bp.route("/favicon.ico")
 def serve_favicon():
     """Serve o favicon oficial a partir da raiz."""
-    return current_app.send_static_file("icon.jpg")
+    return current_app.send_static_file("icon.svg")
 
 
 @dashboard_bp.route("/")

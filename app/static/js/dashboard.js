@@ -38,7 +38,7 @@ window.BrigadaDashboard = {
 
   buildHTML(isSuperAdmin) {
     const adminSection = isSuperAdmin ? `
-      <div class="dashboard-grid dashboard-grid--4 stagger">
+      <div class="dashboard-grid dashboard-grid--5 stagger">
         <div class="metric-card" id="stat-total">
           <div class="metric-card__icon">📦</div>
           <div class="metric-card__body">
@@ -67,6 +67,13 @@ window.BrigadaDashboard = {
             <p class="metric-card__value" id="stat-ok-val">—</p>
           </div>
         </div>
+        <div class="metric-card metric-card--info" id="stat-rebaixa">
+          <div class="metric-card__icon">📉</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Aguardando Rebaixa</p>
+            <p class="metric-card__value" id="stat-rebaixa-val">—</p>
+          </div>
+        </div>
       </div>
       <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:2rem;">
         <div class="metric-card" id="stat-users">
@@ -92,7 +99,7 @@ window.BrigadaDashboard = {
         </div>
       </div>
     ` : `
-      <div class="dashboard-grid dashboard-grid--4 stagger" style="margin-bottom:2rem;">
+      <div class="dashboard-grid dashboard-grid--5 stagger" style="margin-bottom:2rem;">
         <div class="metric-card" id="stat-total">
           <div class="metric-card__icon">📦</div>
           <div class="metric-card__body">
@@ -119,6 +126,13 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Produtos OK</p>
             <p class="metric-card__value" id="stat-ok-val">—</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--info" id="stat-rebaixa">
+          <div class="metric-card__icon">📉</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Aguardando Rebaixa</p>
+            <p class="metric-card__value" id="stat-rebaixa-val">—</p>
           </div>
         </div>
       </div>
@@ -156,7 +170,7 @@ window.BrigadaDashboard = {
         <div class="glass-panel__header">
           <div style="display:flex; flex-direction:column; gap:4px;">
             <h3 class="glass-panel__title">🏪 Visão por Categoria</h3>
-            <p id="dash-table-subtitle" style="font-size:0.75rem; color:var(--text-tertiary);">Visualizando: Todos os produtos</p>
+            <p id="dash-table-subtitle" style="font-size:0.95rem; font-weight:600; color:var(--text-secondary);">Visualizando: Todos os produtos</p>
           </div>
           <div class="cat-quick-tabs" id="dash-cat-tabs">
             <button class="cat-tab cat-tab--sm cat-tab--active" data-cat="all">Todos</button>
@@ -304,8 +318,18 @@ window.BrigadaDashboard = {
     });
 
     // Metric cards click to filter
-    const setStatusFilter = (status) => {
+    const setStatusFilter = (status, clickedCard) => {
+      // Toggle: clicking same card again clears filter
+      if (this.currentStatusFilter === status && status !== 'all') {
+        status = 'all';
+        clickedCard = container.querySelector('#stat-total');
+      }
       this.currentStatusFilter = status;
+
+      // Visual feedback — highlight active card
+      container.querySelectorAll('.metric-card').forEach(c => c.classList.remove('metric-card--active'));
+      if (clickedCard) clickedCard.classList.add('metric-card--active');
+
       const subtitleEl = container.querySelector('#dash-table-subtitle');
       if (subtitleEl) {
         const labels = {
@@ -313,18 +337,26 @@ window.BrigadaDashboard = {
           expired: 'Produtos Vencidos',
           today: 'Produtos Vencendo Hoje',
           soon: 'Produtos em Atenção (1-3 dias)',
-          ok: 'Produtos em dia (OK)'
+          ok: 'Produtos em dia (OK)',
+          rebaixa: 'Produtos Aguardando Rebaixa'
         };
         subtitleEl.textContent = `Visualizando: ${labels[status] || labels.all}`;
       }
       this.renderDashProducts(container, this.currentFilter);
+
+      // Scroll suave para a tabela de produtos
+      const tableSection = container.querySelector('#dash-products-table');
+      if (tableSection) {
+        tableSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     };
 
-    container.querySelector('#stat-total')?.addEventListener('click', () => setStatusFilter('all'));
-    container.querySelector('#stat-expired')?.addEventListener('click', () => setStatusFilter('expired'));
-    container.querySelector('#stat-soon')?.addEventListener('click', () => setStatusFilter('soon'));
-    container.querySelector('#stat-ok')?.addEventListener('click', () => setStatusFilter('ok'));
-    container.querySelector('#stat-today')?.addEventListener('click', () => setStatusFilter('today'));
+    container.querySelector('#stat-total')?.addEventListener('click', (e) => setStatusFilter('all', e.currentTarget));
+    container.querySelector('#stat-expired')?.addEventListener('click', (e) => setStatusFilter('expired', e.currentTarget));
+    container.querySelector('#stat-soon')?.addEventListener('click', (e) => setStatusFilter('soon', e.currentTarget));
+    container.querySelector('#stat-ok')?.addEventListener('click', (e) => setStatusFilter('ok', e.currentTarget));
+    container.querySelector('#stat-today')?.addEventListener('click', (e) => setStatusFilter('today', e.currentTarget));
+    container.querySelector('#stat-rebaixa')?.addEventListener('click', (e) => setStatusFilter('rebaixa', e.currentTarget));
 
     // Users metrics redirect
     container.querySelector('#stat-users')?.addEventListener('click', () => {
@@ -375,6 +407,7 @@ window.BrigadaDashboard = {
     set('stat-today-val', stats.expiresToday);
     set('stat-users-val', stats.totalUsers);
     set('stat-active-users-val', stats.activeUsers);
+    set('stat-rebaixa-val', stats.awaitingReduction);
   },
 
   renderAlertsTimeline(container) {
@@ -479,6 +512,7 @@ window.BrigadaDashboard = {
         if (this.currentStatusFilter === 'today') return s.days === 0;
         if (this.currentStatusFilter === 'soon') return s.days > 0 && s.days <= 3;
         if (this.currentStatusFilter === 'ok') return s.days > 3;
+        if (this.currentStatusFilter === 'rebaixa') return !!p.isAwaitingReduction;
         return true;
       });
     }

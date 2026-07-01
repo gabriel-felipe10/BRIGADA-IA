@@ -882,6 +882,31 @@ window.BrigadaData = {
     return { label: 'OK', class: 'badge--ok', icon: '🟢', days: diffDays };
   },
 
+  // Define status de aguardando rebaixa (persiste no Supabase)
+  async setAwaitingReduction(ids, status) {
+    // Atualiza localmente primeiro para resposta imediata
+    this.products.forEach(p => {
+      if (ids.includes(p.id)) {
+        p.isAwaitingReduction = status;
+      }
+    });
+
+    // Persiste no backend
+    try {
+      const res = await fetch('/api/products/rebaixa', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Erro ao salvar rebaixa no servidor:', errData);
+      }
+    } catch (err) {
+      console.error('Erro na API ao atualizar rebaixa (dados salvos localmente):', err);
+    }
+  },
+
   // Estatísticas gerais
   getStats() {
     const today = new Date();
@@ -907,8 +932,9 @@ window.BrigadaData = {
       }
     }
 
-    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0;
+    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0;
     allowedProducts.forEach(p => {
+      if (p.isAwaitingReduction) awaitingReduction++;
       const s = this.getProductStatus(p);
       if (s.days < 0) expired++;
       else if (s.days === 0) expiresToday++;
@@ -922,6 +948,7 @@ window.BrigadaData = {
       expiresToday,
       expiresSoon,
       ok,
+      awaitingReduction,
       totalUsers: this.users.length,
       activeUsers: this.users.filter(u => u.status === 'active').length,
     };

@@ -28,6 +28,9 @@ window.BrigadaProducts = {
             <span>📥</span> Importar
           </button>
           ` : ''}
+          <button class="btn btn--secondary" id="btn-request-reduction" title="Mover selecionados para Aguardando Rebaixa">
+            <span>📉</span> Rebaixar
+          </button>
           <button class="btn btn--ghost" id="btn-export-excel" title="Exportar para Excel">
             <span>📗</span> Excel
           </button>
@@ -65,6 +68,7 @@ window.BrigadaProducts = {
             <option value="warning">⚠️ Atenção</option>
             <option value="today">🟠 Vence Hoje</option>
             <option value="expired">🔴 Vencido</option>
+            <option value="rebaixa">📉 Aguardando Rebaixa</option>
           </select>
         </div>
       </div>
@@ -200,6 +204,7 @@ window.BrigadaProducts = {
     if (statusFilter !== 'all') {
       products = products.filter(p => {
         const s = window.BrigadaData.getProductStatus(p);
+        if (statusFilter === 'rebaixa') return p.isAwaitingReduction === true;
         if (statusFilter === 'expired') return s.days < 0;
         if (statusFilter === 'today') return s.days === 0;
         if (statusFilter === 'warning') return s.days > 0 && s.days <= 3;
@@ -243,7 +248,12 @@ window.BrigadaProducts = {
           <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
           <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
           <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
-          <td data-label="Status"><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
+          <td data-label="Status">
+            <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+              <span class="badge ${status.class}">${status.icon} ${status.label}</span>
+              ${p.isAwaitingReduction ? `<span class="badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.3); font-size:0.65rem;">📉 Em Rebaixa</span>` : ''}
+            </div>
+          </td>
           <td data-label="Fornecedor">
             <div>${p.supplier || '—'}</div>
             ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
@@ -332,6 +342,7 @@ window.BrigadaProducts = {
     });
 
     // Export / Import buttons
+    container.querySelector('#btn-request-reduction')?.addEventListener('click', () => this.requestReduction(container));
     container.querySelector('#btn-export-excel')?.addEventListener('click', () => this.exportExcel());
     container.querySelector('#btn-export-pdf')?.addEventListener('click', () => this.exportPDF());
     container.querySelector('#btn-import-csv')?.addEventListener('click', () => {
@@ -496,6 +507,23 @@ window.BrigadaProducts = {
     await window.BrigadaData.deleteProduct(this.deletingId);
     window.BrigadaUI.showToast('Produto removido.', 'success');
     this.closeDeleteModal(container);
+    this.renderTable(container);
+  },
+
+  // ── Solicitar Rebaixa ──────────────────────────────────────────────────────
+  requestReduction(container) {
+    const checkboxes = container.querySelectorAll('.select-product-checkbox:checked');
+    const ids = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+    if (ids.length === 0) {
+      window.BrigadaUI.showToast('Selecione pelo menos um produto para solicitar rebaixa.', 'error');
+      return;
+    }
+    window.BrigadaData.setAwaitingReduction(ids, true);
+    window.BrigadaUI.showToast(`${ids.length} produto(s) movido(s) para Aguardando Rebaixa!`, 'success');
+    
+    // Desmarcar tudo e re-renderizar
+    const selectAll = container.querySelector('#select-all-products');
+    if (selectAll) selectAll.checked = false;
     this.renderTable(container);
   },
 

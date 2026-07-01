@@ -71,7 +71,7 @@ window.BrigadaRouter = {
         </div>
         <div class="login-card">
           <div class="login-logo">
-            <img src="/static/icon.jpg" alt="Logo" style="width: 72px; height: 72px; border-radius: 16px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.08);">
+            <img src="/static/icon.svg" alt="Logo" style="width: 72px; height: 72px; border-radius: 16px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.08);">
             <h1 class="login-logo__title">BRIGADA-IA</h1>
             <p class="login-logo__sub">Sistema de Validade · Açougue Varejo</p>
           </div>
@@ -196,7 +196,7 @@ window.BrigadaRouter = {
 
     const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
     const collapsedClass = isCollapsed ? 'sidebar-collapsed' : '';
-    const toggleIcon = isCollapsed ? '▶' : '◀';
+    const toggleIcon = '☰';
     const toggleTitle = isCollapsed ? 'Expandir menu' : 'Recolher menu';
 
     root.innerHTML = `
@@ -209,7 +209,7 @@ window.BrigadaRouter = {
             <span class="sidebar__toggle-icon" id="sidebar-toggle-icon">${toggleIcon}</span>
           </button>
           <div class="sidebar__brand">
-            <img src="/static/icon.jpg" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.08);">
+            <img src="/static/icon.svg" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.08);">
             <div>
               <h1 class="sidebar__title">BRIGADA-IA</h1>
               <p class="sidebar__sub">Varejo · Açougue</p>
@@ -376,9 +376,6 @@ window.BrigadaRouter = {
       if (appShell) {
         const isCurrentlyCollapsed = appShell.classList.toggle('sidebar-collapsed');
         localStorage.setItem('sidebar-collapsed', isCurrentlyCollapsed ? 'true' : 'false');
-        if (toggleIconEl) {
-          toggleIconEl.textContent = isCurrentlyCollapsed ? '▶' : '◀';
-        }
         if (toggleBtn) {
           toggleBtn.title = isCurrentlyCollapsed ? 'Expandir menu' : 'Recolher menu';
         }

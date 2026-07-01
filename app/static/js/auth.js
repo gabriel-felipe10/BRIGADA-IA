@@ -69,7 +69,7 @@ window.BrigadaAuth = {
 
   canEditProduct(product) {
     if (!this.currentUser) return false;
-    if (this.isSuperAdmin()) return true;
+    if (this.isSuperAdmin() || this.currentUser.role === 'lider') return true;
 
     if (product && product.createdBy) {
       const email = this.currentUser.email.toLowerCase();
@@ -78,15 +78,21 @@ window.BrigadaAuth = {
       }
     }
 
-    if (!product || !product.createdBy) {
-      return this.currentUser.role === 'superadmin' || this.currentUser.role === 'lider';
-    }
-
     return false;
   },
 
   canDeleteProduct(product) {
-    return this.isSuperAdmin();
+    if (!this.currentUser) return false;
+    if (this.isSuperAdmin() || this.currentUser.role === 'lider') return true;
+
+    if (product && product.createdBy) {
+      const email = this.currentUser.email.toLowerCase();
+      if (product.createdBy.toLowerCase() === email) {
+        return true;
+      }
+    }
+
+    return false;
   },
 
   canEditOrDeleteProduct(product) {

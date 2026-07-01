@@ -26,7 +26,8 @@ def get_products():
                 "location": p.get("location"),
                 "quantity": p.get("quantity", 0),
                 "column": p.get("column"),
-                "columnNumber": p.get("column_number")
+                "columnNumber": p.get("column_number"),
+                "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False))
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -67,15 +68,17 @@ def create_product():
             "location": data.get("location"),
             "quantity": float(data.get("quantity", 0)) if data.get("quantity") is not None else 0.0,
             "column": data.get("column"),
-            "column_number": data.get("columnNumber")
+            "column_number": data.get("columnNumber"),
+            "is_awaiting_reduction": bool(data.get("isAwaitingReduction", False))
         }
         
         try:
             response = supabase.table("produtos").insert(db_data).execute()
         except Exception as e:
-            logger.warning("Erro ao salvar produto com campos extras (column/column_number), tentando sem eles: {}", e)
+            logger.warning("Erro ao salvar produto com campos extras, tentando sem eles: {}", e)
             db_data.pop("column", None)
             db_data.pop("column_number", None)
+            db_data.pop("is_awaiting_reduction", None)
             response = supabase.table("produtos").insert(db_data).execute()
             
         if not response.data:
@@ -94,7 +97,8 @@ def create_product():
             "location": p.get("location"),
             "quantity": p.get("quantity", 0),
             "column": p.get("column"),
-            "columnNumber": p.get("column_number")
+            "columnNumber": p.get("column_number"),
+            "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False))
         }
         
         logger.info("Produto criado no Supabase | id={} plu={}", created["id"], created["plu"])
@@ -132,6 +136,7 @@ def update_product(product_id):
         if "quantity" in data: db_data["quantity"] = float(data["quantity"]) if data["quantity"] is not None else 0.0
         if "column" in data: db_data["column"] = data["column"]
         if "columnNumber" in data: db_data["column_number"] = data["columnNumber"]
+        if "isAwaitingReduction" in data: db_data["is_awaiting_reduction"] = bool(data["isAwaitingReduction"])
         
         try:
             response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
@@ -139,6 +144,7 @@ def update_product(product_id):
             logger.warning("Erro ao atualizar produto com campos extras, tentando sem eles: {}", e)
             db_data.pop("column", None)
             db_data.pop("column_number", None)
+            db_data.pop("is_awaiting_reduction", None)
             response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
             
         if not response.data:
@@ -157,7 +163,8 @@ def update_product(product_id):
             "location": p.get("location"),
             "quantity": p.get("quantity", 0),
             "column": p.get("column"),
-            "columnNumber": p.get("column_number")
+            "columnNumber": p.get("column_number"),
+            "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False))
         }
         
         logger.info("Produto atualizado no Supabase | id={}", updated["id"])
@@ -182,3 +189,30 @@ def delete_product(product_id):
     except Exception as e:
         logger.exception("Erro ao excluir produto no Supabase")
         return jsonify({"error": "Erro ao excluir produto", "details": str(e)}), 500
+
+
+@products_bp.route("/rebaixa", methods=["PATCH"])
+def toggle_rebaixa():
+    """Marca/desmarca produtos como aguardando rebaixa no Supabase."""
+    try:
+        data = request.get_json(force=True)
+        ids = data.get("ids", [])
+        status = bool(data.get("status", True))
+        
+        if not ids:
+            return jsonify({"error": "Nenhum ID fornecido"}), 400
+        
+        logger.debug("Atualizando rebaixa | ids={} status={}", ids, status)
+        
+        # Atualiza no Supabase usando in_ filter
+        response = supabase.table("produtos").update(
+            {"is_awaiting_reduction": status}
+        ).in_("id", ids).execute()
+        
+        updated_count = len(response.data) if response.data else 0
+        logger.info("Rebaixa atualizada | count={} status={}", updated_count, status)
+        
+        return jsonify({"success": True, "updated": updated_count})
+    except Exception as e:
+        logger.exception("Erro ao atualizar status de rebaixa")
+        return jsonify({"error": "Erro ao atualizar rebaixa", "details": str(e)}), 500

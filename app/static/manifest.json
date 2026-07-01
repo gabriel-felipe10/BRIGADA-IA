@@ -10,21 +10,21 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/static/icon.jpg",
+      "src": "/static/icon.svg",
       "sizes": "any",
-      "type": "image/jpeg",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/static/icon.jpg",
+      "src": "/static/icon.svg",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/icon.jpg",
+      "src": "/static/icon.svg",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ]
