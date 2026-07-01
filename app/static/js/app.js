@@ -64,11 +64,7 @@ window.BrigadaRouter = {
   renderLogin(root) {
     root.innerHTML = `
       <div class="login-screen">
-        <div class="login-bg">
-          <div class="login-blob login-blob--1"></div>
-          <div class="login-blob login-blob--2"></div>
-          <div class="login-blob login-blob--3"></div>
-        </div>
+        <div class="login-bg"></div>
         <div class="login-card">
           <div class="login-logo">
             <img src="/static/icon.svg" alt="Logo" style="width: 72px; height: 72px; border-radius: 16px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.08);">

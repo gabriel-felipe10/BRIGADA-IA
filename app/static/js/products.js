@@ -24,17 +24,17 @@ window.BrigadaProducts = {
         </div>
         <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
           ${isSuperAdmin ? `
-          <button class="btn btn--ghost" id="btn-import-csv" title="Importar produtos via CSV">
+          <button class="btn btn--primary" id="btn-import-csv" title="Importar produtos via CSV">
             <span>📥</span> Importar
           </button>
           ` : ''}
-          <button class="btn btn--secondary" id="btn-request-reduction" title="Mover selecionados para Aguardando Rebaixa">
+          <button class="btn btn--primary" id="btn-request-reduction" title="Mover selecionados para Aguardando Rebaixa">
             <span>📉</span> Rebaixar
           </button>
-          <button class="btn btn--ghost" id="btn-export-excel" title="Exportar para Excel">
+          <button class="btn btn--primary" id="btn-export-excel" title="Exportar para Excel">
             <span>📗</span> Excel
           </button>
-          <button class="btn btn--ghost" id="btn-export-pdf" title="Exportar para PDF">
+          <button class="btn btn--primary" id="btn-export-pdf" title="Exportar para PDF">
             <span>📄</span> PDF
           </button>
           ${canAddProduct ? `
@@ -134,11 +134,37 @@ window.BrigadaProducts = {
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Coluna</label>
-                  <input type="text" id="field-column" class="form-input" placeholder="ex: A">
+                  <select id="field-column" class="form-input">
+                    <option value="">Selecione...</option>
+                    <option value="Aéreo">Aéreo</option>
+                    <option value="Piso">Piso</option>
+                  </select>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Número da Coluna</label>
-                  <input type="number" id="field-column-number" class="form-input" placeholder="ex: 3" min="1">
+                  <select id="field-column-number" class="form-input">
+                    <option value="">Selecione...</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                  </select>
                 </div>
               </div>
               <div class="form-row">
@@ -150,7 +176,6 @@ window.BrigadaProducts = {
                   <label class="form-label">Unidade</label>
                   <select id="field-unit" class="form-input">
                     <option value="kg">kg</option>
-                    <option value="pct">pct</option>
                     <option value="un">un</option>
                     <option value="cx">cx</option>
                   </select>

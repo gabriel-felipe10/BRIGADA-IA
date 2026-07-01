@@ -244,31 +244,20 @@ body::before {
   position:relative; padding: var(--sp-xl);
 }
 
-.login-bg { position:fixed; inset:0; overflow:hidden; pointer-events:none; }
-.login-blob {
-  position:absolute; border-radius:50%;
-  filter:blur(80px); opacity:0.35;
-  animation: blobFloat 8s ease-in-out infinite;
-}
-.login-blob--1 { width:500px; height:500px; background:#6366f1; top:-100px; right:-100px; animation-delay:0s; }
-.login-blob--2 { width:400px; height:400px; background:#a855f7; bottom:-80px; left:-80px; animation-delay:3s; }
-.login-blob--3 { width:300px; height:300px; background:#3b82f6; top:50%; left:40%; animation-delay:6s; }
-
-@keyframes blobFloat {
-  0%,100% { transform:translate(0,0) scale(1); }
-  33% { transform:translate(20px,-20px) scale(1.05); }
-  66% { transform:translate(-15px,15px) scale(0.95); }
+.login-bg { 
+  position:fixed; inset:0; overflow:hidden; pointer-events:none; 
+  background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 70%),
+              radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
 }
 
 .login-card {
-  background: rgba(11,15,34,0.85);
-  border:1px solid var(--glass-border);
-  border-radius:var(--r-2xl);
+  background: #12131e;
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: var(--r-2xl);
   padding: var(--sp-2xl);
-  width:100%; max-width:420px;
-  backdrop-filter:blur(24px);
-  box-shadow: 0 24px 80px rgba(0,0,0,0.5), var(--accent-glow);
-  position:relative; z-index:10;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  position: relative; z-index: 10;
   animation: slideUp 0.5s var(--t-slow);
 }
 
