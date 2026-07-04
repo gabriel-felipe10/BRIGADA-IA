@@ -209,10 +209,10 @@ window.BrigadaUsers = {
           <td data-label="Ações" class="actions-cell">
             ${!isCurrentUser ? `
             <button class="btn-icon btn-icon--status" data-action="toggle-status" data-id="${u.id}" title="${u.status === 'active' ? 'Bloquear' : 'Desbloquear'}">
-              ${u.status === 'active' ? '🔒' : '🔓'}
+              ${u.status === 'active' ? '🔒' : '🔓'}<span class="btn-label">${u.status === 'active' ? 'Bloquear' : 'Liberar'}</span>
             </button>` : ''}
-            <button class="btn-icon btn-icon--edit" data-action="edit-user" data-id="${u.id}" title="Editar">✏️</button>
-            ${!isCurrentUser ? `<button class="btn-icon btn-icon--delete" data-action="delete-user" data-id="${u.id}" title="Excluir">🗑️</button>` : ''}
+            <button class="btn-icon btn-icon--edit" data-action="edit-user" data-id="${u.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>
+            ${!isCurrentUser ? `<button class="btn-icon btn-icon--delete" data-action="delete-user" data-id="${u.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
           </td>
         </tr>`;
     }).join('');

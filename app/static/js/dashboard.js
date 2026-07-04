@@ -395,7 +395,9 @@ window.BrigadaDashboard = {
           today: 'Produtos Vencendo Hoje',
           soon: 'Produtos em Atenção (1-3 dias)',
           ok: 'Produtos em dia (OK)',
-          rebaixa: 'Produtos Aguardando Rebaixa'
+          rebaixa: 'Produtos Aguardando Rebaixa',
+          quebra: '🗑️ Produtos em Quebra',
+          troca: '🔄 Produtos em Troca'
         };
         subtitleEl.textContent = `Visualizando: ${labels[status] || labels.all}`;
       }
@@ -414,6 +416,8 @@ window.BrigadaDashboard = {
     container.querySelector('#stat-ok')?.addEventListener('click', (e) => setStatusFilter('ok', e.currentTarget));
     container.querySelector('#stat-today')?.addEventListener('click', (e) => setStatusFilter('today', e.currentTarget));
     container.querySelector('#stat-rebaixa')?.addEventListener('click', (e) => setStatusFilter('rebaixa', e.currentTarget));
+    container.querySelector('#stat-quebra')?.addEventListener('click', (e) => setStatusFilter('quebra', e.currentTarget));
+    container.querySelector('#stat-troca')?.addEventListener('click', (e) => setStatusFilter('troca', e.currentTarget));
 
     // Users metrics redirect
     container.querySelector('#stat-users')?.addEventListener('click', () => {
@@ -572,6 +576,8 @@ window.BrigadaDashboard = {
         if (this.currentStatusFilter === 'soon') return s.days > 0 && s.days <= 3;
         if (this.currentStatusFilter === 'ok') return s.days > 3;
         if (this.currentStatusFilter === 'rebaixa') return !!p.isAwaitingReduction;
+        if (this.currentStatusFilter === 'quebra') return p.expiredAction === 'quebra';
+        if (this.currentStatusFilter === 'troca') return p.expiredAction === 'troca';
         return true;
       });
     }
@@ -632,14 +638,14 @@ window.BrigadaDashboard = {
               </td>
               ${showActions ? `
               <td data-label="Ações" class="actions-cell">
-                ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}" style="margin-right: 4px;">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}</button>` : ''}
+                ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}<span class="btn-label">${p.rebaixaStatus === 'ok' ? 'Voltar' : 'Rebaixa'}</span></button>` : ''}
                 ${p._status.days < 0 && canEditThis ? `
-                  ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra" style="margin-right:4px;">🗑️</button>` : ''}
-                  ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca" style="margin-right:4px;">🔄</button>` : ''}
-                  ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação" style="margin-right:4px;">↩️</button>` : ''}
+                  ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
+                  ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                  ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
                 ` : ''}
-                ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
-                ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
+                ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
+                ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
               </td>` : ''}
             </tr>`;
           }).join('')}
