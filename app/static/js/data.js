@@ -876,7 +876,11 @@ window.BrigadaData = {
     const end = new Date(product.endDate + 'T00:00:00');
     const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return { label: 'Vencido', class: 'badge--expired', icon: '🔴', days: diffDays };
+    if (diffDays < 0) {
+      if (product.expiredAction === 'quebra') return { label: 'Vencido (Quebra)', class: 'badge--expired', icon: '🗑️', days: diffDays };
+      if (product.expiredAction === 'troca') return { label: 'Vencido (Troca)', class: 'badge--expired', icon: '🔄', days: diffDays };
+      return { label: 'Vencido', class: 'badge--expired', icon: '🔴', days: diffDays };
+    }
     if (diffDays === 0) return { label: 'Vence Hoje', class: 'badge--today', icon: '🟠', days: 0 };
     if (diffDays <= 3) return { label: `${diffDays}d restantes`, class: 'badge--warning', icon: '🟡', days: diffDays };
     return { label: 'OK', class: 'badge--ok', icon: '🟢', days: diffDays };
@@ -908,6 +912,30 @@ window.BrigadaData = {
     }
   },
 
+  // Define status de ação para produtos vencidos (Quebra ou Troca)
+  async setExpiredAction(id, action) {
+    const product = this.products.find(p => p.id === id);
+    if (!product) return;
+    
+    // Atualiza localmente
+    product.expiredAction = action;
+    
+    // Persiste no backend via PATCH ou PUT
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiredAction: action })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Erro ao salvar ação de vencido no servidor:', errData);
+      }
+    } catch (err) {
+      console.error('Erro na API ao atualizar ação de vencido (dados salvos localmente):', err);
+    }
+  },
+
   // Estatísticas gerais
   getStats() {
     const today = new Date();
@@ -933,9 +961,11 @@ window.BrigadaData = {
       }
     }
 
-    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0;
+    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0, quebra = 0, troca = 0;
     allowedProducts.forEach(p => {
       if (p.isAwaitingReduction) awaitingReduction++;
+      if (p.expiredAction === 'quebra') quebra++;
+      if (p.expiredAction === 'troca') troca++;
       const s = this.getProductStatus(p);
       if (s.days < 0) expired++;
       else if (s.days === 0) expiresToday++;
@@ -950,6 +980,8 @@ window.BrigadaData = {
       expiresSoon,
       ok,
       awaitingReduction,
+      quebra,
+      troca,
       totalUsers: this.users.length,
       activeUsers: this.users.filter(u => u.status === 'active').length,
     };

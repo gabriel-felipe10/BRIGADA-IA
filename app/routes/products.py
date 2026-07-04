@@ -28,7 +28,8 @@ def get_products():
                 "column": p.get("column"),
                 "columnNumber": p.get("column_number"),
                 "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
-                "rebaixaStatus": p.get("rebaixa_status", "aguardando")
+                "rebaixaStatus": p.get("rebaixa_status", "aguardando"),
+                "expiredAction": p.get("expired_action")
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -70,7 +71,8 @@ def create_product():
             "quantity": float(data.get("quantity", 0)) if data.get("quantity") is not None else 0.0,
             "column": data.get("column"),
             "column_number": data.get("columnNumber"),
-            "is_awaiting_reduction": bool(data.get("isAwaitingReduction", False))
+            "is_awaiting_reduction": bool(data.get("isAwaitingReduction", False)),
+            "expired_action": data.get("expiredAction")
         }
         
         try:
@@ -80,6 +82,7 @@ def create_product():
             db_data.pop("column", None)
             db_data.pop("column_number", None)
             db_data.pop("is_awaiting_reduction", None)
+            db_data.pop("expired_action", None)
             response = supabase.table("produtos").insert(db_data).execute()
             
         if not response.data:
@@ -99,7 +102,8 @@ def create_product():
             "quantity": p.get("quantity", 0),
             "column": p.get("column"),
             "columnNumber": p.get("column_number"),
-            "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False))
+            "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
+            "expiredAction": p.get("expired_action")
         }
         
         logger.info("Produto criado no Supabase | id={} plu={}", created["id"], created["plu"])
@@ -138,6 +142,7 @@ def update_product(product_id):
         if "column" in data: db_data["column"] = data["column"]
         if "columnNumber" in data: db_data["column_number"] = data["columnNumber"]
         if "isAwaitingReduction" in data: db_data["is_awaiting_reduction"] = bool(data["isAwaitingReduction"])
+        if "expiredAction" in data: db_data["expired_action"] = data["expiredAction"]
         
         try:
             response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
@@ -146,6 +151,7 @@ def update_product(product_id):
             db_data.pop("column", None)
             db_data.pop("column_number", None)
             db_data.pop("is_awaiting_reduction", None)
+            db_data.pop("expired_action", None)
             response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
             
         if not response.data:
@@ -165,7 +171,8 @@ def update_product(product_id):
             "quantity": p.get("quantity", 0),
             "column": p.get("column"),
             "columnNumber": p.get("column_number"),
-            "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False))
+            "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
+            "expiredAction": p.get("expired_action")
         }
         
         logger.info("Produto atualizado no Supabase | id={}", updated["id"])

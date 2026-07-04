@@ -75,6 +75,22 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
+      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1rem;">
+        <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
+          <div class="metric-card__icon">🗑️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Quebra</p>
+            <p class="metric-card__value" id="stat-quebra-val">—</p>
+          </div>
+        </div>
+        <div class="metric-card" id="stat-troca" style="border-left: 3px solid #3b82f6; cursor:pointer;">
+          <div class="metric-card__icon">🔄</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Troca</p>
+            <p class="metric-card__value" id="stat-troca-val">—</p>
+          </div>
+        </div>
+      </div>
       <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:2rem;">
         <div class="metric-card" id="stat-users">
           <div class="metric-card__icon">👥</div>
@@ -133,6 +149,22 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Aguardando Rebaixa</p>
             <p class="metric-card__value" id="stat-rebaixa-val">—</p>
+          </div>
+        </div>
+      </div>
+      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1rem;">
+        <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
+          <div class="metric-card__icon">🗑️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Quebra</p>
+            <p class="metric-card__value" id="stat-quebra-val">—</p>
+          </div>
+        </div>
+        <div class="metric-card" id="stat-troca" style="border-left: 3px solid #3b82f6; cursor:pointer;">
+          <div class="metric-card__icon">🔄</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Troca</p>
+            <p class="metric-card__value" id="stat-troca-val">—</p>
           </div>
         </div>
       </div>
@@ -433,6 +465,8 @@ window.BrigadaDashboard = {
     set('stat-users-val', stats.totalUsers);
     set('stat-active-users-val', stats.activeUsers);
     set('stat-rebaixa-val', stats.awaitingReduction);
+    set('stat-quebra-val', stats.quebra);
+    set('stat-troca-val', stats.troca);
   },
 
   renderAlertsTimeline(container) {
@@ -599,6 +633,11 @@ window.BrigadaDashboard = {
               ${showActions ? `
               <td data-label="Ações" class="actions-cell">
                 ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}" style="margin-right: 4px;">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}</button>` : ''}
+                ${p._status.days < 0 && canEditThis ? `
+                  ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra" style="margin-right:4px;">🗑️</button>` : ''}
+                  ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca" style="margin-right:4px;">🔄</button>` : ''}
+                  ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação" style="margin-right:4px;">↩️</button>` : ''}
+                ` : ''}
                 ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
                 ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
               </td>` : ''}
@@ -621,6 +660,15 @@ window.BrigadaDashboard = {
           window.BrigadaData.setAwaitingReduction([id], true, newStatus).then(() => {
             this.renderDashProducts(container, this.currentFilter);
           });
+        }
+        if (action === 'set-quebra') {
+          window.BrigadaData.setExpiredAction(id, 'quebra').then(() => this.renderDashProducts(container, this.currentFilter));
+        }
+        if (action === 'set-troca') {
+          window.BrigadaData.setExpiredAction(id, 'troca').then(() => this.renderDashProducts(container, this.currentFilter));
+        }
+        if (action === 'clear-expired') {
+          window.BrigadaData.setExpiredAction(id, null).then(() => this.renderDashProducts(container, this.currentFilter));
         }
       });
     });

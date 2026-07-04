@@ -289,6 +289,11 @@ window.BrigadaProducts = {
           ${showActions ? `
           <td data-label="Ações" class="actions-cell">
             ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}" style="margin-right:4px;">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}</button>` : ''}
+            ${status.days < 0 && canEditThis ? `
+              ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra" style="margin-right:4px;">🗑️</button>` : ''}
+              ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca" style="margin-right:4px;">🔄</button>` : ''}
+              ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação" style="margin-right:4px;">↩️</button>` : ''}
+            ` : ''}
             ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
             ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
           </td>` : ''}
@@ -342,6 +347,15 @@ window.BrigadaProducts = {
           window.BrigadaData.setAwaitingReduction([id], true, newStatus).then(() => {
             this.renderTable(container);
           });
+        }
+        if (action === 'set-quebra') {
+          window.BrigadaData.setExpiredAction(id, 'quebra').then(() => this.renderTable(container));
+        }
+        if (action === 'set-troca') {
+          window.BrigadaData.setExpiredAction(id, 'troca').then(() => this.renderTable(container));
+        }
+        if (action === 'clear-expired') {
+          window.BrigadaData.setExpiredAction(id, null).then(() => this.renderTable(container));
         }
       });
     });
