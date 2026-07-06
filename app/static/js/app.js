@@ -224,6 +224,18 @@ window.BrigadaRouter = {
               <span>Açougue</span>
             </a>
             ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
+            <a class="sidebar__link ${activePage === 'product-list' ? 'sidebar__link--active' : ''}" data-page="product-list" href="#">
+              <span class="sidebar__link-icon">📋</span>
+              <span>Lista</span>
+            </a>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
+              <span class="sidebar__link-icon">❄️</span>
+              <span>Câmaras Frias</span>
+            </a>
+            ` : ''}
             ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
             <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
               <span class="sidebar__link-icon">🍎</span>
@@ -276,11 +288,11 @@ window.BrigadaRouter = {
                 <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}</p>
               </div>
             </div>
-            <div style="display: flex; gap: 0.5rem; justify-content: space-between;">
-              <button class="btn-logout" id="btn-theme-toggle" title="Alternar Tema" style="flex: 1; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--glass-border);">
+            <div class="sidebar__actions">
+              <button class="btn-theme" id="btn-theme-toggle" title="Alternar Tema">
                 <span id="theme-icon">${document.documentElement.classList.contains('light-theme') ? '🌙' : '☀️'}</span> <span class="logout-text" style="font-size: 0.8rem; margin-left: 4px;">Tema</span>
               </button>
-              <button class="btn-logout" id="btn-logout" title="Sair do Sistema" style="flex: 1; padding: 0.5rem;">
+              <button class="btn-logout" id="btn-logout" title="Sair do Sistema">
                 <span>🚪</span> <span class="logout-text" style="font-size: 0.8rem; margin-left: 4px;">Sair</span>
               </button>
             </div>
@@ -563,6 +575,18 @@ window.BrigadaRouter = {
         return;
       }
       window.BrigadaProducts.render(container);
+    } else if (page === 'product-list') {
+      if (!window.BrigadaAuth.hasSectorAccess('açougue')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaProductList.render(container);
+    } else if (page === 'chambers') {
+      if (!window.BrigadaAuth.hasSectorAccess('açougue') && !window.BrigadaAuth.hasSectorAccess('pereciveis')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaChambers.render(container);
     } else if (page === 'pereciveis') {
       if (!window.BrigadaAuth.hasSectorAccess('pereciveis')) {
         this.navigate('dashboard');

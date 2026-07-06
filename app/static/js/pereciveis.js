@@ -45,30 +45,32 @@ window.BrigadaPereciveis = {
       <!-- Hidden file input for CSV import -->
       <input type="file" id="import-file-input-pereciveis" accept=".csv" style="display:none;">
 
-      <div class="category-tabs" id="category-tabs-pereciveis">
-        <button class="cat-tab cat-tab--active" data-cat="all">🏪 Todos</button>
-        <button class="cat-tab" data-cat="laticinios">🧀 Laticínios</button>
-        <button class="cat-tab" data-cat="frios">🥓 Frios</button>
-      </div>
-
-      <div class="toolbar">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search-products-pereciveis" class="search-input" placeholder="Buscar por nome ou PLU...">
+      <div class="glass-panel" style="padding: 1.5rem; margin-top: 1rem;">
+  <div class="category-tabs" id="category-tabs-pereciveis">
+          <button class="cat-tab cat-tab--active" data-cat="all">🏪 Todos</button>
+          <button class="cat-tab" data-cat="laticinios">🧀 Laticínios</button>
+          <button class="cat-tab" data-cat="frios">🥓 Frios</button>
         </div>
-        <div class="toolbar-right">
-          <select id="filter-status-pereciveis" class="select-control">
-            <option value="all">Todos os status</option>
-            <option value="ok">✅ OK</option>
-            <option value="warning">⚠️ Atenção</option>
-            <option value="today">🟠 Vence Hoje</option>
-            <option value="expired">🔴 Vencido</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="table-wrapper" id="products-table-wrapper-pereciveis">
-        <!-- tabela renderizada dinamicamente -->
+        <div class="toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-products-pereciveis" class="search-input" placeholder="Buscar por nome, PLU ou código de balança...">
+          </div>
+          <div class="toolbar-right">
+            <select id="filter-status-pereciveis" class="select-control">
+              <option value="all">Todos os status</option>
+              <option value="ok">✅ OK</option>
+              <option value="warning">⚠️ Atenção</option>
+              <option value="today">🟠 Vence Hoje</option>
+              <option value="expired">🔴 Vencido</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper" id="products-table-wrapper-pereciveis">
+          <!-- tabela renderizada dinamicamente -->
+        </div>
       </div>
 
       <!-- Modal de produto -->
@@ -278,7 +280,7 @@ window.BrigadaPereciveis = {
             ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
           </td>
           <td data-label="Localização">
-            ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}
+            ${window.BrigadaData.formatLocationFriendly(p)}
           </td>
           ${showActions ? `
           <td data-label="Ações" class="actions-cell">

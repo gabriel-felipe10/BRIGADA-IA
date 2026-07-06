@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brigada-ia-v1';
+const CACHE_NAME = 'brigada-ia-v1.3';
 const ASSETS = [
   '/',
   '/manifest.json',
@@ -9,7 +9,8 @@ const ASSETS = [
   '/static/js/data.js',
   '/static/js/dashboard.js',
   '/static/js/products.js',
-  '/static/js/users.js'
+  '/static/js/users.js',
+  '/static/js/product_list.js'
 ];
 
 // Install Event

@@ -1009,6 +1009,27 @@ window.BrigadaData = {
     return d.toLocaleString('pt-BR');
   },
 
+  // Formata localização de produto de forma amigável
+  formatLocationFriendly(p) {
+    if (!p) return '—';
+    const loc = p.location;
+    if (!loc) return '—';
+    if (loc === 'resfriado') return '❄️ Resfriado';
+    if (loc === 'congelado') return '🥶 Congelado';
+    
+    // Testa se é coordenada de câmara fria
+    const match = loc.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
+    if (match) {
+      const chamber = match[1] === 'resfriado' ? '❄️ Resf' : '🥶 Cong';
+      const pos = match[4] === 'E' ? 'E' : 'D';
+      return `${chamber}: C${match[2]}-N${match[3]}-${pos}`;
+    }
+    
+    // Fallback genérico
+    const colInfo = p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : '';
+    return `${loc}${colInfo}`;
+  },
+
   // ── Configurações ──────────────────────────────────────────────────────────
   async loadSettings(key) {
     try {

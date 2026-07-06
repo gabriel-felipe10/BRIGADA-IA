@@ -495,7 +495,7 @@ window.BrigadaDashboard = {
         <div class="alert-item__icon">${catIcon[p.category]}</div>
         <div class="alert-item__body">
           <p class="alert-item__name">${p.name}</p>
-          <p class="alert-item__meta">PLU: ${p.plu} · ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}</p>
+          <p class="alert-item__meta">PLU: ${p.plu} · ${window.BrigadaData.formatLocationFriendly(p)}</p>
         </div>
         <div class="alert-item__status">
           <span class="badge ${p.status.class}">${p.status.icon} ${p.status.label}</span>
@@ -634,7 +634,7 @@ window.BrigadaDashboard = {
                 </div>
               </td>
               <td data-label="Localização">
-                ${p.location === 'resfriado' ? '❄️ Resfriado' : '🥶 Congelado'}${p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : ''}
+                ${window.BrigadaData.formatLocationFriendly(p)}
               </td>
               ${showActions ? `
               <td data-label="Ações" class="actions-cell">
