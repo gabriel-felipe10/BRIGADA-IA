@@ -22,7 +22,7 @@ window.BrigadaMercearia = {
           <h2 class="panel-title">🛒 Gestão de Mercearia</h2>
           <p class="panel-subtitle">Controle completo do estoque de mercearia seca e líquida</p>
         </div>
-        <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
+        <div class="glass-actions-card" style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
           ${isSuperAdmin ? `
           <button class="btn btn--primary" id="btn-import-csv-mercearia" title="Importar produtos via CSV">
             <span>📥</span> Importar

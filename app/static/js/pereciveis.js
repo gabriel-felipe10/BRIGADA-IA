@@ -22,7 +22,7 @@ window.BrigadaPereciveis = {
           <h2 class="panel-title">🍎 Gestão de Perecíveis</h2>
           <p class="panel-subtitle">Controle completo do estoque de perecíveis por categoria</p>
         </div>
-        <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
+        <div class="glass-actions-card" style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
           ${isSuperAdmin ? `
           <button class="btn btn--primary" id="btn-import-csv-pereciveis" title="Importar produtos via CSV">
             <span>📥</span> Importar

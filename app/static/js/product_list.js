@@ -49,7 +49,7 @@ window.BrigadaProductList = {
           <h2 class="panel-title">📋 Lista</h2>
           <p class="panel-subtitle">Dicionário e cadastro de códigos PLU oficiais do açougue</p>
         </div>
-        <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
+        <div class="glass-actions-card" style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
           ${canManage ? `
           <button class="btn btn--primary" id="btn-import-plu-csv" title="Importar PLUs via CSV">
             <span>📥</span> Importar CSV
@@ -57,7 +57,7 @@ window.BrigadaProductList = {
           <button class="btn btn--primary" id="btn-add-plu" title="Cadastrar código PLU individual">
             <span>＋</span> Novo Cadastro
           </button>
-          <button class="btn btn--danger" id="btn-clear-plu" title="Limpar todos os cadastros" style="background:#ef4444; border-color:#ef4444;">
+          <button class="btn btn--danger" id="btn-clear-plu" title="Limpar todos os cadastros">
             <span>🗑️</span> Limpar Tudo
           </button>
           ` : ''}

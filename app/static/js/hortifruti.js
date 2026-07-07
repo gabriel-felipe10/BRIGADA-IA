@@ -22,7 +22,7 @@ window.BrigadaHortifruti = {
           <h2 class="panel-title">🥦 Gestão de Hortifruti</h2>
           <p class="panel-subtitle">Controle completo do estoque de hortifruti (frutas, verduras e legumes)</p>
         </div>
-        <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
+        <div class="glass-actions-card" style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
           ${isSuperAdmin ? `
           <button class="btn btn--primary" id="btn-import-csv-hortifruti" title="Importar produtos via CSV">
             <span>📥</span> Importar
