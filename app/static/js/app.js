@@ -25,6 +25,95 @@ window.BrigadaUI = {
       setTimeout(() => toast.remove(), 300);
     }, 3500);
   },
+  
+  // ── Scanner ─────────────────────────────────────────────────────────────
+  scannerInstance: null,
+  onScanCallback: null,
+
+  openScanner(callback) {
+    this.onScanCallback = callback;
+    const modal = document.getElementById('scanner-modal-overlay');
+    if (!modal) return;
+    
+    modal.style.display = 'block';
+    requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+
+    if (!this.scannerInstance) {
+      this.scannerInstance = new Html5Qrcode("scanner-reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 };
+    
+    // Bind close button
+    const closeBtn = document.getElementById('close-scanner-btn');
+    if (closeBtn) closeBtn.onclick = () => this.closeScanner();
+
+    this.scannerInstance.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText, decodedResult) => {
+        // Success
+        this.closeScanner();
+        this.playBeep();
+        
+        let isScaleCode = false;
+        let plu = null;
+        let barcode = decodedText;
+
+        // Lógica de Código de Balança (Brasil: começa com 2, 13 dígitos)
+        // Exemplo: 2 CCCC PPPPPPP D (onde CCCC é o PLU)
+        if (decodedText.startsWith('2') && decodedText.length === 13) {
+           isScaleCode = true;
+           // O PLU costuma estar entre a posição 1 e 5 (4 dígitos) ou 1 e 6 (5 dígitos)
+           // Ex: 20123... (PLU 123) ou 21234... (PLU 1234). Assumindo 4 dígitos por padrão 
+           // para a maioria das balanças (pos 1 a 5) ou adaptativo. 
+           // Geralmente os zeros à esquerda são ignorados.
+           plu = parseInt(decodedText.substring(1, 5), 10).toString();
+        }
+
+        if (this.onScanCallback) {
+           this.onScanCallback({ barcode, isScaleCode, plu, raw: decodedText });
+        }
+      },
+      (errorMessage) => {
+        // Ignorar erros de scan contínuo
+      }
+    ).catch(err => {
+      console.error("Erro ao iniciar câmera", err);
+      this.showToast("Erro ao abrir a câmera. Verifique as permissões.", "error");
+    });
+  },
+
+  closeScanner() {
+    const modal = document.getElementById('scanner-modal-overlay');
+    if (modal) {
+      modal.classList.remove('modal-overlay--visible');
+      setTimeout(() => { modal.style.display = 'none'; }, 300);
+    }
+    if (this.scannerInstance) {
+      this.scannerInstance.stop().then(() => {
+        this.scannerInstance.clear();
+      }).catch(err => console.error("Erro ao parar o scanner", err));
+    }
+  },
+
+  playBeep() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 800;
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.2);
+    } catch(e) {}
+  }
 };
 
 // ── Router ────────────────────────────────────────────────────────────────────
@@ -218,18 +307,17 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📊</span>
               <span>Dashboard</span>
             </a>
+            <a class="sidebar__link ${activePage === 'catalog' ? 'sidebar__link--active' : ''}" data-page="catalog" href="#">
+              <span class="sidebar__link-icon">📖</span>
+              <span>Catálogo</span>
+            </a>
             ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
               <span class="sidebar__link-icon">🥩</span>
               <span>Açougue</span>
             </a>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
-            <a class="sidebar__link ${activePage === 'product-list' ? 'sidebar__link--active' : ''}" data-page="product-list" href="#">
-              <span class="sidebar__link-icon">📋</span>
-              <span>Lista</span>
-            </a>
-            ` : ''}
+
             ${window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
             <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
               <span class="sidebar__link-icon">❄️</span>
@@ -569,6 +657,20 @@ window.BrigadaRouter = {
 
     if (page === 'dashboard') {
       window.BrigadaDashboard.render(container, user.role);
+    } else if (page === 'catalog') {
+      if (window.BrigadaCatalog) {
+        window.BrigadaCatalog.render(container);
+      } else {
+        container.innerHTML = `
+          <div class="empty-state" style="padding:4rem 2rem; text-align:center;">
+            <div class="empty-state__icon" style="font-size: 3rem; margin-bottom: 1rem;">🔄</div>
+            <h3 style="margin-bottom: 0.5rem; color: var(--text-primary);">Atualização Necessária</h3>
+            <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto;">
+              Uma nova versão do sistema está disponível. Por favor, faça uma <strong>atualização forçada (Ctrl + F5)</strong> ou feche e abra a aba novamente para carregar a nova tela de catálogo.
+            </p>
+          </div>
+        `;
+      }
     } else if (page === 'products') {
       if (!window.BrigadaAuth.hasSectorAccess('açougue')) {
         this.navigate('dashboard');

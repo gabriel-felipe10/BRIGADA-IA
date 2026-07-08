@@ -669,6 +669,7 @@ const PRODUCTS_DB = [
 window.BrigadaData = {
   users: [],
   products: [],
+  catalog: [],
 
   parseProductCreator(p) {
     if (!p.supplier) {
@@ -694,7 +695,7 @@ window.BrigadaData = {
   // Carrega todos os produtos e usuários do Supabase via backend Flask
   async load() {
     try {
-      const [resProd, resUsers] = await Promise.all([
+      const [resProd, resUsers, resCatalog] = await Promise.all([
         fetch('/api/products').then(r => {
           if (!r.ok) throw new Error('Falha ao obter produtos');
           return r.json();
@@ -702,11 +703,19 @@ window.BrigadaData = {
         fetch('/api/users').then(r => {
           if (!r.ok) throw new Error('Falha ao obter usuários');
           return r.json();
+        }),
+        fetch('/api/products/catalog').then(r => {
+          if (!r.ok) throw new Error('Falha ao obter catálogo');
+          return r.json();
+        }).catch(err => {
+          console.warn("Aviso: Falha ao carregar catálogo", err);
+          return [];
         })
       ]);
       
       this.products = resProd.map(p => this.parseProductCreator(p));
       this.users = resUsers;
+      this.catalog = resCatalog;
       console.log('Dados carregados com sucesso do Supabase via API');
       return true;
     } catch (err) {

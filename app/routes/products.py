@@ -17,6 +17,7 @@ def get_products():
             products.append({
                 "id": p.get("id"),
                 "plu": p.get("plu"),
+                "barcode": p.get("barcode"),
                 "name": p.get("name"),
                 "category": p.get("category"),
                 "startDate": p.get("start_date"),
@@ -61,6 +62,7 @@ def create_product():
         # Mapeia camelCase para o snake_case do banco
         db_data = {
             "plu": plu,
+            "barcode": data.get("barcode") if data.get("barcode") else None,
             "name": data.get("name").strip(),
             "category": data.get("category"),
             "start_date": data.get("startDate") if data.get("startDate") else None,
@@ -92,6 +94,7 @@ def create_product():
         created = {
             "id": p.get("id"),
             "plu": p.get("plu"),
+            "barcode": p.get("barcode"),
             "name": p.get("name"),
             "category": p.get("category"),
             "startDate": p.get("start_date"),
@@ -131,6 +134,7 @@ def update_product(product_id):
         # Mapeia campos do front-end para o banco
         db_data = {}
         if "plu" in data: db_data["plu"] = data["plu"].strip()
+        if "barcode" in data: db_data["barcode"] = data["barcode"].strip() if data["barcode"] else None
         if "name" in data: db_data["name"] = data["name"].strip()
         if "category" in data: db_data["category"] = data["category"]
         if "startDate" in data: db_data["start_date"] = data["startDate"] if data["startDate"] else None
@@ -161,6 +165,7 @@ def update_product(product_id):
         updated = {
             "id": p.get("id"),
             "plu": p.get("plu"),
+            "barcode": p.get("barcode"),
             "name": p.get("name"),
             "category": p.get("category"),
             "startDate": p.get("start_date"),
@@ -232,3 +237,28 @@ def toggle_rebaixa():
     except Exception as e:
         logger.exception("Erro ao atualizar status de rebaixa")
         return jsonify({"error": "Erro ao atualizar rebaixa", "details": str(e)}), 500
+
+
+@products_bp.route("/catalog", methods=["GET"])
+def get_catalog():
+    """Retorna o catálogo base de produtos (sem datas de validade)."""
+    try:
+        logger.debug("Buscando catálogo no Supabase")
+        response = supabase.table("catalogo_produtos").select("*").execute()
+        
+        catalog = []
+        for p in response.data:
+            catalog.append({
+                "id": p.get("id"),
+                "plu": p.get("plu"),
+                "barcode": p.get("barcode"),
+                "name": p.get("name"),
+                "category": p.get("category"),
+                "createdAt": p.get("created_at")
+            })
+            
+        logger.info("Catálogo carregado | count={}", len(catalog))
+        return jsonify(catalog)
+    except Exception as e:
+        logger.exception("Erro ao buscar catálogo no Supabase")
+        return jsonify({"error": "Erro ao buscar catálogo", "details": str(e)}), 500

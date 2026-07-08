@@ -142,13 +142,13 @@ window.BrigadaProductList = {
               </div>
               <div class="form-group" style="margin-bottom:1rem;">
                 <label class="form-label">Categoria *</label>
-                <select id="plu-field-category" class="form-input" required>
-                  <option value="">Selecione...</option>
-                  <option value="aves">🐔 Aves</option>
-                  <option value="suino">🐷 Suíno</option>
-                  <option value="bovino">🐮 Bovino</option>
-                  <option value="pescado">🐟 Pescados</option>
-                </select>
+                  <select id="plu-field-category" class="form-input" required>
+                    <option value="">Selecione...</option>
+                    <option value="aves">🐔 Aves</option>
+                    <option value="suino">🐷 Suíno</option>
+                    <option value="bovino">🐮 Bovino</option>
+                    <option value="pescado">🐟 Pescados</option>
+                  </select>
               </div>
             </form>
           </div>

@@ -184,6 +184,30 @@ window.BrigadaDashboard = {
 
       ${adminSection}
 
+      <!-- Top Quebras Widget -->
+      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1.5rem;">
+        <div class="glass-panel" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem;">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras (Nesta Semana)</h3>
+          <div style="display:flex; align-items:center; gap: 1rem;">
+            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">🗑️</div>
+            <div>
+              <p style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);" id="top-quebra-week-name">Calculando...</p>
+              <p style="font-size:0.9rem; color:var(--error);" id="top-quebra-week-count">...</p>
+            </div>
+          </div>
+        </div>
+        <div class="glass-panel" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem;">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras (Neste Mês)</h3>
+          <div style="display:flex; align-items:center; gap: 1rem;">
+            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
+            <div>
+              <p style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);" id="top-quebra-month-name">Calculando...</p>
+              <p style="font-size:0.9rem; color:var(--error);" id="top-quebra-month-count">...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:2rem;">
         <!-- Gráfico de categorias -->
         <div class="glass-panel">
@@ -471,6 +495,40 @@ window.BrigadaDashboard = {
     set('stat-rebaixa-val', stats.awaitingReduction);
     set('stat-quebra-val', stats.quebra);
     set('stat-troca-val', stats.troca);
+
+    // Cálculo do Top Quebras
+    const quebraProducts = window.BrigadaData.products.filter(p => p.expiredAction === 'quebra');
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const calcTop = (items) => {
+      if (items.length === 0) return { name: 'Nenhuma quebra registrada', count: '-' };
+      const counts = {};
+      items.forEach(i => counts[i.plu] = (counts[i.plu] || 0) + (i.quantity ? parseFloat(i.quantity) : 1));
+      
+      let topPlu = null;
+      let maxCount = -1;
+      for (const plu in counts) {
+        if (counts[plu] > maxCount) {
+          maxCount = counts[plu];
+          topPlu = plu;
+        }
+      }
+      const topItem = items.find(i => i.plu === topPlu);
+      return { name: topItem.name, count: maxCount };
+    };
+
+    const weekItems = quebraProducts.filter(p => new Date(p.endDate) >= oneWeekAgo);
+    const monthItems = quebraProducts.filter(p => new Date(p.endDate) >= oneMonthAgo);
+
+    const topWeek = calcTop(weekItems);
+    const topMonth = calcTop(monthItems);
+
+    set('top-quebra-week-name', topWeek.name);
+    set('top-quebra-week-count', topWeek.count !== '-' ? `Quantidade: ${topWeek.count}` : '');
+    set('top-quebra-month-name', topMonth.name);
+    set('top-quebra-month-count', topMonth.count !== '-' ? `Quantidade: ${topMonth.count}` : '');
   },
 
   renderAlertsTimeline(container) {
@@ -665,16 +723,26 @@ window.BrigadaDashboard = {
           const newStatus = product.rebaixaStatus === 'ok' ? 'aguardando' : 'ok';
           window.BrigadaData.setAwaitingReduction([id], true, newStatus).then(() => {
             this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
           });
         }
         if (action === 'set-quebra') {
-          window.BrigadaData.setExpiredAction(id, 'quebra').then(() => this.renderDashProducts(container, this.currentFilter));
+          window.BrigadaData.setExpiredAction(id, 'quebra').then(() => {
+            this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
+          });
         }
         if (action === 'set-troca') {
-          window.BrigadaData.setExpiredAction(id, 'troca').then(() => this.renderDashProducts(container, this.currentFilter));
+          window.BrigadaData.setExpiredAction(id, 'troca').then(() => {
+            this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
+          });
         }
         if (action === 'clear-expired') {
-          window.BrigadaData.setExpiredAction(id, null).then(() => this.renderDashProducts(container, this.currentFilter));
+          window.BrigadaData.setExpiredAction(id, null).then(() => {
+            this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
+          });
         }
       });
     });

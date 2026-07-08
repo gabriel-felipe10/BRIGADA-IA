@@ -58,9 +58,12 @@ window.BrigadaProducts = {
         </div>
 
         <div class="toolbar">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-products" class="search-input" placeholder="Buscar por nome, PLU ou código de balança...">
+          <div class="search-box" style="display: flex; gap: 0.5rem; flex: 1;">
+            <div style="position: relative; flex: 1; display: flex; align-items: center;">
+              <span class="search-icon" style="position: absolute; left: 1rem;">🔍</span>
+              <input type="text" id="search-products" class="search-input" placeholder="Buscar por nome, PLU ou código..." style="width: 100%; padding-left: 2.5rem;">
+            </div>
+            <button id="btn-scan-products" class="btn btn--outline" style="padding: 0 1rem;" title="Escanear Código">📷</button>
           </div>
           <div class="toolbar-right">
             <select id="filter-status" class="select-control">
@@ -105,9 +108,18 @@ window.BrigadaProducts = {
                   </select>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Nome do Produto *</label>
-                <input type="text" id="field-name" class="form-input" placeholder="Nome do produto" required>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Nome do Produto *</label>
+                  <input type="text" id="field-name" class="form-input" placeholder="Nome do produto" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cód. Barras (Fábrica)</label>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="field-barcode" class="form-input" placeholder="Opcional">
+                    <button type="button" id="btn-scan-form" class="btn btn--outline" style="padding: 0 0.8rem;" title="Escanear">📷</button>
+                  </div>
+                </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -223,7 +235,8 @@ window.BrigadaProducts = {
       const q = this.currentSearch.toLowerCase();
       products = products.filter(p =>
         p.name.toLowerCase().includes(q) ||
-        p.plu.toLowerCase().includes(q)
+        p.plu.toLowerCase().includes(q) ||
+        (p.barcode && p.barcode.toLowerCase().includes(q))
       );
     }
 
@@ -385,6 +398,28 @@ window.BrigadaProducts = {
     const statusFilter = container.querySelector('#filter-status');
     statusFilter?.addEventListener('change', () => this.renderTable(container));
 
+    // Scanner
+    const scanBtn = container.querySelector('#btn-scan-products');
+    scanBtn?.addEventListener('click', () => {
+      window.BrigadaUI.openScanner((result) => {
+        if (result.isScaleCode) {
+          searchInput.value = result.plu;
+        } else {
+          searchInput.value = result.barcode;
+        }
+        this.currentSearch = searchInput.value;
+        this.renderTable(container);
+      });
+    });
+
+    const formScanBtn = container.querySelector('#btn-scan-form');
+    formScanBtn?.addEventListener('click', () => {
+      window.BrigadaUI.openScanner((result) => {
+        const barcodeInput = container.querySelector('#field-barcode');
+        if (barcodeInput) barcodeInput.value = result.barcode;
+      });
+    });
+
     // Add product button
     container.querySelector('#btn-add-product')?.addEventListener('click', () => {
       this.openAddModal(container);
@@ -428,6 +463,8 @@ window.BrigadaProducts = {
     container.querySelector('#modal-title').textContent = 'Novo Produto';
     container.querySelector('#product-form').reset();
     container.querySelector('#field-id').value = '';
+    container.querySelector('#field-plu').value = '';
+    container.querySelector('#field-barcode').value = '';
     container.querySelector('#field-startDate').value = '';
     container.querySelector('#field-quantity').value = '';
     container.querySelector('#field-column').value = '';
@@ -442,6 +479,7 @@ window.BrigadaProducts = {
     container.querySelector('#modal-title').textContent = 'Editar Produto';
     container.querySelector('#field-id').value = product.id;
     container.querySelector('#field-plu').value = product.plu;
+    container.querySelector('#field-barcode').value = product.barcode || '';
     container.querySelector('#field-name').value = product.name;
     container.querySelector('#field-category').value = product.category;
     container.querySelector('#field-startDate').value = product.startDate || '';
@@ -498,6 +536,7 @@ window.BrigadaProducts = {
       }
     }
     const plu = container.querySelector('#field-plu').value.trim();
+    const barcode = container.querySelector('#field-barcode').value.trim();
     const name = container.querySelector('#field-name').value.trim();
     const category = container.querySelector('#field-category').value;
     const startDate = container.querySelector('#field-startDate').value;
@@ -530,7 +569,7 @@ window.BrigadaProducts = {
       return;
     }
 
-    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber };
+    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber };
 
     try {
       if (this.editingId) {
