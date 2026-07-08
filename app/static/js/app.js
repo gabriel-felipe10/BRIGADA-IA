@@ -486,7 +486,6 @@ window.BrigadaRouter = {
               </button>
             </div>
           </div>
-          </div>
         </aside>
         ` : `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--surface); border-bottom: 1px solid var(--border);">
