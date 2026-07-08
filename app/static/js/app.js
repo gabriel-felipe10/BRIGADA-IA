@@ -126,7 +126,11 @@ window.BrigadaRouter = {
     await window.BrigadaData.load();
     
     if (window.BrigadaAuth.isLoggedIn()) {
-      this.navigate('dashboard');
+      if (window.BrigadaAuth.isKiosk()) {
+        this.navigate('catalog');
+      } else {
+        this.navigate('dashboard');
+      }
     } else {
       this.navigate('login');
     }
@@ -180,6 +184,46 @@ window.BrigadaRouter = {
               <span class="spinner" id="login-spinner" style="display:none;"></span>
               <span id="btn-login-text">Entrar no Sistema</span>
             </button>
+            <div style="text-align: center; margin-top: 1rem;">
+              <button type="button" class="btn btn--ghost" id="btn-toggle-pin" style="font-size: 0.85rem; padding: 0.5rem;">
+                Acesso Rápido ao Catálogo
+              </button>
+            </div>
+          </form>
+
+          <form id="login-pin-form" class="login-form" style="display:none;">
+            <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+              Modo Quiosque (Somente Leitura)
+            </p>
+            <div class="form-group" style="text-align: center;">
+              <label class="form-label">PIN de 4 dígitos</label>
+              <input type="password" id="login-pin" class="form-input" placeholder="••••" maxlength="4" style="text-align: center; font-size: 2rem; letter-spacing: 0.5rem; width: 150px; margin: 0 auto;" readonly>
+            </div>
+            
+            <div class="virtual-keypad">
+              <button type="button" class="keypad-btn" data-key="1">1</button>
+              <button type="button" class="keypad-btn" data-key="2">2<span class="keypad-sub">ABC</span></button>
+              <button type="button" class="keypad-btn" data-key="3">3<span class="keypad-sub">DEF</span></button>
+              <button type="button" class="keypad-btn" data-key="4">4<span class="keypad-sub">GHI</span></button>
+              <button type="button" class="keypad-btn" data-key="5">5<span class="keypad-sub">JKL</span></button>
+              <button type="button" class="keypad-btn" data-key="6">6<span class="keypad-sub">MNO</span></button>
+              <button type="button" class="keypad-btn" data-key="7">7<span class="keypad-sub">PQRS</span></button>
+              <button type="button" class="keypad-btn" data-key="8">8<span class="keypad-sub">TUV</span></button>
+              <button type="button" class="keypad-btn" data-key="9">9<span class="keypad-sub">WXYZ</span></button>
+              <button type="button" class="keypad-btn keypad-action" data-key="back">⌫</button>
+              <button type="button" class="keypad-btn" data-key="0">0</button>
+              <button type="button" class="keypad-btn keypad-action" data-key="ok">OK</button>
+            </div>
+
+            <div class="login-error" id="login-pin-error" style="display:none;"></div>
+            <button type="submit" class="btn btn--primary btn--full" id="btn-login-pin" style="display: none;">
+              <span id="btn-login-pin-text">Acessar Catálogo</span>
+            </button>
+            <div style="text-align: center; margin-top: 1rem;">
+              <button type="button" class="btn btn--ghost" id="btn-toggle-email" style="font-size: 0.85rem; padding: 0.5rem;">
+                Voltar para Login Admin
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -235,6 +279,18 @@ window.BrigadaRouter = {
       if (e.target.id === 'forgot-password-modal') closeForgotModal();
     });
 
+    // Toggle Forms
+    const formEmail = document.getElementById('login-form');
+    const formPin = document.getElementById('login-pin-form');
+    document.getElementById('btn-toggle-pin')?.addEventListener('click', () => {
+      formEmail.style.display = 'none';
+      formPin.style.display = 'block';
+    });
+    document.getElementById('btn-toggle-email')?.addEventListener('click', () => {
+      formPin.style.display = 'none';
+      formEmail.style.display = 'block';
+    });
+
     // Form submit
     document.getElementById('login-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -269,12 +325,56 @@ window.BrigadaRouter = {
         }
       }, 700);
     });
+
+    // PIN Form submit
+    document.getElementById('login-pin-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pin = document.getElementById('login-pin').value;
+      const errorEl = document.getElementById('login-pin-error');
+      
+      errorEl.style.display = 'none';
+
+      const result = window.BrigadaAuth.loginPin(pin);
+      if (result.success) {
+        window.BrigadaUI.showToast(`Acesso rápido autorizado!`, 'success');
+        this.navigate('catalog');
+      } else {
+        errorEl.style.display = 'block';
+        errorEl.textContent = result.message;
+      }
+    });
+
+    // Virtual Keypad logic
+    const pinInput = document.getElementById('login-pin');
+    const pinForm = document.getElementById('login-pin-form');
+    document.querySelectorAll('.keypad-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        if (!pinInput) return;
+
+        if (key === 'ok') {
+          if (pinInput.value.length > 0) {
+            pinForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+          }
+        } else if (key === 'back') {
+          pinInput.value = pinInput.value.slice(0, -1);
+        } else {
+          if (pinInput.value.length < 4) {
+            pinInput.value += key;
+          }
+        }
+        
+        // Trigger visual feedback or input events if necessary
+        pinInput.dispatchEvent(new Event('input'));
+      });
+    });
   },
 
   // ── App Shell (sidebar layout) ────────────────────────────────────────────
   renderShell(root, activePage) {
     const user = window.BrigadaAuth.currentUser;
     const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
+    const isKiosk = window.BrigadaAuth.isKiosk();
     const avatarColor = this.avatarColor(user.name);
     const hasImageAvatar = user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http'));
     const avatarHTML = hasImageAvatar ? `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : user.avatar;
@@ -285,10 +385,11 @@ window.BrigadaRouter = {
     const toggleTitle = isCollapsed ? 'Expandir menu' : 'Recolher menu';
 
     root.innerHTML = `
-      <div class="app-shell ${collapsedClass}">
+      <div class="app-shell ${collapsedClass} ${isKiosk ? 'is-kiosk' : ''}">
         <!-- Sidebar Overlay -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <!-- Sidebar -->
+        ${!isKiosk ? `
         <aside class="sidebar" id="sidebar">
           <button class="sidebar__toggle" id="sidebar-toggle" title="${toggleTitle}">
             <span class="sidebar__toggle-icon" id="sidebar-toggle-icon">${toggleIcon}</span>
@@ -385,10 +486,20 @@ window.BrigadaRouter = {
               </button>
             </div>
           </div>
+          </div>
         </aside>
+        ` : `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--surface); border-bottom: 1px solid var(--border);">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <img src="/static/icon.svg" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+            <h1 style="margin: 0; font-size: 1.25rem;">Catálogo Rápido</h1>
+          </div>
+          <button class="btn btn--outline" id="btn-logout-kiosk" style="padding: 0.5rem 1rem;">Sair</button>
+        </div>
+        `}
 
         <!-- Mobile menu toggle -->
-        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        ${!isKiosk ? `<button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>` : ''}
 
         <!-- Main content -->
         <main class="main-content" id="main-content">
@@ -440,30 +551,62 @@ window.BrigadaRouter = {
       </div>
     `;
 
-    // Helper to close sidebar on mobile
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const closeSidebar = () => {
-      sidebar?.classList.remove('sidebar--open');
-      overlay?.classList.remove('sidebar-overlay--visible');
-    };
+    // Navigation events
+    if (!isKiosk) {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const closeSidebar = () => {
+        sidebar?.classList.remove('sidebar--open');
+        overlay?.classList.remove('sidebar-overlay--visible');
+      };
 
-    // Nav links
-    root.querySelectorAll('.sidebar__link[data-page]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        closeSidebar();
-        this.navigate(link.dataset.page);
+      root.querySelectorAll('.sidebar__link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = e.currentTarget.dataset.page;
+          if (page !== activePage) {
+            this.navigate(page);
+          }
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
       });
-    });
+
+      // Toggle Sidebar events
+      document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+        const appSidebar = document.getElementById('app-sidebar');
+        const icon = document.getElementById('sidebar-toggle-icon');
+        appSidebar.classList.toggle('sidebar-collapsed');
+        const collapsed = appSidebar.classList.contains('sidebar-collapsed');
+        icon.textContent = collapsed ? '☰' : '☰';
+        localStorage.setItem('sidebar-collapsed', collapsed);
+        document.getElementById('sidebar-toggle').title = collapsed ? 'Expandir menu' : 'Recolher menu';
+      });
+
+      // Mobile Menu
+      document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+        sidebar?.classList.add('sidebar--open');
+        overlay?.classList.add('sidebar-overlay--visible');
+      });
+      overlay?.addEventListener('click', () => {
+        closeSidebar();
+      });
+    }
 
     // Logout
-    document.getElementById('btn-logout')?.addEventListener('click', () => {
-      closeSidebar();
+    const logoutHandler = () => {
+      if (!isKiosk) {
+        document.getElementById('sidebar')?.classList.remove('sidebar--open');
+        document.getElementById('sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+      }
       window.BrigadaAuth.logout();
-      window.BrigadaUI.showToast('Até logo! 👋', 'success');
+      window.BrigadaUI.showToast(isKiosk ? 'Sessão encerrada.' : 'Até logo! 👋', 'success');
       this.navigate('login');
-    });
+    };
+    
+    document.getElementById('btn-logout')?.addEventListener('click', logoutHandler);
+    document.getElementById('btn-logout-kiosk')?.addEventListener('click', logoutHandler);
 
     // Theme Toggle
     document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
@@ -475,12 +618,7 @@ window.BrigadaRouter = {
       }
     });
 
-    // Mobile menu
-    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-      sidebar?.classList.toggle('sidebar--open');
-      overlay?.classList.toggle('sidebar-overlay--visible');
-    });
-
+    // Mobile menu toggle is handled inside the !isKiosk block
     // Sidebar toggle (desktop collapse/expand)
     const toggleBtn = document.getElementById('sidebar-toggle');
     const appShell = root.querySelector('.app-shell');
@@ -496,8 +634,6 @@ window.BrigadaRouter = {
       }
     });
 
-    // Close on overlay click
-    overlay?.addEventListener('click', closeSidebar);
 
     // Eventos do Modal de Perfil
     const profileModal = document.getElementById('profile-modal');

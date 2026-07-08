@@ -235,6 +235,13 @@ body::before {
   transition: margin-left var(--t-slow);
 }
 
+.app-shell.is-kiosk {
+  flex-direction: column;
+}
+.app-shell.is-kiosk .main-content {
+  margin-left: 0;
+}
+
 .page-container {
   flex:1; padding: var(--sp-xl) var(--sp-2xl);
   max-width: 100%;
@@ -3205,3 +3212,52 @@ input[type="checkbox"]:focus-visible {
 
 }
 
+/* Virtual Keypad for Kiosk Login */
+.virtual-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  max-width: 280px;
+  margin: 1.5rem auto;
+}
+.keypad-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  width: 75px;
+  height: 75px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  margin: 0 auto;
+}
+.keypad-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.keypad-btn:active {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(0.92);
+}
+.keypad-sub {
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: -2px;
+}
+.keypad-action {
+  font-size: 1.2rem;
+  background: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+}
+.keypad-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+}

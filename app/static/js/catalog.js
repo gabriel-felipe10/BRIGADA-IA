@@ -17,6 +17,12 @@ window.BrigadaCatalog = {
         </span>
       </div>
 
+      ${window.BrigadaAuth.isKiosk() ? `
+        <div style="background: var(--primary-dark); color: white; padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+          🔒 <strong>Modo Quiosque:</strong> Acesso restrito apenas para consulta e leitura de produtos.
+        </div>
+      ` : ''}
+
       <div class="glass-panel">
         <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap;">
           <div style="display: flex; gap: 0.5rem; align-items: center; max-width: 450px; flex: 1;">
@@ -30,14 +36,14 @@ window.BrigadaCatalog = {
             <option value="suino">🐷 Suíno</option>
             <option value="pescado">🐟 Pescado</option>
           </select>
-          <button id="btn-print-selected" class="btn btn--primary" style="margin-left: auto;">🖨️ Imprimir Selecionados</button>
+          ${!window.BrigadaAuth.isKiosk() ? `<button id="btn-print-selected" class="btn btn--primary" style="margin-left: auto;">🖨️ Imprimir Selecionados</button>` : ''}
         </div>
 
         <div class="table-scroll">
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width: 50px; text-align: center;"><input type="checkbox" id="catalog-select-all"></th>
+                ${!window.BrigadaAuth.isKiosk() ? `<th style="width: 50px; text-align: center;"><input type="checkbox" id="catalog-select-all"></th>` : ''}
                 <th>PLU</th>
                 <th>Nome do Produto</th>
                 <th>Categoria</th>
@@ -172,16 +178,18 @@ window.BrigadaCatalog = {
     });
   },
 
-  renderTable(items) {
+  renderTable(data) {
     const tbody = document.getElementById('catalog-table-body');
+    const isKiosk = window.BrigadaAuth.isKiosk();
+    
     if (!tbody) return;
 
-    if (items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 2rem;">Nenhum produto encontrado no catálogo.</td></tr>`;
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${isKiosk ? '3' : '4'}" style="text-align: center; padding: 2rem;">Nenhum produto encontrado.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = items.map(p => {
+    tbody.innerHTML = data.map(p => {
       let icon = '';
       const normalizeCat = (c) => {
         if (!c) return '';
@@ -205,8 +213,11 @@ window.BrigadaCatalog = {
 
       return `
         <tr>
-          <td style="text-align: center;"><input type="checkbox" class="catalog-row-checkbox" value="${p.plu}"></td>
-          <td data-label="PLU"><span class="plu-badge">${p.plu || '—'}</span></td>
+          ${!isKiosk ? `<td style="text-align: center;"><input type="checkbox" class="catalog-row-checkbox" value="${p.plu}"></td>` : ''}
+          <td data-label="PLU">
+            <span class="plu-badge">${p.plu || '—'}</span>
+            ${p.barcode ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Cód: ${p.barcode}</div>` : ''}
+          </td>
           <td data-label="Produto" class="product-name">${p.name || '—'}</td>
           <td data-label="Categoria">
             <span class="cat-pill cat-pill--${p.category || 'default'}">${icon}</span>

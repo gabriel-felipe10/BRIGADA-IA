@@ -42,6 +42,15 @@ window.BrigadaAuth = {
     sessionStorage.removeItem('brigada_user');
   },
 
+  loginPin(pin) {
+    if (pin === '1010') {
+      this.currentUser = { id: 'kiosk', name: 'Catálogo (Leitura)', role: 'kiosk', email: 'kiosk@brigada.com', sector: 'todos' };
+      sessionStorage.setItem('brigada_user', JSON.stringify(this.currentUser));
+      return { success: true, user: this.currentUser };
+    }
+    return { success: false, message: 'PIN incorreto.' };
+  },
+
   isLoggedIn() {
     return !!this.currentUser;
   },
@@ -50,12 +59,17 @@ window.BrigadaAuth = {
     return this.currentUser?.role === 'superadmin';
   },
 
+  isKiosk() {
+    return this.currentUser?.role === 'kiosk';
+  },
+
   isGestao() {
     return this.currentUser?.role === 'gestao';
   },
 
   hasSectorAccess(sector) {
     if (!this.currentUser) return false;
+    if (this.isKiosk()) return true; // Kiosk can view catalog of any sector
     const email = this.currentUser.email.toLowerCase();
     if (email === 'admin@brigada.com' || email === 'marcos@brigada.com' || this.isSuperAdmin()) {
       return true;
