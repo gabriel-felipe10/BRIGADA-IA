@@ -186,8 +186,8 @@ window.BrigadaDashboard = {
 
       <!-- Top Quebras Widget -->
       <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1.5rem;">
-        <div class="glass-panel" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem;">
-          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras (Nesta Semana)</h3>
+        <div class="glass-panel" id="card-top-quebra-week" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver o Top 10">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Semana)</h3>
           <div style="display:flex; align-items:center; gap: 1rem;">
             <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">🗑️</div>
             <div>
@@ -196,8 +196,8 @@ window.BrigadaDashboard = {
             </div>
           </div>
         </div>
-        <div class="glass-panel" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem;">
-          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras (Neste Mês)</h3>
+        <div class="glass-panel" id="card-top-quebra-month" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver o Top 10">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Mês)</h3>
           <div style="display:flex; align-items:center; gap: 1rem;">
             <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
             <div>
@@ -360,6 +360,23 @@ window.BrigadaDashboard = {
         </div>
       </div>
 
+      <!-- Modal Top 10 -->
+      <div class="modal-overlay" id="top10-modal" style="display:none; z-index: 2000;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 class="modal-title" id="top10-modal-title">🏆 Top 10</h3>
+            <button class="modal-close" id="top10-modal-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <div id="top10-list" class="table-scroll"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn--ghost" id="btn-cancel-top10">Fechar</button>
+            <button class="btn btn--primary" id="btn-print-top10">🖨️ Imprimir</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal de confirmação de exclusão -->
       <div class="modal-overlay" id="delete-modal" style="display:none;">
         <div class="modal modal--sm">
@@ -458,6 +475,26 @@ window.BrigadaDashboard = {
 
     // Modal close
     container.querySelector('#modal-close')?.addEventListener('click', () => this.closeModal(container));
+    
+    // Top 10 Modal
+    container.querySelector('#top10-modal-close')?.addEventListener('click', () => this.closeTop10Modal(container));
+    container.querySelector('#btn-cancel-top10')?.addEventListener('click', () => this.closeTop10Modal(container));
+    container.querySelector('#top10-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'top10-modal') this.closeTop10Modal(container);
+    });
+    
+    // Top Quebra widgets
+    container.querySelector('#card-top-quebra-week')?.addEventListener('click', () => {
+      if (this.top10WeekData) this.openTop10Modal(container, this.top10WeekData, '🏆 Top 10 Quebras e Trocas (Nesta Semana)');
+    });
+    container.querySelector('#card-top-quebra-month')?.addEventListener('click', () => {
+      if (this.top10MonthData) this.openTop10Modal(container, this.top10MonthData, '🏆 Top 10 Quebras e Trocas (Neste Mês)');
+    });
+    
+    // Print button
+    container.querySelector('#btn-print-top10')?.addEventListener('click', () => {
+      this.printTop10(container.querySelector('#top10-modal-title').textContent, this.currentTop10Data);
+    });
     container.querySelector('#btn-cancel-modal')?.addEventListener('click', () => this.closeModal(container));
 
     // Save product
@@ -497,33 +534,39 @@ window.BrigadaDashboard = {
     set('stat-troca-val', stats.troca);
 
     // Cálculo do Top Quebras
-    const quebraProducts = window.BrigadaData.products.filter(p => p.expiredAction === 'quebra');
+    const quebraProducts = window.BrigadaData.products.filter(p => p.expiredAction === 'quebra' || p.expiredAction === 'troca');
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const calcTop = (items) => {
-      if (items.length === 0) return { name: 'Nenhuma quebra registrada', count: '-' };
+    const calcTop10 = (items) => {
+      if (items.length === 0) return [];
       const counts = {};
-      items.forEach(i => counts[i.plu] = (counts[i.plu] || 0) + (i.quantity ? parseFloat(i.quantity) : 1));
+      const productMap = {};
+      items.forEach(i => {
+        counts[i.plu] = (counts[i.plu] || 0) + (i.quantity ? parseFloat(i.quantity) : 1);
+        if (!productMap[i.plu]) productMap[i.plu] = i;
+      });
       
-      let topPlu = null;
-      let maxCount = -1;
-      for (const plu in counts) {
-        if (counts[plu] > maxCount) {
-          maxCount = counts[plu];
-          topPlu = plu;
-        }
-      }
-      const topItem = items.find(i => i.plu === topPlu);
-      return { name: topItem.name, count: maxCount };
+      const sorted = Object.keys(counts).map(plu => ({
+        plu,
+        name: productMap[plu].name,
+        category: productMap[plu].category,
+        action: productMap[plu].expiredAction,
+        count: counts[plu]
+      })).sort((a, b) => b.count - a.count).slice(0, 10);
+      
+      return sorted;
     };
 
     const weekItems = quebraProducts.filter(p => new Date(p.endDate) >= oneWeekAgo);
     const monthItems = quebraProducts.filter(p => new Date(p.endDate) >= oneMonthAgo);
 
-    const topWeek = calcTop(weekItems);
-    const topMonth = calcTop(monthItems);
+    this.top10WeekData = calcTop10(weekItems);
+    this.top10MonthData = calcTop10(monthItems);
+
+    const topWeek = this.top10WeekData.length > 0 ? this.top10WeekData[0] : { name: 'Nenhum registro', count: '-' };
+    const topMonth = this.top10MonthData.length > 0 ? this.top10MonthData[0] : { name: 'Nenhum registro', count: '-' };
 
     set('top-quebra-week-name', topWeek.name);
     set('top-quebra-week-count', topWeek.count !== '-' ? `Quantidade: ${topWeek.count}` : '');
@@ -868,5 +911,116 @@ window.BrigadaDashboard = {
     this.renderAlertsTimeline(container);
     this.renderCategoryChart(container);
     this.renderDashProducts(container, this.currentFilter);
+  },
+
+  openTop10Modal(container, dataList, title) {
+    this.currentTop10Data = dataList;
+    container.querySelector('#top10-modal-title').textContent = title;
+    const listContainer = container.querySelector('#top10-list');
+    
+    if (!dataList || dataList.length === 0) {
+      listContainer.innerHTML = '<div class="empty-state" style="padding:2rem;"><p>Nenhum dado encontrado.</p></div>';
+    } else {
+      listContainer.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>PLU</th>
+              <th>Produto</th>
+              <th>Ação</th>
+              <th>Qtd. Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dataList.map((item, index) => `
+              <tr>
+                <td style="font-weight:bold; color:var(--primary);">${index + 1}º</td>
+                <td><span class="plu-badge">${item.plu}</span></td>
+                <td>${item.name}</td>
+                <td><span class="badge ${item.action === 'quebra' ? 'badge--expired' : 'badge--info'}">${item.action === 'quebra' ? '🗑️ Quebra' : '🔄 Troca'}</span></td>
+                <td style="font-weight:bold; font-size:1.1rem;">${item.count}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+    
+    const modal = container.querySelector('#top10-modal');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+  },
+
+  closeTop10Modal(container) {
+    const modal = container.querySelector('#top10-modal');
+    if (modal) {
+      modal.classList.remove('modal-overlay--visible');
+      setTimeout(() => modal.style.display = 'none', 250);
+    }
+  },
+
+  printTop10(title, dataList) {
+    if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para imprimir.', 'error');
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return window.BrigadaUI.showToast('Bloqueador de pop-ups ativo. Permita pop-ups para imprimir.', 'error');
+    
+    const dateStr = new Date().toLocaleString('pt-BR');
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Imprimir - ${title}</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; color: #111; padding: 20px; }
+            h1 { font-size: 1.5rem; margin-bottom: 5px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+            p { color: #555; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background-color: #f4f4f5; font-weight: 600; color: #333; }
+            td { font-size: 0.95rem; }
+            .pos { font-weight: bold; }
+            @media print {
+              body { margin: 0; padding: 0; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${title}</h1>
+          <p>Gerado em: ${dateStr}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>PLU</th>
+                <th>Produto</th>
+                <th>Ação</th>
+                <th>Qtd. Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dataList.map((item, index) => `
+                <tr>
+                  <td class="pos">${index + 1}º</td>
+                  <td>${item.plu}</td>
+                  <td>${item.name}</td>
+                  <td>${item.action === 'quebra' ? 'Quebra' : 'Troca'}</td>
+                  <td><strong>${item.count}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   },
 };
