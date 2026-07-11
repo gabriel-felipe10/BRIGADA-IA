@@ -275,22 +275,28 @@ def whatsapp_instance_status():
                     conn_req = urllib.request.Request(connect_url, headers=evo_headers)
                     with urllib.request.urlopen(conn_req, timeout=10) as conn_response:
                         conn_data = json.loads(conn_response.read().decode('utf-8'))
-                        qr_base64 = conn_data.get("qrcode", {}).get("base64")
+                        
+                        # Suportar múltiplos formatos da Evolution API
+                        qr_base64 = (
+                            conn_data.get("qrcode", {}).get("base64")
+                            or conn_data.get("base64")
+                            or conn_data.get("qrcode", {}).get("base64Image")
+                        )
                         
                         if qr_base64:
-                            return jsonify({
-                                "success": True,
-                                "status": "QR_READY",
-                                "qrImage": qr_base64,
-                                "details": conn_data
-                            })
+                            if not qr_base64.startswith("data:"):
+                                qr_base64 = f"data:image/png;base64,{qr_base64}"
+                            return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_base64, "details": conn_data})
+                        
+                        # Formato com "code" (texto bruto do QR)
+                        qr_code_text = conn_data.get("code")
+                        if qr_code_text:
+                            import urllib.parse
+                            qr_url = f"https://quickchart.io/qr?text={urllib.parse.quote(qr_code_text)}&size=200"
+                            return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_url, "qrIsUrl": True, "details": conn_data})
                         
                         if conn_data.get("status") == "connecting" or state == "connecting":
-                            return jsonify({
-                                "success": True,
-                                "status": "CONNECTING",
-                                "details": conn_data
-                            })
+                            return jsonify({"success": True, "status": "CONNECTING", "details": conn_data})
                             
                     return jsonify({
                         "success": True,
@@ -397,10 +403,33 @@ def whatsapp_connect():
                 )
                 with urllib.request.urlopen(conn_req, timeout=10) as conn_resp:
                     conn_data = json.loads(conn_resp.read().decode("utf-8"))
-                    logger.info("Resposta /instance/connect/{}: {}", instance_id, str(conn_data)[:200])
-                    qr_base64 = conn_data.get("qrcode", {}).get("base64")
+                    logger.info("Resposta /instance/connect/{}: {}", instance_id, str(conn_data)[:300])
+                    
+                    # Evolution API pode retornar QR em diferentes formatos:
+                    # Formato 1: { "qrcode": { "base64": "..." } }
+                    # Formato 2: { "code": "2@...", "base64": "data:image/png;base64,..." }
+                    # Formato 3: { "base64": "..." }
+                    qr_base64 = (
+                        conn_data.get("qrcode", {}).get("base64")
+                        or conn_data.get("base64")
+                        or conn_data.get("qrcode", {}).get("base64Image")
+                    )
+                    
                     if qr_base64:
+                        # Garantir prefixo data URI
+                        if not qr_base64.startswith("data:"):
+                            qr_base64 = f"data:image/png;base64,{qr_base64}"
                         return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_base64, "details": conn_data})
+                    
+                    # Formato 4: "code" contém o texto do QR bruto — gerar imagem via URL do QR
+                    qr_code_text = conn_data.get("code")
+                    if qr_code_text:
+                        # Usar API pública para gerar QR como imagem
+                        import urllib.parse
+                        qr_url = f"https://quickchart.io/qr?text={urllib.parse.quote(qr_code_text)}&size=200"
+                        logger.info("QR Code text recebido, usando QuickChart para gerar imagem")
+                        return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_url, "qrIsUrl": True, "details": conn_data})
+                    
                     return jsonify({"success": True, "status": "CONNECTING", "details": conn_data})
             except urllib.error.HTTPError as http_err:
                 body = http_err.read().decode("utf-8", errors="ignore")
