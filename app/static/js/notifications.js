@@ -78,6 +78,9 @@
                         </button>
                       </div>
                     </div>
+                    <!-- Campos ocultos para Basic Auth (não exibidos, mas preservados no save) -->
+                    <input type="hidden" id="field-whatsapp-api-user" value="">
+                    <input type="hidden" id="field-whatsapp-api-password" value="">
                   </div>
                 </div>
 
@@ -262,7 +265,13 @@
         fieldApiUrl.value = this.config.apiUrl || '';
         fieldInstanceId.value = this.config.instanceId || '';
         fieldApiToken.value = this.config.apiToken || '';
-        
+
+        // Preservar credenciais ocultas (user/password para Basic Auth)
+        const hiddenUser = container.querySelector('#field-whatsapp-api-user');
+        const hiddenPass = container.querySelector('#field-whatsapp-api-password');
+        if (hiddenUser) hiddenUser.value = this.config.apiUser || '';
+        if (hiddenPass) hiddenPass.value = this.config.apiPassword || '';
+
         fieldEnabledFallback.checked = true;
         fieldApiUrlFallback.value = this.config.apiUrlFallback || '';
         fieldInstanceIdFallback.value = this.config.instanceIdFallback || '';
@@ -556,17 +565,23 @@
   },
 
   gatherFormData(container) {
+    // Recupera campos ocultos preservados ao carregar o config
+    const apiUser = container.querySelector('#field-whatsapp-api-user')?.value?.trim() || '';
+    const apiPassword = container.querySelector('#field-whatsapp-api-password')?.value?.trim() || '';
+
     return {
       enabled: true,
       apiUrl: container.querySelector('#field-whatsapp-api-url').value.trim(),
       instanceId: container.querySelector('#field-whatsapp-instance-id').value.trim(),
       apiToken: container.querySelector('#field-whatsapp-api-token').value.trim(),
-      
+      apiUser,
+      apiPassword,
+
       enabledFallback: true,
       apiUrlFallback: container.querySelector('#field-whatsapp-api-url-fallback').value.trim(),
       instanceIdFallback: container.querySelector('#field-whatsapp-instance-id-fallback').value.trim(),
       apiTokenFallback: container.querySelector('#field-whatsapp-api-token-fallback').value.trim(),
-      
+
       alertDaysBefore: parseInt(container.querySelector('#field-alert-days').value) || 3,
       alertTime: container.querySelector('#field-alert-time').value,
       alertPhone: container.querySelector('#field-alert-phone').value.trim(),
