@@ -83,9 +83,24 @@ def get_settings(key):
 
 @settings_bp.route("/<key>", methods=["POST"])
 def save_settings(key):
-    """Salva ou atualiza as configurações no Supabase."""
+    """Salva ou atualiza as configurações no Supabase, preservando campos sensíveis existentes."""
     try:
         data = request.get_json(force=True)
+
+        # Para configurações do whatsapp, preservar credenciais sensíveis se chegarem vazias
+        if key == "whatsapp":
+            try:
+                existing_res = supabase.table("settings").select("value").eq("key", key).execute()
+                if existing_res.data:
+                    existing_val = existing_res.data[0]["value"]
+                    existing = json.loads(existing_val) if isinstance(existing_val, str) else existing_val
+                    # Preservar credenciais que não devem ser sobrescritas com vazio
+                    for sensitive_field in ("apiUser", "apiPassword", "apiUserFallback", "apiPasswordFallback"):
+                        if not data.get(sensitive_field) and existing.get(sensitive_field):
+                            data[sensitive_field] = existing[sensitive_field]
+            except Exception as merge_err:
+                logger.warning("Não foi possível mesclar credenciais existentes: {}", merge_err)
+
         supabase.table("settings").upsert({"key": key, "value": data}).execute()
         logger.info("Configurações atualizadas no Supabase para a chave: {}", key)
         return jsonify({"success": True, "message": "Configurações salvas com sucesso!"})
