@@ -266,6 +266,10 @@ def whatsapp_instance_status():
                         "status": "DISCONNECTED",
                         "details": status_data
                     })
+            except urllib.error.HTTPError as http_err:
+                body = http_err.read().decode('utf-8', errors='ignore')
+                logger.warning("Erro ao consultar status da principal (Evolution API): HTTP {} {} - {}", http_err.code, http_err.reason, body[:300])
+                return jsonify({"success": False, "status": "DISCONNECTED", "error": f"HTTP {http_err.code}: {http_err.reason}", "detail": body[:200]})
             except Exception as e:
                 logger.warning("Erro ao consultar status da principal (Evolution API): {}", e)
                 return jsonify({"success": False, "status": "DISCONNECTED", "error": str(e)})
@@ -355,6 +359,15 @@ def whatsapp_connect():
                 with urllib.request.urlopen(req, timeout=6) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
                     logger.info("Instância principal (Evolution API) {} criada/iniciada: {}", instance_id, res_data)
+            except urllib.error.HTTPError as http_err:
+                body = http_err.read().decode('utf-8', errors='ignore')
+                logger.warning("Tentativa de criar instância retornou HTTP {}: {} - {}", http_err.code, http_err.reason, body[:300])
+                # 409 = instância já existe, 403 = token incorreto ou instância existe com outro token
+                if http_err.code not in (409, 403):
+                    # Outro erro crítico — retornar mensagem de erro
+                    return jsonify({"error": f"HTTP {http_err.code}: {http_err.reason} — {body[:200]}", "success": False})
+                # Se 403 ou 409: instância possivelmente já existe, tenta conectar direto
+                logger.info("Tentando conectar instância existente...")
             except Exception as e:
                 logger.info("Tentativa de criar instância principal (Evolution) retornou: {}", e)
                 
