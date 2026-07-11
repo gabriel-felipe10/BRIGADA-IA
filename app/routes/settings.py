@@ -439,30 +439,32 @@ def whatsapp_disconnect():
             api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
             instance_id = config.get("instanceIdFallback", "").strip()
             api_token = config.get("apiTokenFallback", "").strip()
+            api_user = config.get("apiUserFallback", "").strip()
+            api_password = config.get("apiPasswordFallback", "").strip()
         else:
             api_url = config.get("apiUrl", "").strip().rstrip("/")
             instance_id = config.get("instanceId", "").strip()
             api_token = config.get("apiToken", "").strip()
-        
+            api_user = config.get("apiUser", "").strip()
+            api_password = config.get("apiPassword", "").strip()
+
         if not api_url or not instance_id:
             return jsonify({"error": "Configurações incompletas"}), 400
             
         # Se for instância principal (Evolution API)
         if instance_type == "primary":
+            evo_headers = _evolution_headers(api_token, api_user, api_password)
             logout_url = f"{api_url}/instance/logout/{instance_id}"
             try:
-                req = urllib.request.Request(
-                    logout_url,
-                    headers={
-                        "apikey": api_token,
-                        "Authorization": f"Bearer {api_token}"
-                    },
-                    method="DELETE"
-                )
-                with urllib.request.urlopen(req, timeout=6) as response:
-                    res_data = json.loads(response.read().decode('utf-8'))
+                req = urllib.request.Request(logout_url, headers=evo_headers, method="DELETE")
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res_data = json.loads(response.read().decode("utf-8"))
                     logger.info("Instância principal (Evolution API) {} desconectada: {}", instance_id, res_data)
                 return jsonify({"success": True, "message": "Instância principal desconectada com sucesso."})
+            except urllib.error.HTTPError as http_err:
+                body = http_err.read().decode("utf-8", errors="ignore")
+                logger.warning("Erro ao desconectar instância principal (Evolution): HTTP {} - {}", http_err.code, body[:300])
+                return jsonify({"error": f"HTTP {http_err.code}: {http_err.reason} — {body[:200]}"}), 500
             except Exception as e:
                 logger.exception("Erro ao desconectar instância principal (Evolution API)")
                 return jsonify({"error": str(e)}), 500
