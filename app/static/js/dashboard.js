@@ -1,12 +1,14 @@
 /**
  * BRIGADA-IA — Dashboard Brigada de Validade
  */
-
 window.BrigadaDashboard = {
   currentFilter: 'all',
   currentStatusFilter: 'all',
   editingId: null,
   deletingId: null,
+  currentYear: 'all',
+  currentMonth: 'all',
+  currentDay: 'all',
 
   getAllowedProducts() {
     let products = window.BrigadaData.products;
@@ -25,14 +27,52 @@ window.BrigadaDashboard = {
     return products;
   },
 
+  getFilteredProducts() {
+    let list = this.getAllowedProducts();
+
+    if (this.currentYear !== 'all') {
+      list = list.filter(p => {
+        if (!p.endDate) return false;
+        const [y] = p.endDate.split('-');
+        return y === this.currentYear;
+      });
+    }
+
+    if (this.currentMonth !== 'all') {
+      list = list.filter(p => {
+        if (!p.endDate) return false;
+        const [, m] = p.endDate.split('-');
+        return m === this.currentMonth;
+      });
+    }
+
+    if (this.currentDay !== 'all') {
+      list = list.filter(p => {
+        if (!p.endDate) return false;
+        const [, , d] = p.endDate.split('-');
+        return d === this.currentDay;
+      });
+    }
+
+    return list;
+  },
+
   render(container, role) {
     this.currentFilter = 'all';
     this.currentStatusFilter = 'all';
+    this.currentYear = 'all';
+    this.currentMonth = 'all';
+    this.currentDay = 'all';
     const isSuperAdmin = role === 'superadmin';
     container.innerHTML = this.buildHTML(isSuperAdmin);
     this.bindEvents(container);
+    this.refreshData(container);
+  },
+
+  refreshData(container) {
     this.renderStats(container);
     this.renderAlertsTimeline(container);
+    this.renderDashProducts(container, this.currentFilter || 'all');
   },
 
   buildHTML(isSuperAdmin) {
@@ -176,6 +216,43 @@ window.BrigadaDashboard = {
       </div>
     `;
 
+    // Opções de Dia
+    let dayOptions = '<option value="all">Dia (Todos)</option>';
+    for (let i = 1; i <= 31; i++) {
+      const d = String(i).padStart(2, '0');
+      const selected = this.currentDay === d ? 'selected' : '';
+      dayOptions += `<option value="${d}" ${selected}>${d}</option>`;
+    }
+
+    // Opções de Mês
+    const months = [
+      { val: '01', name: 'Janeiro' },
+      { val: '02', name: 'Fevereiro' },
+      { val: '03', name: 'Março' },
+      { val: '04', name: 'Abril' },
+      { val: '05', name: 'Maio' },
+      { val: '06', name: 'Junho' },
+      { val: '07', name: 'Julho' },
+      { val: '08', name: 'Agosto' },
+      { val: '09', name: 'Setembro' },
+      { val: '10', name: 'Outubro' },
+      { val: '11', name: 'Novembro' },
+      { val: '12', name: 'Dezembro' }
+    ];
+    let monthOptions = '<option value="all">Mês (Todos)</option>';
+    months.forEach(m => {
+      const selected = this.currentMonth === m.val ? 'selected' : '';
+      monthOptions += `<option value="${m.val}" ${selected}>${m.name}</option>`;
+    });
+
+    // Opções de Ano
+    const years = ['2025', '2026', '2027', '2028'];
+    let yearOptions = '<option value="all">Ano (Todos)</option>';
+    years.forEach(y => {
+      const selected = this.currentYear === y ? 'selected' : '';
+      yearOptions += `<option value="${y}" ${selected}>${y}</option>`;
+    });
+
     return `
       <div class="panel-header">
         <div class="panel-header__left">
@@ -185,6 +262,28 @@ window.BrigadaDashboard = {
         <div class="date-badge">
           <span>📅</span>
           <span id="current-date-badge"></span>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros por Data de Vencimento -->
+      <div class="toolbar" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border);">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">🔍</span>
+          <span style="font-weight: 500; font-size: 0.95rem; color: var(--text-secondary);">Filtrar Validade:</span>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <select id="dash-filter-day" class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 90px; height: 38px;">
+            ${dayOptions}
+          </select>
+          <select id="dash-filter-month" class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 130px; height: 38px;">
+            ${monthOptions}
+          </select>
+          <select id="dash-filter-year" class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 110px; height: 38px;">
+            ${yearOptions}
+          </select>
+          <button id="btn-clear-dash-filters" class="btn btn--ghost" style="padding: 0 1rem; height: 38px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; border-radius: var(--r-full);">
+            <span>🧹</span> Limpar
+          </button>
         </div>
       </div>
 
@@ -407,12 +506,42 @@ window.BrigadaDashboard = {
       });
     }
 
+    // Set up filter change listeners
+    const selectDay = container.querySelector('#dash-filter-day');
+    const selectMonth = container.querySelector('#dash-filter-month');
+    const selectYear = container.querySelector('#dash-filter-year');
+    const btnClear = container.querySelector('#btn-clear-dash-filters');
+
+    const handleFilterChange = () => {
+      this.currentDay = selectDay ? selectDay.value : 'all';
+      this.currentMonth = selectMonth ? selectMonth.value : 'all';
+      this.currentYear = selectYear ? selectYear.value : 'all';
+      this.refreshData(container);
+    };
+
+    if (selectDay) selectDay.addEventListener('change', handleFilterChange);
+    if (selectMonth) selectMonth.addEventListener('change', handleFilterChange);
+    if (selectYear) selectYear.addEventListener('change', handleFilterChange);
+
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        this.currentDay = 'all';
+        this.currentMonth = 'all';
+        this.currentYear = 'all';
+        if (selectDay) selectDay.value = 'all';
+        if (selectMonth) selectMonth.value = 'all';
+        if (selectYear) selectYear.value = 'all';
+        this.refreshData(container);
+      });
+    }
+
     // Category tabs
     container.querySelectorAll('#dash-cat-tabs .cat-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         container.querySelectorAll('#dash-cat-tabs .cat-tab').forEach(t => t.classList.remove('cat-tab--active'));
         tab.classList.add('cat-tab--active');
-        this.renderDashProducts(container, tab.dataset.cat);
+        this.currentFilter = tab.dataset.cat;
+        this.renderDashProducts(container, this.currentFilter);
       });
     });
 
@@ -518,7 +647,8 @@ window.BrigadaDashboard = {
   },
 
   renderStats(container) {
-    const stats = window.BrigadaData.getStats();
+    const filteredProducts = this.getFilteredProducts();
+    const stats = window.BrigadaData.getStats(filteredProducts);
     const set = (id, val) => {
       const el = container.querySelector(`#${id}`);
       if (el) el.textContent = val;
@@ -547,7 +677,7 @@ window.BrigadaDashboard = {
     }
 
     // Cálculo do Top Quebras
-    const quebraProducts = window.BrigadaData.products.filter(p => p.expiredAction === 'quebra' || p.expiredAction === 'troca');
+    const quebraProducts = filteredProducts.filter(p => p.expiredAction === 'quebra' || p.expiredAction === 'troca');
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -591,7 +721,7 @@ window.BrigadaDashboard = {
     const timeline = container.querySelector('#alerts-timeline');
     if (!timeline) return;
 
-    const products = this.getAllowedProducts()
+    const products = this.getFilteredProducts()
       .map(p => ({ ...p, status: window.BrigadaData.getProductStatus(p) }))
       .filter(p => p.status.days <= 3)
       .sort((a, b) => a.status.days - b.status.days)
@@ -626,7 +756,7 @@ window.BrigadaDashboard = {
 
     this.currentFilter = cat;
 
-    let products = this.getAllowedProducts();
+    let products = this.getFilteredProducts();
     if (cat !== 'all') products = products.filter(p => p.category === cat);
 
     if (this.currentStatusFilter && this.currentStatusFilter !== 'all') {
@@ -670,7 +800,13 @@ window.BrigadaDashboard = {
           </tr>
         </thead>
         <tbody>
-          ${products.map(p => {
+          ${products.length === 0 ? `
+            <tr>
+              <td colspan="${showActions ? 9 : 8}" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                Nenhum produto encontrado para o filtro selecionado.
+              </td>
+            </tr>
+          ` : products.map(p => {
             const canEditThis = window.BrigadaAuth.canEditProduct(p);
             const canDeleteThis = window.BrigadaAuth.canDeleteProduct(p);
             return `

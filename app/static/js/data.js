@@ -946,26 +946,29 @@ window.BrigadaData = {
   },
 
   // Estatísticas gerais
-  getStats() {
+  getStats(productsList = null) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let allowedProducts = this.products;
-    if (window.BrigadaAuth && window.BrigadaAuth.currentUser) {
-      const email = window.BrigadaAuth.currentUser.email.toLowerCase();
-      const isRestricted = !(email === 'admin@brigada.com' || email === 'marcos@brigada.com' || window.BrigadaAuth.isSuperAdmin());
-      if (isRestricted) {
-        const sector = window.BrigadaAuth.currentUser.sector;
-        if (sector === 'açougue') {
-          allowedProducts = this.products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
-        } else if (sector === 'pereciveis') {
-          allowedProducts = this.products.filter(p => ['laticinios', 'frios'].includes(p.category));
-        } else if (sector === 'padaria') {
-          allowedProducts = this.products.filter(p => ['padaria'].includes(p.category));
-        } else if (sector === 'hortifruti') {
-          allowedProducts = this.products.filter(p => ['hortifruti'].includes(p.category));
-        } else if (sector === 'mercearia') {
-          allowedProducts = this.products.filter(p => ['mercearia'].includes(p.category));
+    let allowedProducts = productsList;
+    if (!allowedProducts) {
+      allowedProducts = this.products;
+      if (window.BrigadaAuth && window.BrigadaAuth.currentUser) {
+        const email = window.BrigadaAuth.currentUser.email.toLowerCase();
+        const isRestricted = !(email === 'admin@brigada.com' || email === 'marcos@brigada.com' || window.BrigadaAuth.isSuperAdmin());
+        if (isRestricted) {
+          const sector = window.BrigadaAuth.currentUser.sector;
+          if (sector === 'açougue') {
+            allowedProducts = this.products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
+          } else if (sector === 'pereciveis') {
+            allowedProducts = this.products.filter(p => ['laticinios', 'frios'].includes(p.category));
+          } else if (sector === 'padaria') {
+            allowedProducts = this.products.filter(p => ['padaria'].includes(p.category));
+          } else if (sector === 'hortifruti') {
+            allowedProducts = this.products.filter(p => ['hortifruti'].includes(p.category));
+          } else if (sector === 'mercearia') {
+            allowedProducts = this.products.filter(p => ['mercearia'].includes(p.category));
+          }
         }
       }
     }
