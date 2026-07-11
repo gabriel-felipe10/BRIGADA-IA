@@ -248,7 +248,7 @@
 
     await this.loadAndFillForm(container);
     this.bindEvents(container);
-  }
+  },
 
   async loadAndFillForm(container) {
     if (window.BrigadaAuth.isSuperAdmin()) {
@@ -300,7 +300,7 @@
       }
     }
     this.checkPushSubscription(container);
-  }
+  },
 
   toggleSections(container) {
     const gatewaySection = container.querySelector('#gateway-config-section');
@@ -325,7 +325,7 @@
       container.querySelector('#field-whatsapp-api-url-fallback').removeAttribute('required');
       container.querySelector('#field-whatsapp-instance-id-fallback').removeAttribute('required');
     }
-  }
+  },
 
   startPolling(container, type = 'primary') {
     if (this.pollingIntervals[type]) clearInterval(this.pollingIntervals[type]);
