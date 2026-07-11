@@ -190,10 +190,10 @@ def whatsapp_instance_status():
         row = res.data[0] if res.data else None
         
         if not row:
-            return jsonify({"status": "DISCONNECTED", "message": "WhatsApp não configurado."})
-            
-        val = row["value"]
-        config = json.loads(val) if isinstance(val, str) else val
+            config = DEFAULT_SETTINGS["whatsapp"]
+        else:
+            val = row["value"]
+            config = json.loads(val) if isinstance(val, str) else val
         
         if instance_type == "fallback":
             api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
@@ -307,10 +307,10 @@ def whatsapp_connect():
         row = res.data[0] if res.data else None
         
         if not row:
-            return jsonify({"error": "Configurações de WhatsApp não encontradas"}), 400
-            
-        val = row["value"]
-        config = json.loads(val) if isinstance(val, str) else val
+            config = DEFAULT_SETTINGS["whatsapp"]
+        else:
+            val = row["value"]
+            config = json.loads(val) if isinstance(val, str) else val
         
         if instance_type == "fallback":
             api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
@@ -391,10 +391,10 @@ def whatsapp_disconnect():
         row = res.data[0] if res.data else None
         
         if not row:
-            return jsonify({"error": "Configurações de WhatsApp não encontradas"}), 400
-            
-        val = row["value"]
-        config = json.loads(val) if isinstance(val, str) else val
+            config = DEFAULT_SETTINGS["whatsapp"]
+        else:
+            val = row["value"]
+            config = json.loads(val) if isinstance(val, str) else val
         
         if instance_type == "fallback":
             api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
