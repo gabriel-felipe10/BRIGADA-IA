@@ -3237,8 +3237,8 @@ input[type="checkbox"]:focus-visible {
   margin: 1.5rem auto;
 }
 .keypad-btn {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
   width: 75px;
   height: 75px;
@@ -3246,7 +3246,7 @@ input[type="checkbox"]:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-primary);
   font-size: 2rem;
   font-weight: 300;
   cursor: pointer;
@@ -3255,17 +3255,17 @@ input[type="checkbox"]:focus-visible {
   margin: 0 auto;
 }
 .keypad-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--primary-light, rgba(99, 102, 241, 0.15));
 }
 .keypad-btn:active {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--primary-light, rgba(99, 102, 241, 0.3));
   transform: scale(0.92);
 }
 .keypad-sub {
   font-size: 0.65rem;
   letter-spacing: 1px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   margin-top: -2px;
 }
 .keypad-action {
@@ -3275,5 +3275,5 @@ input[type="checkbox"]:focus-visible {
   backdrop-filter: none;
 }
 .keypad-action:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-border);
 }

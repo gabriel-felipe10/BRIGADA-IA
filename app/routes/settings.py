@@ -6,8 +6,8 @@ from py_vapid import Vapid
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from pywebpush import webpush, WebPushException
 from flask import Blueprint, request, jsonify
-from app.models.database import get_db_connection
 from app.logging_config import logger
+from app.utils.supabase_client import supabase
 
 settings_bp = Blueprint("settings_api", __name__, url_prefix="/api/settings")
 
@@ -17,6 +17,13 @@ DEFAULT_SETTINGS = {
         "apiUrl": "https://api.whatsapp.com",
         "instanceId": "instance-123",
         "apiToken": "",
+        
+        # Fallback Instance
+        "enabledFallback": False,
+        "apiUrlFallback": "https://api.whatsapp.com",
+        "instanceIdFallback": "instance-fallback",
+        "apiTokenFallback": "",
+        
         "alertDaysBefore": 3,
         "alertTime": "08:00",
         "alertPhone": "",
@@ -28,47 +35,38 @@ DEFAULT_SETTINGS = {
 
 @settings_bp.route("/<key>", methods=["GET"])
 def get_settings(key):
-    """Retorna as configurações para a chave informada."""
+    """Retorna as configurações para a chave informada do Supabase."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
-        row = cursor.fetchone()
-        conn.close()
+        res = supabase.table("settings").select("value").eq("key", key).execute()
+        row = res.data[0] if res.data else None
 
         if row:
-            try:
-                data = json.loads(row["value"])
-                return jsonify(data)
-            except json.JSONDecodeError:
-                logger.error("Erro ao decodificar JSON das configurações para a chave: {}", key)
-                return jsonify(DEFAULT_SETTINGS.get(key, {}))
+            val = row["value"]
+            if isinstance(val, str):
+                try:
+                    data = json.loads(val)
+                except json.JSONDecodeError:
+                    logger.error("Erro ao decodificar JSON das configurações para a chave: {}", key)
+                    data = DEFAULT_SETTINGS.get(key, {})
+            else:
+                data = val
+            return jsonify(data)
         else:
             return jsonify(DEFAULT_SETTINGS.get(key, {}))
     except Exception as e:
-        logger.exception("Erro ao buscar configurações no banco")
+        logger.exception("Erro ao buscar configurações no Supabase")
         return jsonify({"error": "Erro ao buscar configurações", "details": str(e)}), 500
 
 @settings_bp.route("/<key>", methods=["POST"])
 def save_settings(key):
-    """Salva ou atualiza as configurações para a chave informada."""
+    """Salva ou atualiza as configurações no Supabase."""
     try:
         data = request.get_json(force=True)
-        value_str = json.dumps(data)
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-            (key, value_str)
-        )
-        conn.commit()
-        conn.close()
-
-        logger.info("Configurações atualizadas para a chave: {}", key)
+        supabase.table("settings").upsert({"key": key, "value": data}).execute()
+        logger.info("Configurações atualizadas no Supabase para a chave: {}", key)
         return jsonify({"success": True, "message": "Configurações salvas com sucesso!"})
     except Exception as e:
-        logger.exception("Erro ao salvar configurações no banco")
+        logger.exception("Erro ao salvar configurações no Supabase")
         return jsonify({"error": "Erro ao salvar configurações", "details": str(e)}), 500
 
 @settings_bp.route("/whatsapp/test", methods=["POST"])
@@ -80,6 +78,13 @@ def test_whatsapp():
         api_url = config.get("apiUrl", "").strip()
         instance_id = config.get("instanceId", "").strip()
         api_token = config.get("apiToken", "").strip()
+        
+        # Fallback configs
+        enabled_fallback = config.get("enabledFallback", False)
+        api_url_fallback = config.get("apiUrlFallback", "").strip()
+        instance_id_fallback = config.get("instanceIdFallback", "").strip()
+        api_token_fallback = config.get("apiTokenFallback", "").strip()
+        
         phone = config.get("alertPhone", "").strip()
 
         if not phone:
@@ -98,21 +103,15 @@ def test_whatsapp():
                 "message": f"Mensagem de teste simulada enviada com sucesso para {phone}!"
             })
 
-        # Caso contrário, tentamos disparar uma chamada HTTP real
+        # Tenta enviar com a principal primeiro
         try:
-            # Limpa o telefone
             clean_phone = "".join(filter(str.isdigit, phone))
-            
-            # Monta payload para Pastorini API
             payload = {
                 "jid": f"{clean_phone}@s.whatsapp.net",
                 "text": msg
             }
             req_data = json.dumps(payload).encode('utf-8')
-            
-            # Remove barras extras da URL
             base_url = api_url.rstrip("/")
-            # Endpoint Pastorini API: /api/instances/{id}/send-text
             full_url = f"{base_url}/api/instances/{instance_id}/send-text"
             
             req = urllib.request.Request(
@@ -124,23 +123,54 @@ def test_whatsapp():
                 },
                 method="POST"
             )
-            
-            # Executa com timeout de 8 segundos
             with urllib.request.urlopen(req, timeout=8) as response:
                 resp_data = response.read().decode('utf-8')
-                logger.info("WhatsApp de teste enviado com sucesso para {}: {}", phone, resp_data)
+                logger.info("WhatsApp de teste enviado com sucesso pela instância principal para {}: {}", phone, resp_data)
                 return jsonify({
                     "success": True,
                     "simulated": False,
-                    "response": resp_data,
-                    "message": f"Mensagem de teste enviada com sucesso para {phone}!"
+                    "message": f"Mensagem de teste enviada com sucesso (via Instância Principal) para {phone}!"
                 })
         except Exception as http_err:
-            logger.warning("Falha na chamada real do WhatsApp, retornando sucesso simulado como fallback: {}", http_err)
+            logger.warning("Falha ao enviar com a instância principal: {}. Tentando fallback...", http_err)
+            
+            # Se a principal falhou, verifica se a de fallback está habilitada
+            if enabled_fallback and api_url_fallback and instance_id_fallback:
+                try:
+                    clean_phone = "".join(filter(str.isdigit, phone))
+                    payload = {
+                        "jid": f"{clean_phone}@s.whatsapp.net",
+                        "text": msg + "\n\n*(Nota: Enviado via Instância de Fallback)*"
+                    }
+                    req_data = json.dumps(payload).encode('utf-8')
+                    base_url_fallback = api_url_fallback.rstrip("/")
+                    full_url_fallback = f"{base_url_fallback}/api/instances/{instance_id_fallback}/send-text"
+                    
+                    req = urllib.request.Request(
+                        full_url_fallback,
+                        data=req_data,
+                        headers={
+                            "Content-Type": "application/json",
+                            "x-api-key": api_token_fallback
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(req, timeout=8) as response:
+                        resp_data = response.read().decode('utf-8')
+                        logger.info("WhatsApp de teste enviado com sucesso pela instância de fallback para {}: {}", phone, resp_data)
+                        return jsonify({
+                            "success": True,
+                            "simulated": False,
+                            "message": f"Mensagem de teste enviada com sucesso (via Instância de Fallback) para {phone}!"
+                        })
+                except Exception as fallback_err:
+                    logger.warning("Falha na chamada de fallback: {}", fallback_err)
+                    
+            # Fallback final (simulação) se ambas falharem
             return jsonify({
                 "success": True,
                 "simulated": True,
-                "warning": f"Não foi possível conectar com o gateway real ({str(http_err)}), mas o fluxo foi testado e simulado com sucesso!",
+                "warning": f"Não foi possível conectar com os gateways reais (Erro principal: {str(http_err)}), mas o fluxo foi testado e simulado com sucesso!",
                 "message": f"Mensagem de teste simulada enviada para {phone}!"
             })
 
@@ -151,22 +181,28 @@ def test_whatsapp():
 
 @settings_bp.route("/whatsapp/instance-status", methods=["GET"])
 def whatsapp_instance_status():
-    """Retorna o status atual da instância e tenta obter o QR code se necessário."""
+    """Retorna o status atual da instância e tenta obter o QR code se necessário do Supabase."""
     try:
-        # Busca a configuração salva no banco
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT value FROM settings WHERE key = 'whatsapp'")
-        row = cursor.fetchone()
-        conn.close()
+        instance_type = request.args.get("type", "primary")
+        
+        # Busca a configuração salva no Supabase
+        res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
+        row = res.data[0] if res.data else None
         
         if not row:
             return jsonify({"status": "DISCONNECTED", "message": "WhatsApp não configurado."})
             
-        config = json.loads(row["value"])
-        api_url = config.get("apiUrl", "").strip().rstrip("/")
-        instance_id = config.get("instanceId", "").strip()
-        api_token = config.get("apiToken", "").strip()
+        val = row["value"]
+        config = json.loads(val) if isinstance(val, str) else val
+        
+        if instance_type == "fallback":
+            api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
+            instance_id = config.get("instanceIdFallback", "").strip()
+            api_token = config.get("apiTokenFallback", "").strip()
+        else:
+            api_url = config.get("apiUrl", "").strip().rstrip("/")
+            instance_id = config.get("instanceId", "").strip()
+            api_token = config.get("apiToken", "").strip()
         
         if not api_url or not instance_id:
             return jsonify({"status": "DISCONNECTED", "message": "Configurações incompletas."})
@@ -208,21 +244,28 @@ def whatsapp_instance_status():
 
 @settings_bp.route("/whatsapp/connect", methods=["POST"])
 def whatsapp_connect():
-    """Tenta criar ou conectar a instância no gateway Pastorini API."""
+    """Tenta criar ou conectar a instância no gateway Pastorini API com configs do Supabase."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT value FROM settings WHERE key = 'whatsapp'")
-        row = cursor.fetchone()
-        conn.close()
+        body = request.get_json(silent=True) or {}
+        instance_type = body.get("type") or request.args.get("type", "primary")
+        
+        res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
+        row = res.data[0] if res.data else None
         
         if not row:
             return jsonify({"error": "Configurações de WhatsApp não encontradas"}), 400
             
-        config = json.loads(row["value"])
-        api_url = config.get("apiUrl", "").strip().rstrip("/")
-        instance_id = config.get("instanceId", "").strip()
-        api_token = config.get("apiToken", "").strip()
+        val = row["value"]
+        config = json.loads(val) if isinstance(val, str) else val
+        
+        if instance_type == "fallback":
+            api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
+            instance_id = config.get("instanceIdFallback", "").strip()
+            api_token = config.get("apiTokenFallback", "").strip()
+        else:
+            api_url = config.get("apiUrl", "").strip().rstrip("/")
+            instance_id = config.get("instanceId", "").strip()
+            api_token = config.get("apiToken", "").strip()
         
         if not api_url or not instance_id:
             return jsonify({"error": "URL ou ID da Instância não informados"}), 400
@@ -250,6 +293,7 @@ def whatsapp_connect():
             logger.info("Tentativa de criação de instância retornou: {}", e)
 
         # Retorna o status atual
+        request.args = {"type": instance_type}
         return whatsapp_instance_status()
     except Exception as e:
         logger.exception("Erro ao tentar conectar WhatsApp")
@@ -260,19 +304,26 @@ def whatsapp_connect():
 def whatsapp_disconnect():
     """Realiza o logout/desconexão da instância no gateway Pastorini API."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT value FROM settings WHERE key = 'whatsapp'")
-        row = cursor.fetchone()
-        conn.close()
+        body = request.get_json(silent=True) or {}
+        instance_type = body.get("type") or request.args.get("type", "primary")
+        
+        res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
+        row = res.data[0] if res.data else None
         
         if not row:
             return jsonify({"error": "Configurações de WhatsApp não encontradas"}), 400
             
-        config = json.loads(row["value"])
-        api_url = config.get("apiUrl", "").strip().rstrip("/")
-        instance_id = config.get("instanceId", "").strip()
-        api_token = config.get("apiToken", "").strip()
+        val = row["value"]
+        config = json.loads(val) if isinstance(val, str) else val
+        
+        if instance_type == "fallback":
+            api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
+            instance_id = config.get("instanceIdFallback", "").strip()
+            api_token = config.get("apiTokenFallback", "").strip()
+        else:
+            api_url = config.get("apiUrl", "").strip().rstrip("/")
+            instance_id = config.get("instanceId", "").strip()
+            api_token = config.get("apiToken", "").strip()
         
         if not api_url or not instance_id:
             return jsonify({"error": "Configurações incompletas"}), 400
@@ -294,24 +345,20 @@ def whatsapp_disconnect():
 
 
 def get_or_create_vapid_keys():
-    """Busca as chaves VAPID no banco ou gera um novo par se não existir."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT value FROM settings WHERE key = 'vapid_private_key'")
-    row = cursor.fetchone()
+    """Busca as chaves VAPID no Supabase ou gera um novo par se não existir."""
+    res = supabase.table("settings").select("value").eq("key", "vapid_private_key").execute()
+    row = res.data[0] if res.data else None
     
     if row:
-        private_pem = row["value"].encode('utf-8')
+        val = row["value"]
+        private_pem = val.encode('utf-8') if isinstance(val, str) else str(val).encode('utf-8')
         vapid = Vapid.from_pem(private_pem)
-        conn.close()
         return vapid
     else:
         vapid = Vapid()
         vapid.generate_keys()
         private_pem = vapid.private_pem().decode('utf-8')
-        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('vapid_private_key', ?)", (private_pem,))
-        conn.commit()
-        conn.close()
+        supabase.table("settings").upsert({"key": "vapid_private_key", "value": private_pem}).execute()
         return vapid
 
 
@@ -333,33 +380,38 @@ def get_push_public_key():
 
 @settings_bp.route("/push/subscribe", methods=["POST"])
 def push_subscribe():
-    """Registra uma nova inscrição push do navegador no banco de dados."""
+    """Registra uma nova inscrição push do navegador no Supabase."""
     try:
         subscription = request.get_json(force=True)
         if not subscription or "endpoint" not in subscription:
             return jsonify({"error": "Inscrição inválida"}), 400
         
-        subscription_str = json.dumps(subscription)
+        # Verifica se já existe para evitar duplicados
+        res = supabase.table("push_subscriptions").select("id, subscription_json").execute()
+        exists = False
+        for row in res.data:
+            try:
+                sub_data = row["subscription_json"]
+                if isinstance(sub_data, str):
+                    sub_data = json.loads(sub_data)
+                if sub_data.get("endpoint") == subscription["endpoint"]:
+                    exists = True
+                    break
+            except Exception:
+                pass
+        if not exists:
+            supabase.table("push_subscriptions").insert({"subscription_json": subscription}).execute()
         
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT OR IGNORE INTO push_subscriptions (subscription_json) VALUES (?)",
-            (subscription_str,)
-        )
-        conn.commit()
-        conn.close()
-        
-        logger.info("Nova inscrição push registrada")
+        logger.info("Nova inscrição push registrada no Supabase")
         return jsonify({"success": True, "message": "Inscrição push registrada com sucesso!"})
     except Exception as e:
-        logger.exception("Erro ao registrar inscrição push")
+        logger.exception("Erro ao registrar inscrição push no Supabase")
         return jsonify({"error": "Erro ao registrar inscrição push", "details": str(e)}), 500
 
 
 @settings_bp.route("/push/unsubscribe", methods=["POST"])
 def push_unsubscribe():
-    """Remove uma inscrição push correspondente ao endpoint informado."""
+    """Remove uma inscrição push correspondente ao endpoint informado no Supabase."""
     try:
         subscription = request.get_json(force=True)
         if not subscription or "endpoint" not in subscription:
@@ -367,43 +419,37 @@ def push_unsubscribe():
         
         endpoint = subscription["endpoint"]
         
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, subscription_json FROM push_subscriptions")
-        rows = cursor.fetchall()
+        # Busca todas para deletar pelo endpoint no python
+        res = supabase.table("push_subscriptions").select("id, subscription_json").execute()
         to_delete = []
-        for row in rows:
+        for row in res.data:
             try:
-                data = json.loads(row["subscription_json"])
-                if data.get("endpoint") == endpoint:
+                sub_data = row["subscription_json"]
+                if isinstance(sub_data, str):
+                    sub_data = json.loads(sub_data)
+                if sub_data.get("endpoint") == endpoint:
                     to_delete.append(row["id"])
             except Exception:
                 pass
-        
+                
         for sub_id in to_delete:
-            cursor.execute("DELETE FROM push_subscriptions WHERE id = ?", (sub_id,))
+            supabase.table("push_subscriptions").delete().eq("id", sub_id).execute()
         
-        conn.commit()
-        conn.close()
-        
-        logger.info("Inscrição push removida")
+        logger.info("Inscrição push removida no Supabase")
         return jsonify({"success": True, "message": "Inscrição push removida com sucesso!"})
     except Exception as e:
-        logger.exception("Erro ao remover inscrição push")
+        logger.exception("Erro ao remover inscrição push no Supabase")
         return jsonify({"error": "Erro ao remover inscrição push", "details": str(e)}), 500
 
 
 @settings_bp.route("/push/test", methods=["POST"])
 def push_test():
-    """Envia uma notificação push de teste para todos os navegadores inscritos."""
+    """Envia uma notificação push de teste para todos os navegadores inscritos no Supabase."""
     try:
         vapid = get_or_create_vapid_keys()
         
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT subscription_json FROM push_subscriptions")
-        rows = cursor.fetchall()
-        conn.close()
+        res = supabase.table("push_subscriptions").select("subscription_json").execute()
+        rows = res.data
         
         if not rows:
             return jsonify({"error": "Nenhum navegador inscrito para receber notificações neste dispositivo."}), 400
@@ -427,7 +473,9 @@ def push_test():
         
         for row in rows:
             try:
-                sub_data = json.loads(row["subscription_json"])
+                sub_data = row["subscription_json"]
+                if isinstance(sub_data, str):
+                    sub_data = json.loads(sub_data)
                 webpush(
                     subscription_info=sub_data,
                     data=payload,
@@ -441,12 +489,9 @@ def push_test():
                 error_count += 1
                 if ex.response is not None and ex.response.status_code == 410:
                     try:
-                        conn = get_db_connection()
-                        cursor = conn.cursor()
-                        cursor.execute("DELETE FROM push_subscriptions WHERE subscription_json = ?", (row["subscription_json"],))
-                        conn.commit()
-                        conn.close()
-                        logger.info("Removida inscrição expirada (410)")
+                        # Remove a inscrição expirada
+                        supabase.table("push_subscriptions").delete().eq("id", row["id"]).execute()
+                        logger.info("Removida inscrição expirada (410) no Supabase")
                     except Exception:
                         pass
             except Exception as e:

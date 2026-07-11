@@ -1,13 +1,11 @@
 /**
  * BRIGADA-IA — Notifications & Reminders (WhatsApp) Module
- */
-
-window.BrigadaNotifications = {
+ */window.BrigadaNotifications = {
   config: null,
-  pollingInterval: null,
+  pollingIntervals: {},
 
   async render(container) {
-    this.stopPolling();
+    this.stopPolling('all');
     const isSuperAdmin = window.BrigadaAuth.isSuperAdmin();
 
     container.innerHTML = `
@@ -22,7 +20,7 @@ window.BrigadaNotifications = {
       <div class="glass-panel stagger" style="max-width: 800px; margin-bottom: 2rem;">
         <div style="padding: 1.5rem;">
           <h3 class="glass-panel__title" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>📱</span> Integração com WhatsApp Gateway (Pastorini API)
+            <span>📱</span> Integração com WhatsApp Gateway
           </h3>
 
           <form id="whatsapp-settings-form">
@@ -40,46 +38,115 @@ window.BrigadaNotifications = {
 
             <!-- Seção de credenciais do Gateway -->
             <div id="gateway-config-section" style="display: none; transition: all 0.3s ease;">
-              <div class="form-group">
-                <label class="form-label">URL do Gateway (API) *</label>
-                <input type="url" id="field-whatsapp-api-url" class="form-input" placeholder="ex: http://74.1.20.130:3000" required>
-                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">Endereço base do seu servidor de envio de WhatsApp (ex: Pastorini API)</p>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">ID da Instância *</label>
-                  <input type="text" id="field-whatsapp-instance-id" class="form-input" placeholder="ex: MinhaInstancia" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Token de Acesso (API Key / PANEL_API_KEY)</label>
-                  <input type="password" id="field-whatsapp-api-token" class="form-input" placeholder="Sua chave de API secreta">
-                </div>
-              </div>
-
-              <!-- Painel de Conexão da Instância -->
-              <div class="connection-status-panel" style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px dashed var(--glass-border); margin-top: 1.5rem; margin-bottom: 1.5rem;">
-                <h4 style="margin: 0 0 1rem 0; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-                  <span>🔗</span> Status de Conexão: <span id="whatsapp-connection-badge" class="badge badge--expired" style="font-size: 0.8rem; padding: 0.2rem 0.6rem;">Carregando...</span>
-                </h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 
-                <!-- QR Code Wrapper -->
-                <div id="whatsapp-qr-wrapper" style="display: none; text-align: center; margin: 1.5rem 0; background: #fff; padding: 1rem; border-radius: 8px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                  <img id="whatsapp-qr-image" style="width: 220px; height: 220px; display: block;" src="" alt="Scan QR Code">
-                  <p style="color: #333; font-size: 0.8rem; margin: 0.5rem 0 0 0; font-weight: 500;">Escaneie o código com seu WhatsApp</p>
+                <!-- CARD 1: INSTÂNCIA PRINCIPAL -->
+                <div class="glass-panel" style="padding: 1.25rem; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01); border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+                      <span>🟢</span> Instância Principal
+                    </h4>
+                    
+                    <div class="form-group">
+                      <label class="form-label">URL do Gateway (API) *</label>
+                      <input type="url" id="field-whatsapp-api-url" class="form-input" placeholder="ex: http://74.1.20.130:3000" required>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">ID da Instância *</label>
+                      <input type="text" id="field-whatsapp-instance-id" class="form-input" placeholder="ex: MinhaInstancia" required>
+                    </div>
+                    
+                    <div class="form-group">
+                      <label class="form-label">Token de Acesso</label>
+                      <input type="password" id="field-whatsapp-api-token" class="form-input" placeholder="Chave de API secreta">
+                    </div>
+
+                    <!-- Status / QR Code Principal -->
+                    <div class="connection-status-panel" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px dashed var(--glass-border); margin-top: 1rem; margin-bottom: 1rem;">
+                      <div style="font-size: 0.85rem; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                        <span style="font-weight: 500; color: var(--text-secondary);">Status da Conexão:</span>
+                        <span id="whatsapp-connection-badge" class="badge badge--expired" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">Carregando...</span>
+                      </div>
+                      
+                      <div id="whatsapp-qr-wrapper" style="display: none; text-align: center; margin: 1rem 0; background: #fff; padding: 0.75rem; border-radius: 8px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        <img id="whatsapp-qr-image" style="width: 160px; height: 160px; display: block;" src="" alt="Scan QR Code">
+                        <p style="color: #333; font-size: 0.75rem; margin: 0.4rem 0 0 0; font-weight: 500;">Escaneie o código</p>
+                      </div>
+
+                      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+                        <button type="button" class="btn btn--primary" id="btn-connect-whatsapp" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; flex: 1;">
+                          Conectar / QR Code
+                        </button>
+                        <button type="button" class="btn btn--ghost" id="btn-disconnect-whatsapp" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; display: none; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); flex: 1;">
+                          Desconectar
+                        </button>
+                        <button type="button" class="btn btn--ghost" id="btn-refresh-status" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                          🔄
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                  <button type="button" class="btn btn--primary" id="btn-connect-whatsapp" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
-                    Conectar / Gerar QR Code
-                  </button>
-                  <button type="button" class="btn btn--ghost" id="btn-disconnect-whatsapp" style="font-size: 0.85rem; padding: 0.5rem 1rem; display: none; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
-                    Desconectar Instância
-                  </button>
-                  <button type="button" class="btn btn--ghost" id="btn-refresh-status" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
-                    Atualizar Status
-                  </button>
+                <!-- CARD 2: INSTÂNCIA DE FALLBACK -->
+                <div class="glass-panel" style="padding: 1.25rem; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01); border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                      <h4 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+                        <span>🟡</span> Instância de Fallback
+                      </h4>
+                      <label class="switch" style="transform: scale(0.85);">
+                        <input type="checkbox" id="field-whatsapp-enabled-fallback">
+                        <span class="slider round"></span>
+                      </label>
+                    </div>
+
+                    <!-- Seção interna do Fallback -->
+                    <div id="fallback-instance-config-section" style="transition: all 0.3s ease; opacity: 0.5; pointer-events: none;">
+                      <div class="form-group">
+                        <label class="form-label">URL do Gateway (API) *</label>
+                        <input type="url" id="field-whatsapp-api-url-fallback" class="form-input" placeholder="ex: https://evolution.rotaflash.com">
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label">ID da Instância *</label>
+                        <input type="text" id="field-whatsapp-instance-id-fallback" class="form-input" placeholder="ex: InstanciaFallback">
+                      </div>
+                      
+                      <div class="form-group">
+                        <label class="form-label">Token de Acesso</label>
+                        <input type="password" id="field-whatsapp-api-token-fallback" class="form-input" placeholder="Chave de API secreta">
+                      </div>
+
+                      <!-- Status / QR Code Fallback -->
+                      <div class="connection-status-panel" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px dashed var(--glass-border); margin-top: 1rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.85rem; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                          <span style="font-weight: 500; color: var(--text-secondary);">Status da Conexão:</span>
+                          <span id="whatsapp-connection-badge-fallback" class="badge badge--expired" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">Carregando...</span>
+                        </div>
+                        
+                        <div id="whatsapp-qr-wrapper-fallback" style="display: none; text-align: center; margin: 1rem 0; background: #fff; padding: 0.75rem; border-radius: 8px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                          <img id="whatsapp-qr-image-fallback" style="width: 160px; height: 160px; display: block;" src="" alt="Scan QR Code">
+                          <p style="color: #333; font-size: 0.75rem; margin: 0.4rem 0 0 0; font-weight: 500;">Escaneie o código</p>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+                          <button type="button" class="btn btn--primary" id="btn-connect-whatsapp-fallback" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; flex: 1;">
+                            Conectar / QR Code
+                          </button>
+                          <button type="button" class="btn btn--ghost" id="btn-disconnect-whatsapp-fallback" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; display: none; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); flex: 1;">
+                            Desconectar
+                          </button>
+                          <button type="button" class="btn btn--ghost" id="btn-refresh-status-fallback" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                            🔄
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
               </div>
             </div>
 
@@ -181,7 +248,7 @@ window.BrigadaNotifications = {
 
     await this.loadAndFillForm(container);
     this.bindEvents(container);
-  },
+  }
 
   async loadAndFillForm(container) {
     if (window.BrigadaAuth.isSuperAdmin()) {
@@ -191,6 +258,12 @@ window.BrigadaNotifications = {
       const fieldApiUrl = container.querySelector('#field-whatsapp-api-url');
       const fieldInstanceId = container.querySelector('#field-whatsapp-instance-id');
       const fieldApiToken = container.querySelector('#field-whatsapp-api-token');
+      
+      const fieldEnabledFallback = container.querySelector('#field-whatsapp-enabled-fallback');
+      const fieldApiUrlFallback = container.querySelector('#field-whatsapp-api-url-fallback');
+      const fieldInstanceIdFallback = container.querySelector('#field-whatsapp-instance-id-fallback');
+      const fieldApiTokenFallback = container.querySelector('#field-whatsapp-api-token-fallback');
+      
       const fieldAlertDays = container.querySelector('#field-alert-days');
       const fieldAlertTime = container.querySelector('#field-alert-time');
       const fieldAlertPhone = container.querySelector('#field-alert-phone');
@@ -203,6 +276,12 @@ window.BrigadaNotifications = {
         fieldApiUrl.value = this.config.apiUrl || '';
         fieldInstanceId.value = this.config.instanceId || '';
         fieldApiToken.value = this.config.apiToken || '';
+        
+        fieldEnabledFallback.checked = !!this.config.enabledFallback;
+        fieldApiUrlFallback.value = this.config.apiUrlFallback || '';
+        fieldInstanceIdFallback.value = this.config.instanceIdFallback || '';
+        fieldApiTokenFallback.value = this.config.apiTokenFallback || '';
+        
         fieldAlertDays.value = this.config.alertDaysBefore !== undefined ? this.config.alertDaysBefore : 3;
         fieldAlertTime.value = this.config.alertTime || '08:00';
         fieldAlertPhone.value = this.config.alertPhone || '';
@@ -214,45 +293,72 @@ window.BrigadaNotifications = {
       this.toggleSections(container);
 
       if (this.config && this.config.enabled) {
-        this.updateConnectionStatus(container);
+        this.updateConnectionStatus(container, 'primary');
+        if (this.config.enabledFallback) {
+          this.updateConnectionStatus(container, 'fallback');
+        }
       }
     }
     this.checkPushSubscription(container);
-  },
+  }
 
   toggleSections(container) {
     const gatewaySection = container.querySelector('#gateway-config-section');
     const remindersSection = container.querySelector('#reminders-config-section');
+    const fallbackConfigSection = container.querySelector('#fallback-instance-config-section');
 
     const enabledChecked = container.querySelector('#field-whatsapp-enabled').checked;
     const remindersChecked = container.querySelector('#field-reminder-active').checked;
+    const fallbackChecked = container.querySelector('#field-whatsapp-enabled-fallback').checked;
 
     gatewaySection.style.display = enabledChecked ? 'block' : 'none';
     remindersSection.style.display = remindersChecked ? 'block' : 'none';
-  },
+    
+    if (fallbackChecked) {
+      fallbackConfigSection.style.opacity = '1';
+      fallbackConfigSection.style.pointerEvents = 'auto';
+      container.querySelector('#field-whatsapp-api-url-fallback').required = true;
+      container.querySelector('#field-whatsapp-instance-id-fallback').required = true;
+    } else {
+      fallbackConfigSection.style.opacity = '0.5';
+      fallbackConfigSection.style.pointerEvents = 'none';
+      container.querySelector('#field-whatsapp-api-url-fallback').removeAttribute('required');
+      container.querySelector('#field-whatsapp-instance-id-fallback').removeAttribute('required');
+    }
+  }
 
-  startPolling(container) {
-    if (this.pollingInterval) clearInterval(this.pollingInterval);
-    this.pollingInterval = setInterval(() => {
-      this.updateConnectionStatus(container, true);
+  startPolling(container, type = 'primary') {
+    if (this.pollingIntervals[type]) clearInterval(this.pollingIntervals[type]);
+    this.pollingIntervals[type] = setInterval(() => {
+      this.updateConnectionStatus(container, type, true);
     }, 5000);
   },
 
-  stopPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
+  stopPolling(type = 'primary') {
+    if (type === 'all') {
+      Object.keys(this.pollingIntervals).forEach(k => {
+        if (this.pollingIntervals[k]) {
+          clearInterval(this.pollingIntervals[k]);
+          this.pollingIntervals[k] = null;
+        }
+      });
+    } else {
+      if (this.pollingIntervals[type]) {
+        clearInterval(this.pollingIntervals[type]);
+        this.pollingIntervals[type] = null;
+      }
     }
   },
 
-  async updateConnectionStatus(container, isPolling = false) {
+  async updateConnectionStatus(container, type = 'primary', isPolling = false) {
     try {
-      const res = await fetch('/api/settings/whatsapp/instance-status').then(r => r.json());
-      const badge = container.querySelector('#whatsapp-connection-badge');
-      const qrWrapper = container.querySelector('#whatsapp-qr-wrapper');
-      const qrImage = container.querySelector('#whatsapp-qr-image');
-      const btnConnect = container.querySelector('#btn-connect-whatsapp');
-      const btnDisconnect = container.querySelector('#btn-disconnect-whatsapp');
+      const suffix = type === 'fallback' ? '-fallback' : '';
+      const res = await fetch(`/api/settings/whatsapp/instance-status?type=${type}`).then(r => r.json());
+      const badge = container.querySelector(`#whatsapp-connection-badge${suffix}`);
+      const qrWrapper = container.querySelector(`#whatsapp-qr-wrapper${suffix}`);
+      const qrImage = container.querySelector(`#whatsapp-qr-image${suffix}`);
+      const btnConnect = container.querySelector(`#btn-connect-whatsapp${suffix}`);
+      const btnDisconnect = container.querySelector(`#btn-disconnect-whatsapp${suffix}`);
       
       if (!badge) return;
 
@@ -262,7 +368,7 @@ window.BrigadaNotifications = {
         qrWrapper.style.display = 'none';
         btnConnect.style.display = 'none';
         btnDisconnect.style.display = 'inline-block';
-        this.stopPolling();
+        this.stopPolling(type);
       } else if (res.status === 'QR_READY' && res.qrImage) {
         badge.textContent = 'AGUARDANDO LEITURA DO QR CODE 🟡';
         badge.className = 'badge badge--warning';
@@ -271,24 +377,24 @@ window.BrigadaNotifications = {
         btnConnect.style.display = 'none';
         btnDisconnect.style.display = 'inline-block';
         
-        if (!isPolling) this.startPolling(container);
+        if (!isPolling) this.startPolling(container, type);
       } else if (res.status === 'CONNECTING') {
         badge.textContent = 'CONECTANDO 🔵';
         badge.className = 'badge badge--info';
         qrWrapper.style.display = 'none';
         btnConnect.style.display = 'none';
         btnDisconnect.style.display = 'inline-block';
-        if (!isPolling) this.startPolling(container);
+        if (!isPolling) this.startPolling(container, type);
       } else {
         badge.textContent = 'DESCONECTADO 🔴';
         badge.className = 'badge badge--expired';
         qrWrapper.style.display = 'none';
         btnConnect.style.display = 'inline-block';
         btnDisconnect.style.display = 'none';
-        this.stopPolling();
+        this.stopPolling(type);
       }
     } catch (e) {
-      console.error("Erro ao atualizar status do WhatsApp:", e);
+      console.error(`Erro ao atualizar status do WhatsApp (${type}):`, e);
     }
   },
 
@@ -296,6 +402,7 @@ window.BrigadaNotifications = {
     if (window.BrigadaAuth.isSuperAdmin()) {
       const form = container.querySelector('#whatsapp-settings-form');
       const fieldEnabled = container.querySelector('#field-whatsapp-enabled');
+      const fieldEnabledFallback = container.querySelector('#field-whatsapp-enabled-fallback');
       const fieldReminderActive = container.querySelector('#field-reminder-active');
       const btnTest = container.querySelector('#btn-test-whatsapp');
       const testSpinner = container.querySelector('#test-spinner');
@@ -304,40 +411,85 @@ window.BrigadaNotifications = {
       const btnDisconnectInst = container.querySelector('#btn-disconnect-whatsapp');
       const btnRefreshStatus = container.querySelector('#btn-refresh-status');
 
+      const btnConnectInstFallback = container.querySelector('#btn-connect-whatsapp-fallback');
+      const btnDisconnectInstFallback = container.querySelector('#btn-disconnect-whatsapp-fallback');
+      const btnRefreshStatusFallback = container.querySelector('#btn-refresh-status-fallback');
+
       fieldEnabled.addEventListener('change', () => this.toggleSections(container));
+      fieldEnabledFallback.addEventListener('change', () => {
+        this.toggleSections(container);
+        if (fieldEnabledFallback.checked) {
+          this.updateConnectionStatus(container, 'fallback');
+        } else {
+          this.stopPolling('fallback');
+        }
+      });
       fieldReminderActive.addEventListener('change', () => this.toggleSections(container));
 
       btnConnectInst.addEventListener('click', async () => {
-        window.BrigadaUI.showToast('Iniciando conexão da instância...', 'info');
+        window.BrigadaUI.showToast('Iniciando conexão da instância principal...', 'info');
         try {
-          const res = await fetch('/api/settings/whatsapp/connect', { method: 'POST' }).then(r => r.json());
-          this.updateConnectionStatus(container);
+          const res = await fetch('/api/settings/whatsapp/connect?type=primary', { method: 'POST' }).then(r => r.json());
+          this.updateConnectionStatus(container, 'primary');
           if (res.status === 'QR_READY') {
-            window.BrigadaUI.showToast('Instância pronta para escanear!', 'warning');
+            window.BrigadaUI.showToast('Instância principal pronta para escanear!', 'warning');
           } else if (res.status === 'CONNECTED') {
-            window.BrigadaUI.showToast('WhatsApp conectado com sucesso!', 'success');
+            window.BrigadaUI.showToast('Instância principal conectada com sucesso!', 'success');
           }
         } catch (err) {
-          window.BrigadaUI.showToast('Falha ao tentar conectar a instância.', 'error');
+          window.BrigadaUI.showToast('Falha ao tentar conectar a instância principal.', 'error');
         }
       });
 
       btnDisconnectInst.addEventListener('click', async () => {
-        if (!confirm('Deseja realmente desconectar o WhatsApp do painel?')) return;
+        if (!confirm('Deseja realmente desconectar a instância principal do WhatsApp?')) return;
         try {
-          const res = await fetch('/api/settings/whatsapp/disconnect', { method: 'POST' }).then(r => r.json());
+          const res = await fetch('/api/settings/whatsapp/disconnect?type=primary', { method: 'POST' }).then(r => r.json());
           if (res.success) {
             window.BrigadaUI.showToast('Desconectado com sucesso!', 'success');
-            this.updateConnectionStatus(container);
+            this.updateConnectionStatus(container, 'primary');
           }
         } catch (err) {
-          window.BrigadaUI.showToast('Falha ao desconectar instância.', 'error');
+          window.BrigadaUI.showToast('Falha ao desconectar instância principal.', 'error');
         }
       });
 
       btnRefreshStatus.addEventListener('click', () => {
-        this.updateConnectionStatus(container);
-        window.BrigadaUI.showToast('Status atualizado!', 'success');
+        this.updateConnectionStatus(container, 'primary');
+        window.BrigadaUI.showToast('Status da instância principal atualizado!', 'success');
+      });
+
+      btnConnectInstFallback.addEventListener('click', async () => {
+        window.BrigadaUI.showToast('Iniciando conexão da instância de fallback...', 'info');
+        try {
+          const res = await fetch('/api/settings/whatsapp/connect?type=fallback', { method: 'POST' }).then(r => r.json());
+          this.updateConnectionStatus(container, 'fallback');
+          if (res.status === 'QR_READY') {
+            window.BrigadaUI.showToast('Instância de fallback pronta para escanear!', 'warning');
+          } else if (res.status === 'CONNECTED') {
+            window.BrigadaUI.showToast('Instância de fallback conectada com sucesso!', 'success');
+          }
+        } catch (err) {
+          window.BrigadaUI.showToast('Falha ao tentar conectar a instância de fallback.', 'error');
+        }
+      });
+
+      btnDisconnectInstFallback.addEventListener('click', async () => {
+        if (!confirm('Deseja realmente desconectar a instância de fallback?')) return;
+        try {
+          const res = await fetch('/api/settings/whatsapp/disconnect?type=fallback', { method: 'POST' }).then(r => r.json());
+          if (res.success) {
+            window.BrigadaUI.showToast('Desconectado com sucesso!', 'success');
+            this.updateConnectionStatus(container, 'fallback');
+          }
+        } catch (err) {
+          window.BrigadaUI.showToast('Falha ao desconectar instância de fallback.', 'error');
+        }
+      });
+
+      btnRefreshStatusFallback.addEventListener('click', () => {
+        this.updateConnectionStatus(container, 'fallback');
+        window.BrigadaUI.showToast('Status da instância de fallback atualizado!', 'success');
       });
 
       form.addEventListener('submit', async (e) => {
@@ -347,7 +499,10 @@ window.BrigadaNotifications = {
           const res = await window.BrigadaData.saveSettings('whatsapp', data);
           if (res.success) {
             window.BrigadaUI.showToast(res.message || 'Configurações salvas com sucesso!', 'success');
-            this.updateConnectionStatus(container);
+            this.updateConnectionStatus(container, 'primary');
+            if (data.enabledFallback) {
+              this.updateConnectionStatus(container, 'fallback');
+            }
           } else {
             window.BrigadaUI.showToast(res.error || 'Erro ao salvar configurações.', 'error');
           }
@@ -416,6 +571,12 @@ window.BrigadaNotifications = {
       apiUrl: container.querySelector('#field-whatsapp-api-url').value.trim(),
       instanceId: container.querySelector('#field-whatsapp-instance-id').value.trim(),
       apiToken: container.querySelector('#field-whatsapp-api-token').value.trim(),
+      
+      enabledFallback: container.querySelector('#field-whatsapp-enabled-fallback').checked,
+      apiUrlFallback: container.querySelector('#field-whatsapp-api-url-fallback').value.trim(),
+      instanceIdFallback: container.querySelector('#field-whatsapp-instance-id-fallback').value.trim(),
+      apiTokenFallback: container.querySelector('#field-whatsapp-api-token-fallback').value.trim(),
+      
       alertDaysBefore: parseInt(container.querySelector('#field-alert-days').value) || 3,
       alertTime: container.querySelector('#field-alert-time').value,
       alertPhone: container.querySelector('#field-alert-phone').value.trim(),
