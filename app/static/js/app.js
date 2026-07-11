@@ -113,6 +113,81 @@ window.BrigadaUI = {
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.2);
     } catch(e) {}
+  },
+
+  // ── Product View Modal ───────────────────────────────────────────────────
+  showProductView(productId) {
+    const product = window.BrigadaData.products.find(p => p.id === productId);
+    if (!product) return;
+
+    const modal = document.getElementById('product-view-modal-overlay');
+    const content = document.getElementById('product-view-content');
+    if (!modal || !content) return;
+
+    const catMap = {
+      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado'
+    };
+    const status = window.BrigadaData.getProductStatus(product);
+
+    content.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <strong style="color: var(--text-secondary); font-size: 0.85rem;">PRODUTO</strong>
+        <div style="font-size: 1.25rem; font-weight: bold; color: var(--text-primary);">${product.name}</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">PLU</strong>
+          <div style="color: var(--text-primary);">${product.plu}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">CÓD. BARRAS</strong>
+          <div style="color: var(--text-primary);">${product.barcode || '—'}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">CATEGORIA</strong>
+          <div style="color: var(--text-primary);">${catMap[product.category] || product.category}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">QUANTIDADE</strong>
+          <div style="color: var(--text-primary);">${product.quantity !== undefined ? product.quantity : 0} ${product.unit || 'kg'}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">DATA INICIAL</strong>
+          <div style="color: var(--text-primary);">${window.BrigadaData.formatDate(product.startDate)}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">VALIDADE</strong>
+          <div style="color: var(--text-primary);">${window.BrigadaData.formatDate(product.endDate)}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">STATUS</strong>
+          <div style="margin-top: 0.25rem;"><span class="badge ${status.class}">${status.icon} ${status.label}</span></div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">FORNECEDOR</strong>
+          <div style="color: var(--text-primary);">${product.supplier || '—'}</div>
+        </div>
+        <div style="grid-column: span 2;">
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">LOCALIZAÇÃO</strong>
+          <div style="color: var(--text-primary);">${window.BrigadaData.formatLocationFriendly(product)}</div>
+        </div>
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+
+    const closeBtn = document.getElementById('close-product-view-btn');
+    const closeBtn2 = document.getElementById('btn-close-product-view');
+    const closeHandler = () => {
+      modal.classList.remove('modal-overlay--visible');
+      setTimeout(() => modal.style.display = 'none', 250);
+    };
+    if (closeBtn) closeBtn.onclick = closeHandler;
+    if (closeBtn2) closeBtn2.onclick = closeHandler;
+    modal.onclick = (e) => {
+      if (e.target === modal) closeHandler();
+    };
   }
 };
 

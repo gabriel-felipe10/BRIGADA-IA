@@ -33,7 +33,6 @@ window.BrigadaDashboard = {
     this.bindEvents(container);
     this.renderStats(container);
     this.renderAlertsTimeline(container);
-    this.renderCategoryChart(container);
   },
 
   buildHTML(isSuperAdmin) {
@@ -152,7 +151,7 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
-      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1rem;">
+      <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:1rem;">
         <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
           <div class="metric-card__icon">🗑️</div>
           <div class="metric-card__body">
@@ -165,6 +164,13 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Troca</p>
             <p class="metric-card__value" id="stat-troca-val">—</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--orange" id="stat-today">
+          <div class="metric-card__icon">🟠</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Vence Hoje</p>
+            <p class="metric-card__value" id="stat-today-val">—</p>
           </div>
         </div>
       </div>
@@ -208,12 +214,7 @@ window.BrigadaDashboard = {
         </div>
       </div>
 
-      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:2rem;">
-        <!-- Gráfico de categorias -->
-        <div class="glass-panel">
-          <h3 class="glass-panel__title">📊 Produtos por Categoria</h3>
-          <div id="category-chart" class="category-chart"></div>
-        </div>
+      <div style="margin-bottom:2rem;">
         <!-- Timeline de alertas -->
         <div class="glass-panel">
           <h3 class="glass-panel__title">🚨 Alertas de Validade</h3>
@@ -533,6 +534,18 @@ window.BrigadaDashboard = {
     set('stat-quebra-val', stats.quebra);
     set('stat-troca-val', stats.troca);
 
+    const soonCard = container.querySelector('#stat-soon');
+    if (soonCard) {
+      if (stats.expiresSoon > 0) soonCard.classList.add('card-blink-warning');
+      else soonCard.classList.remove('card-blink-warning');
+    }
+
+    const todayCard = container.querySelector('#stat-today');
+    if (todayCard) {
+      if (stats.expiresToday > 0) todayCard.classList.add('card-blink-orange');
+      else todayCard.classList.remove('card-blink-orange');
+    }
+
     // Cálculo do Top Quebras
     const quebraProducts = window.BrigadaData.products.filter(p => p.expiredAction === 'quebra' || p.expiredAction === 'troca');
     const now = new Date();
@@ -606,59 +619,6 @@ window.BrigadaDashboard = {
     `).join('');
   },
 
-  renderCategoryChart(container) {
-    const chart = container.querySelector('#category-chart');
-    if (!chart) return;
-
-    let categories = [];
-    const labels = { 
-      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
-      laticinios: '🧀 Laticínios', frios: '🥓 Frios', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
-    };
-    const colors = { 
-      aves: '#f59e0b', suino: '#ef4444', bovino: '#a855f7', pescado: '#3b82f6',
-      laticinios: '#10b981', frios: '#f59e0b', padaria: '#d97706', hortifruti: '#84cc16'
-    };
-
-    if (window.BrigadaAuth.hasSectorAccess('açougue')) {
-      categories.push('aves', 'suino', 'bovino', 'pescado');
-    }
-    if (window.BrigadaAuth.hasSectorAccess('pereciveis')) {
-      categories.push('laticinios', 'frios', 'padaria', 'hortifruti');
-    }
-
-    const data = categories.map(cat => {
-      const products = this.getAllowedProducts().filter(p => p.category === cat);
-      const expired = products.filter(p => window.BrigadaData.getProductStatus(p).days < 0).length;
-      const warning = products.filter(p => {
-        const s = window.BrigadaData.getProductStatus(p);
-        return s.days >= 0 && s.days <= 3;
-      }).length;
-      const ok = products.filter(p => window.BrigadaData.getProductStatus(p).days > 3).length;
-      return { cat, label: labels[cat], total: products.length, expired, warning, ok, color: colors[cat] };
-    });
-
-    const maxVal = Math.max(...data.map(d => d.total), 1);
-
-    chart.innerHTML = data.map(d => `
-      <div class="chart-bar-group">
-        <div class="chart-bar-label">${d.label}</div>
-        <div class="chart-bar-track">
-          <div class="chart-bar-fill" style="width: ${(d.total / maxVal) * 100}%; background: ${d.color}20; border-left: 3px solid ${d.color};">
-            <div class="chart-bar-ok" style="width: ${d.total ? (d.ok / d.total) * 100 : 0}%; background: var(--success);"></div>
-            <div class="chart-bar-warn" style="width: ${d.total ? (d.warning / d.total) * 100 : 0}%; background: var(--warning);"></div>
-            <div class="chart-bar-exp" style="width: ${d.total ? (d.expired / d.total) * 100 : 0}%; background: var(--error);"></div>
-          </div>
-        </div>
-        <div class="chart-bar-stats">
-          <span class="chart-stat chart-stat--total">${d.total} total</span>
-          <span class="chart-stat chart-stat--ok">${d.ok} OK</span>
-          ${d.warning ? `<span class="chart-stat chart-stat--warn">${d.warning} atenção</span>` : ''}
-          ${d.expired ? `<span class="chart-stat chart-stat--exp">${d.expired} vencido${d.expired !== 1 ? 's' : ''}</span>` : ''}
-        </div>
-      </div>
-    `).join('');
-  },
 
   renderDashProducts(container, cat) {
     const tableDiv = container.querySelector('#dash-products-table');
@@ -716,9 +676,9 @@ window.BrigadaDashboard = {
             return `
             <tr>
               <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-              <td data-label="Produto" class="product-name">
+              <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView(${p.id})" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">
                 <div>${p.name}</div>
-                ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
+                ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500; text-decoration: none;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
               </td>
               <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${p.quantity !== undefined ? p.quantity : 0}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${p.unit || 'kg'}</span></td>
               <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>

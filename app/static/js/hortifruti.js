@@ -220,6 +220,13 @@ window.BrigadaHortifruti = {
       });
     }
 
+    // Sort products by urgency (days remaining) ascending
+    products.sort((a, b) => {
+      const statusA = window.BrigadaData.getProductStatus(a);
+      const statusB = window.BrigadaData.getProductStatus(b);
+      return statusA.days - statusB.days;
+    });
+
     return products;
   },
 
