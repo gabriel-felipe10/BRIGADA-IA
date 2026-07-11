@@ -14,15 +14,16 @@ settings_bp = Blueprint("settings_api", __name__, url_prefix="/api/settings")
 DEFAULT_SETTINGS = {
     "whatsapp": {
         "enabled": True,
-        "apiUrl": "https://api.whatsapp.com",
-        "instanceId": "instance-123",
-        "apiToken": "",
+        # Instância Principal (Evolution API)
+        "apiUrl": "https://evolution.rotaflash.com",
+        "instanceId": "admin",
+        "apiToken": "rotaflash-evolution-key-prod",
         
-        # Fallback Instance (Evolution API)
+        # Instância de Fallback (Pastorini API)
         "enabledFallback": True,
-        "apiUrlFallback": "https://evolution.rotaflash.com",
-        "instanceIdFallback": "admin",
-        "apiTokenFallback": "rotaflash-evolution-key-prod",
+        "apiUrlFallback": "https://api.whatsapp.com",
+        "instanceIdFallback": "instance-fallback",
+        "apiTokenFallback": "",
         
         "alertDaysBefore": 3,
         "alertTime": "08:00",
@@ -103,68 +104,68 @@ def test_whatsapp():
                 "message": f"Mensagem de teste simulada enviada com sucesso para {phone}!"
             })
 
-        # Tenta enviar com a principal primeiro (Pastorini API)
+        # Tenta enviar com a principal primeiro (Evolution API)
         try:
             clean_phone = "".join(filter(str.isdigit, phone))
             payload = {
-                "jid": f"{clean_phone}@s.whatsapp.net",
+                "number": clean_phone,
                 "text": msg
             }
             req_data = json.dumps(payload).encode('utf-8')
             base_url = api_url.rstrip("/")
-            full_url = f"{base_url}/api/instances/{instance_id}/send-text"
+            full_url = f"{base_url}/message/sendText/{instance_id}"
             
             req = urllib.request.Request(
                 full_url,
                 data=req_data,
                 headers={
                     "Content-Type": "application/json",
-                    "x-api-key": api_token
+                    "apikey": api_token
                 },
                 method="POST"
             )
             with urllib.request.urlopen(req, timeout=8) as response:
                 resp_data = response.read().decode('utf-8')
-                logger.info("WhatsApp de teste enviado com sucesso pela instância principal (Pastorini) para {}: {}", phone, resp_data)
+                logger.info("WhatsApp de teste enviado com sucesso pela instância principal (Evolution) para {}: {}", phone, resp_data)
                 return jsonify({
                     "success": True,
                     "simulated": False,
-                    "message": f"Mensagem de teste enviada com sucesso (via Instância Principal - Pastorini API) para {phone}!"
+                    "message": f"Mensagem de teste enviada com sucesso (via Instância Principal - Evolution API) para {phone}!"
                 })
         except Exception as http_err:
-            logger.warning("Falha ao enviar com a instância principal: {}. Tentando fallback...", http_err)
+            logger.warning("Falha ao enviar com a instância principal (Evolution): {}. Tentando fallback...", http_err)
             
-            # Se a principal falhou, verifica se a de fallback está habilitada (Evolution API)
+            # Se a principal falhou, verifica se a de fallback está habilitada (Pastorini API)
             if enabled_fallback and api_url_fallback and instance_id_fallback:
                 try:
                     clean_phone = "".join(filter(str.isdigit, phone))
                     payload = {
-                        "number": clean_phone,
-                        "text": msg + "\n\n*(Nota: Enviado via Instância de Fallback - Evolution API)*"
+                        "jid": f"{clean_phone}@s.whatsapp.net",
+                        "text": msg + "\n\n*(Nota: Enviado via Instância de Fallback - Pastorini API)*"
                     }
                     req_data = json.dumps(payload).encode('utf-8')
                     base_url_fallback = api_url_fallback.rstrip("/")
-                    full_url_fallback = f"{base_url_fallback}/message/sendText/{instance_id_fallback}"
+                    full_url_fallback = f"{base_url_fallback}/api/instances/{instance_id_fallback}/send-text"
                     
                     req = urllib.request.Request(
                         full_url_fallback,
                         data=req_data,
                         headers={
                             "Content-Type": "application/json",
-                            "apikey": api_token_fallback
+                            "x-api-key": api_token_fallback
                         },
                         method="POST"
                     )
                     with urllib.request.urlopen(req, timeout=8) as response:
                         resp_data = response.read().decode('utf-8')
-                        logger.info("WhatsApp de teste enviado com sucesso pela instância de fallback (Evolution) para {}: {}", phone, resp_data)
+                        logger.info("WhatsApp de teste enviado com sucesso pela instância de fallback (Pastorini) para {}: {}", phone, resp_data)
                         return jsonify({
                             "success": True,
                             "simulated": False,
-                            "message": f"Mensagem de teste enviada com sucesso (via Instância de Fallback - Evolution API) para {phone}!"
+                            "message": f"Mensagem de teste enviada com sucesso (via Instância de Fallback - Pastorini API) para {phone}!"
                         })
                 except Exception as fallback_err:
-                    logger.warning("Falha na chamada de fallback (Evolution API): {}", fallback_err)
+                    logger.warning("Falha na chamada de fallback (Pastorini API): {}", fallback_err)
                     
             # Fallback final (simulação) se ambas falharem
             return jsonify({
@@ -207,8 +208,8 @@ def whatsapp_instance_status():
         if not api_url or not instance_id:
             return jsonify({"status": "DISCONNECTED", "message": "Configurações incompletas."})
             
-        # Se for a instância de fallback (Evolution API)
-        if instance_type == "fallback":
+        # Se for a instância principal (Evolution API)
+        if instance_type == "primary":
             status_url = f"{api_url}/instance/connectionState/{instance_id}"
             try:
                 req = urllib.request.Request(
@@ -259,10 +260,10 @@ def whatsapp_instance_status():
                         "details": status_data
                     })
             except Exception as e:
-                logger.warning("Erro ao consultar status de fallback (Evolution API): {}", e)
+                logger.warning("Erro ao consultar status da principal (Evolution API): {}", e)
                 return jsonify({"success": False, "status": "DISCONNECTED", "error": str(e)})
 
-        # Caso contrário, Instância Principal (Pastorini API)
+        # Caso contrário, Instância de Fallback (Pastorini API)
         status_url = f"{api_url}/api/instances/{instance_id}/status"
         try:
             req = urllib.request.Request(
@@ -324,8 +325,8 @@ def whatsapp_connect():
         if not api_url or not instance_id:
             return jsonify({"error": "URL ou ID da Instância não informados"}), 400
 
-        # Se for instância de fallback (Evolution API)
-        if instance_type == "fallback":
+        # Se for instância principal (Evolution API)
+        if instance_type == "primary":
             create_url = f"{api_url}/instance/create"
             payload = {
                 "instanceName": instance_id,
@@ -345,14 +346,14 @@ def whatsapp_connect():
                 )
                 with urllib.request.urlopen(req, timeout=6) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
-                    logger.info("Instância fallback (Evolution API) {} criada/iniciada: {}", instance_id, res_data)
+                    logger.info("Instância principal (Evolution API) {} criada/iniciada: {}", instance_id, res_data)
             except Exception as e:
-                logger.info("Tentativa de criar instância fallback (Evolution) retornou: {}", e)
+                logger.info("Tentativa de criar instância principal (Evolution) retornou: {}", e)
                 
-            request.args = {"type": "fallback"}
+            request.args = {"type": "primary"}
             return whatsapp_instance_status()
 
-        # Caso contrário, Instância Principal (Pastorini API)
+        # Caso contrário, Instância de Fallback (Pastorini API)
         create_url = f"{api_url}/api/instances"
         payload = {"id": instance_id}
         req_data = json.dumps(payload).encode('utf-8')
@@ -369,9 +370,9 @@ def whatsapp_connect():
             )
             with urllib.request.urlopen(req, timeout=6) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
-                logger.info("Instância {} criada/iniciada: {}", instance_id, res_data)
+                logger.info("Instância fallback {} criada/iniciada: {}", instance_id, res_data)
         except Exception as e:
-            logger.info("Tentativa de criação de instância retornou: {}", e)
+            logger.info("Tentativa de criação de instância fallback retornou: {}", e)
 
         request.args = {"type": instance_type}
         return whatsapp_instance_status()
@@ -408,8 +409,8 @@ def whatsapp_disconnect():
         if not api_url or not instance_id:
             return jsonify({"error": "Configurações incompletas"}), 400
             
-        # Se for instância de fallback (Evolution API)
-        if instance_type == "fallback":
+        # Se for instância principal (Evolution API)
+        if instance_type == "primary":
             logout_url = f"{api_url}/instance/logout/{instance_id}"
             try:
                 req = urllib.request.Request(
@@ -419,13 +420,13 @@ def whatsapp_disconnect():
                 )
                 with urllib.request.urlopen(req, timeout=6) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
-                    logger.info("Instância fallback (Evolution API) {} desconectada: {}", instance_id, res_data)
-                return jsonify({"success": True, "message": "Instância de fallback desconectada com sucesso."})
+                    logger.info("Instância principal (Evolution API) {} desconectada: {}", instance_id, res_data)
+                return jsonify({"success": True, "message": "Instância principal desconectada com sucesso."})
             except Exception as e:
-                logger.exception("Erro ao desconectar instância de fallback (Evolution API)")
+                logger.exception("Erro ao desconectar instância principal (Evolution API)")
                 return jsonify({"error": str(e)}), 500
 
-        # Caso contrário, Instância Principal (Pastorini API)
+        # Caso contrário, Instância de Fallback (Pastorini API)
         logout_url = f"{api_url}/api/instances/{instance_id}/logout"
         req = urllib.request.Request(
             logout_url,

@@ -36,17 +36,17 @@
                 <div class="glass-panel" style="padding: 1.25rem; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01); border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
                   <div>
                     <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
-                      <span>🟢</span> Instância Principal (Pastorini API)
+                      <span>🟢</span> Instância Principal (Evolution API)
                     </h4>
                     
                     <div class="form-group">
                       <label class="form-label">URL do Gateway (API) *</label>
-                      <input type="url" id="field-whatsapp-api-url" class="form-input" placeholder="ex: http://74.1.20.130:3000" required>
+                      <input type="url" id="field-whatsapp-api-url" class="form-input" placeholder="ex: https://evolution.rotaflash.com" required>
                     </div>
 
                     <div class="form-group">
                       <label class="form-label">ID da Instância *</label>
-                      <input type="text" id="field-whatsapp-instance-id" class="form-input" placeholder="ex: MinhaInstancia" required>
+                      <input type="text" id="field-whatsapp-instance-id" class="form-input" placeholder="ex: admin" required>
                     </div>
                     
                     <div class="form-group">
@@ -85,19 +85,19 @@
                 <div class="glass-panel" style="padding: 1.25rem; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01); border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
                   <div>
                     <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
-                      <span>🟡</span> Instância de Fallback (Evolution API)
+                      <span>🟡</span> Instância de Fallback (Pastorini API)
                     </h4>
 
                     <!-- Seção interna do Fallback -->
                     <div id="fallback-instance-config-section" style="transition: all 0.3s ease; opacity: 1; pointer-events: auto;">
                       <div class="form-group">
                         <label class="form-label">URL do Gateway (API) *</label>
-                        <input type="url" id="field-whatsapp-api-url-fallback" class="form-input" placeholder="ex: https://evolution.rotaflash.com" required>
+                        <input type="url" id="field-whatsapp-api-url-fallback" class="form-input" placeholder="ex: http://74.1.20.130:3000" required>
                       </div>
 
                       <div class="form-group">
                         <label class="form-label">ID da Instância *</label>
-                        <input type="text" id="field-whatsapp-instance-id-fallback" class="form-input" placeholder="ex: InstanciaFallback" required>
+                        <input type="text" id="field-whatsapp-instance-id-fallback" class="form-input" placeholder="ex: MinhaInstancia" required>
                       </div>
                       
                       <div class="form-group">
