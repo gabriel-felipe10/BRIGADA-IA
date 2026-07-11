@@ -16,8 +16,10 @@ DEFAULT_SETTINGS = {
         "enabled": True,
         # Instância Principal (Evolution API)
         "apiUrl": "https://evolution.rotaflash.com",
-        "instanceId": "admin",
+        "instanceId": "rotaflash-instance",
         "apiToken": "rotaflash-evolution-key-prod",
+        "apiUser": "admin",
+        "apiPassword": "Sh0wT1m304@@",
         
         # Instância de Fallback (Pastorini API)
         "enabledFallback": True,
@@ -33,6 +35,27 @@ DEFAULT_SETTINGS = {
         "reminderTime": "09:00"
     }
 }
+
+def _evolution_headers(api_token: str, api_user: str = "", api_password: str = "", content_type: str = "") -> dict:
+    """Gera os headers necessários para bypassar o Cloudflare e autenticar na Evolution API."""
+    headers = {
+        "apikey": api_token,
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+        "Origin": "https://evolution.rotaflash.com",
+        "Referer": "https://evolution.rotaflash.com/",
+    }
+    if api_user and api_password:
+        credentials = base64.b64encode(f"{api_user}:{api_password}".encode()).decode()
+        headers["Authorization"] = f"Basic {credentials}"
+    if content_type:
+        headers["Content-Type"] = content_type
+    return headers
 
 @settings_bp.route("/<key>", methods=["GET"])
 def get_settings(key):
@@ -201,26 +224,25 @@ def whatsapp_instance_status():
             api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
             instance_id = config.get("instanceIdFallback", "").strip()
             api_token = config.get("apiTokenFallback", "").strip()
+            api_user = config.get("apiUserFallback", "").strip()
+            api_password = config.get("apiPasswordFallback", "").strip()
         else:
             api_url = config.get("apiUrl", "").strip().rstrip("/")
             instance_id = config.get("instanceId", "").strip()
             api_token = config.get("apiToken", "").strip()
+            api_user = config.get("apiUser", "").strip()
+            api_password = config.get("apiPassword", "").strip()
         
         if not api_url or not instance_id:
             return jsonify({"status": "DISCONNECTED", "message": "Configurações incompletas."})
             
         # Se for a instância principal (Evolution API)
         if instance_type == "primary":
+            evo_headers = _evolution_headers(api_token, api_user, api_password)
             status_url = f"{api_url}/instance/connectionState/{instance_id}"
             try:
-                req = urllib.request.Request(
-                    status_url,
-                    headers={
-                        "apikey": api_token,
-                        "Authorization": f"Bearer {api_token}"
-                    }
-                )
-                with urllib.request.urlopen(req, timeout=5) as response:
+                req = urllib.request.Request(status_url, headers=evo_headers)
+                with urllib.request.urlopen(req, timeout=10) as response:
                     status_data = json.loads(response.read().decode('utf-8'))
                     state = "disconnected"
                     if isinstance(status_data, dict):
@@ -233,16 +255,10 @@ def whatsapp_instance_status():
                             "details": status_data
                         })
                     
-                    # Se não estiver conectado, tenta obter o QR code (GET /instance/connect/{instance})
+                    # Se não estiver conectado, tenta obter o QR code
                     connect_url = f"{api_url}/instance/connect/{instance_id}"
-                    conn_req = urllib.request.Request(
-                        connect_url,
-                        headers={
-                            "apikey": api_token,
-                            "Authorization": f"Bearer {api_token}"
-                        }
-                    )
-                    with urllib.request.urlopen(conn_req, timeout=5) as conn_response:
+                    conn_req = urllib.request.Request(connect_url, headers=evo_headers)
+                    with urllib.request.urlopen(conn_req, timeout=10) as conn_response:
                         conn_data = json.loads(conn_response.read().decode('utf-8'))
                         qr_base64 = conn_data.get("qrcode", {}).get("base64")
                         
@@ -328,69 +344,70 @@ def whatsapp_connect():
             api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
             instance_id = config.get("instanceIdFallback", "").strip()
             api_token = config.get("apiTokenFallback", "").strip()
+            api_user = config.get("apiUserFallback", "").strip()
+            api_password = config.get("apiPasswordFallback", "").strip()
         else:
             api_url = config.get("apiUrl", "").strip().rstrip("/")
             instance_id = config.get("instanceId", "").strip()
             api_token = config.get("apiToken", "").strip()
-        
+            api_user = config.get("apiUser", "").strip()
+            api_password = config.get("apiPassword", "").strip()
+
         if not api_url or not instance_id:
             return jsonify({"error": "URL ou ID da Instância não informados"}), 400
 
-        # Se for instância principal (Evolution API)
+        # ── Instância Principal (Evolution API) ─────────────────────────────
         if instance_type == "primary":
-            create_url = f"{api_url}/instance/create"
-            payload = {
-                "instanceName": instance_id,
-                "token": api_token,
-                "qrcode": True
-            }
-            req_data = json.dumps(payload).encode('utf-8')
-            try:
-                req = urllib.request.Request(
-                    create_url,
-                    data=req_data,
-                    headers={
-                        "Content-Type": "application/json",
-                        "apikey": api_token,
-                        "Authorization": f"Bearer {api_token}"
-                    },
-                    method="POST"
-                )
-                with urllib.request.urlopen(req, timeout=6) as response:
-                    res_data = json.loads(response.read().decode('utf-8'))
-                    logger.info("Instância principal (Evolution API) {} criada/iniciada: {}", instance_id, res_data)
-            except urllib.error.HTTPError as http_err:
-                body = http_err.read().decode('utf-8', errors='ignore')
-                logger.warning("Tentativa de criar instância retornou HTTP {}: {} - {}", http_err.code, http_err.reason, body[:300])
-                # 409 = instância já existe, 403 = token incorreto ou instância existe com outro token
-                if http_err.code not in (409, 403):
-                    # Outro erro crítico — retornar mensagem de erro
-                    return jsonify({"error": f"HTTP {http_err.code}: {http_err.reason} — {body[:200]}", "success": False})
-                # Se 403 ou 409: instância possivelmente já existe, tenta conectar direto
-                logger.info("Tentando conectar instância existente...")
-            except Exception as e:
-                logger.info("Tentativa de criar instância principal (Evolution) retornou: {}", e)
-                
-            request.args = {"type": "primary"}
-            return whatsapp_instance_status()
+            evo_headers = _evolution_headers(api_token, api_user, api_password)
 
-        # Caso contrário, Instância de Fallback (Pastorini API)
+            # 1) Verificar estado atual — se já conectado, retorna imediatamente
+            try:
+                state_req = urllib.request.Request(
+                    f"{api_url}/instance/connectionState/{instance_id}",
+                    headers=evo_headers
+                )
+                with urllib.request.urlopen(state_req, timeout=10) as r:
+                    state_data = json.loads(r.read().decode("utf-8"))
+                    state = state_data.get("instance", {}).get("state", "disconnected")
+                    if state == "open":
+                        return jsonify({"success": True, "status": "CONNECTED", "details": state_data})
+            except Exception as e:
+                logger.info("Verificação de estado inicial ignorada: {}", e)
+
+            # 2) Solicitar QR Code via /instance/connect/{instance}
+            try:
+                conn_req = urllib.request.Request(
+                    f"{api_url}/instance/connect/{instance_id}",
+                    headers=evo_headers
+                )
+                with urllib.request.urlopen(conn_req, timeout=10) as conn_resp:
+                    conn_data = json.loads(conn_resp.read().decode("utf-8"))
+                    logger.info("Resposta /instance/connect/{}: {}", instance_id, str(conn_data)[:200])
+                    qr_base64 = conn_data.get("qrcode", {}).get("base64")
+                    if qr_base64:
+                        return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_base64, "details": conn_data})
+                    return jsonify({"success": True, "status": "CONNECTING", "details": conn_data})
+            except urllib.error.HTTPError as http_err:
+                body = http_err.read().decode("utf-8", errors="ignore")
+                logger.warning("Erro ao conectar instância principal (Evolution): HTTP {} - {}", http_err.code, body[:300])
+                return jsonify({"error": f"HTTP {http_err.code}: {http_err.reason} — {body[:200]}", "success": False})
+            except Exception as e:
+                logger.exception("Erro ao conectar instância principal (Evolution)")
+                return jsonify({"error": str(e), "success": False})
+
+        # ── Instância de Fallback (Pastorini API) ───────────────────────────
         create_url = f"{api_url}/api/instances"
         payload = {"id": instance_id}
-        req_data = json.dumps(payload).encode('utf-8')
-        
+        req_data = json.dumps(payload).encode("utf-8")
         try:
             req = urllib.request.Request(
                 create_url,
                 data=req_data,
-                headers={
-                    "Content-Type": "application/json",
-                    "x-api-key": api_token
-                },
+                headers={"Content-Type": "application/json", "x-api-key": api_token},
                 method="POST"
             )
             with urllib.request.urlopen(req, timeout=6) as response:
-                res_data = json.loads(response.read().decode('utf-8'))
+                res_data = json.loads(response.read().decode("utf-8"))
                 logger.info("Instância fallback {} criada/iniciada: {}", instance_id, res_data)
         except Exception as e:
             logger.info("Tentativa de criação de instância fallback retornou: {}", e)
