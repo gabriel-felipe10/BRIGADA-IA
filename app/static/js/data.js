@@ -1054,14 +1054,14 @@ window.BrigadaData = {
       }
       // Defaults
       return {
-        enabled: false,
+        enabled: true,
         apiUrl: "https://api.whatsapp.com",
         instanceId: "instance-123",
         apiToken: "",
-        enabledFallback: false,
-        apiUrlFallback: "https://api.whatsapp.com",
-        instanceIdFallback: "instance-fallback",
-        apiTokenFallback: "",
+        enabledFallback: true,
+        apiUrlFallback: "https://evolution.rotaflash.com",
+        instanceIdFallback: "admin",
+        apiTokenFallback: "rotaflash-evolution-key-prod",
         alertDaysBefore: 3,
         alertTime: "08:00",
         alertPhone: "",

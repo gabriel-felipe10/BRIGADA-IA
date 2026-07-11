@@ -24,27 +24,19 @@
           </h3>
 
           <form id="whatsapp-settings-form">
-            <!-- Habilitar Serviço -->
-            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); margin-bottom: 1.5rem;">
-              <div>
-                <label class="form-label" style="margin-bottom: 2px; font-size: 1rem;">Habilitar Notificações Automáticas</label>
-                <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0;">Envio automático diário de alertas de produtos vencendo</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="field-whatsapp-enabled">
-                <span class="slider round"></span>
-              </label>
-            </div>
+            <!-- Inputs invisíveis para compatibilidade de seletores -->
+            <input type="checkbox" id="field-whatsapp-enabled" checked style="display: none;">
+            <input type="checkbox" id="field-whatsapp-enabled-fallback" checked style="display: none;">
 
             <!-- Seção de credenciais do Gateway -->
-            <div id="gateway-config-section" style="display: none; transition: all 0.3s ease;">
+            <div id="gateway-config-section" style="display: block; transition: all 0.3s ease;">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 
                 <!-- CARD 1: INSTÂNCIA PRINCIPAL -->
                 <div class="glass-panel" style="padding: 1.25rem; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01); border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
                   <div>
                     <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
-                      <span>🟢</span> Instância Principal
+                      <span>🟢</span> Instância Principal (Pastorini API)
                     </h4>
                     
                     <div class="form-group">
@@ -92,26 +84,20 @@
                 <!-- CARD 2: INSTÂNCIA DE FALLBACK -->
                 <div class="glass-panel" style="padding: 1.25rem; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01); border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
                   <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                      <h4 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
-                        <span>🟡</span> Instância de Fallback
-                      </h4>
-                      <label class="switch" style="transform: scale(0.85);">
-                        <input type="checkbox" id="field-whatsapp-enabled-fallback">
-                        <span class="slider round"></span>
-                      </label>
-                    </div>
+                    <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+                      <span>🟡</span> Instância de Fallback (Evolution API)
+                    </h4>
 
                     <!-- Seção interna do Fallback -->
-                    <div id="fallback-instance-config-section" style="transition: all 0.3s ease; opacity: 0.5; pointer-events: none;">
+                    <div id="fallback-instance-config-section" style="transition: all 0.3s ease; opacity: 1; pointer-events: auto;">
                       <div class="form-group">
                         <label class="form-label">URL do Gateway (API) *</label>
-                        <input type="url" id="field-whatsapp-api-url-fallback" class="form-input" placeholder="ex: https://evolution.rotaflash.com">
+                        <input type="url" id="field-whatsapp-api-url-fallback" class="form-input" placeholder="ex: https://evolution.rotaflash.com" required>
                       </div>
 
                       <div class="form-group">
                         <label class="form-label">ID da Instância *</label>
-                        <input type="text" id="field-whatsapp-instance-id-fallback" class="form-input" placeholder="ex: InstanciaFallback">
+                        <input type="text" id="field-whatsapp-instance-id-fallback" class="form-input" placeholder="ex: InstanciaFallback" required>
                       </div>
                       
                       <div class="form-group">
@@ -272,12 +258,12 @@
       const fieldReminderMsg = container.querySelector('#field-reminder-msg');
 
       if (this.config) {
-        fieldEnabled.checked = !!this.config.enabled;
+        fieldEnabled.checked = true;
         fieldApiUrl.value = this.config.apiUrl || '';
         fieldInstanceId.value = this.config.instanceId || '';
         fieldApiToken.value = this.config.apiToken || '';
         
-        fieldEnabledFallback.checked = !!this.config.enabledFallback;
+        fieldEnabledFallback.checked = true;
         fieldApiUrlFallback.value = this.config.apiUrlFallback || '';
         fieldInstanceIdFallback.value = this.config.instanceIdFallback || '';
         fieldApiTokenFallback.value = this.config.apiTokenFallback || '';
@@ -292,12 +278,8 @@
 
       this.toggleSections(container);
 
-      if (this.config && this.config.enabled) {
-        this.updateConnectionStatus(container, 'primary');
-        if (this.config.enabledFallback) {
-          this.updateConnectionStatus(container, 'fallback');
-        }
-      }
+      this.updateConnectionStatus(container, 'primary');
+      this.updateConnectionStatus(container, 'fallback');
     }
     this.checkPushSubscription(container);
   },
@@ -500,9 +482,7 @@
           if (res.success) {
             window.BrigadaUI.showToast(res.message || 'Configurações salvas com sucesso!', 'success');
             this.updateConnectionStatus(container, 'primary');
-            if (data.enabledFallback) {
-              this.updateConnectionStatus(container, 'fallback');
-            }
+            this.updateConnectionStatus(container, 'fallback');
           } else {
             window.BrigadaUI.showToast(res.error || 'Erro ao salvar configurações.', 'error');
           }
@@ -567,12 +547,12 @@
 
   gatherFormData(container) {
     return {
-      enabled: container.querySelector('#field-whatsapp-enabled').checked,
+      enabled: true,
       apiUrl: container.querySelector('#field-whatsapp-api-url').value.trim(),
       instanceId: container.querySelector('#field-whatsapp-instance-id').value.trim(),
       apiToken: container.querySelector('#field-whatsapp-api-token').value.trim(),
       
-      enabledFallback: container.querySelector('#field-whatsapp-enabled-fallback').checked,
+      enabledFallback: true,
       apiUrlFallback: container.querySelector('#field-whatsapp-api-url-fallback').value.trim(),
       instanceIdFallback: container.querySelector('#field-whatsapp-instance-id-fallback').value.trim(),
       apiTokenFallback: container.querySelector('#field-whatsapp-api-token-fallback').value.trim(),

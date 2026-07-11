@@ -13,16 +13,16 @@ settings_bp = Blueprint("settings_api", __name__, url_prefix="/api/settings")
 
 DEFAULT_SETTINGS = {
     "whatsapp": {
-        "enabled": False,
+        "enabled": True,
         "apiUrl": "https://api.whatsapp.com",
         "instanceId": "instance-123",
         "apiToken": "",
         
-        # Fallback Instance
-        "enabledFallback": False,
-        "apiUrlFallback": "https://api.whatsapp.com",
-        "instanceIdFallback": "instance-fallback",
-        "apiTokenFallback": "",
+        # Fallback Instance (Evolution API)
+        "enabledFallback": True,
+        "apiUrlFallback": "https://evolution.rotaflash.com",
+        "instanceIdFallback": "admin",
+        "apiTokenFallback": "rotaflash-evolution-key-prod",
         
         "alertDaysBefore": 3,
         "alertTime": "08:00",
