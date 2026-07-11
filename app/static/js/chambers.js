@@ -221,7 +221,7 @@ window.BrigadaChambers = {
           <td data-label="Endereço WMS"><strong style="color:#6366F1; font-family:monospace; font-size:1rem;">${addressLabel}</strong></td>
           <td data-label="Câmara"><span class="butcher-alloc-badge allocated ${parsed.chamber === 'Câmara Resfriada' ? 'resfriada' : 'congelada'}">${chamberLabel}</span></td>
           <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-          <td data-label="Produto" class="product-name">
+          <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">
             <div>${p.name}</div>
             <div style="font-size:0.7rem; color:var(--text-tertiary);">${catMap[p.category] || p.category}</div>
           </td>
@@ -1398,7 +1398,7 @@ window.BrigadaChambers = {
             <td data-label="Endereço WMS"><strong style="color:#6366F1; font-family:monospace; font-size:1rem;">${addressLabel}</strong></td>
             <td data-label="Câmara"><span class="butcher-alloc-badge allocated ${parsed.chamber === 'Câmara Resfriada' ? 'resfriada' : 'congelada'}">${chamberLabel}</span></td>
             <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-            <td data-label="Produto" class="product-name">
+            <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">
               <div>${p.name}</div>
               <div style="font-size:0.7rem; color:var(--text-tertiary);">${catMap[p.category] || p.category}</div>
             </td>

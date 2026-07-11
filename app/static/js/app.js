@@ -117,7 +117,7 @@ window.BrigadaUI = {
 
   // ── Product View Modal ───────────────────────────────────────────────────
   showProductView(productId) {
-    const product = window.BrigadaData.products.find(p => p.id === productId);
+    const product = window.BrigadaData.products.find(p => String(p.id) === String(productId));
     if (!product) return;
 
     const modal = document.getElementById('product-view-modal-overlay');
@@ -1057,7 +1057,7 @@ window.BrigadaRouter = {
                 ${criticalProducts.map(p => `
                   <tr>
                     <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-                    <td data-label="Produto" class="product-name">${p.name}</td>
+                    <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">${p.name}</td>
                     <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${p.category === 'aves' ? '🐔 Aves' : p.category === 'suino' ? '🐷 Suíno' : p.category === 'bovino' ? '🐮 Bovino' : '🐟 Pescado'}</span></td>
                     <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
                     <td data-label="Status"><span class="badge ${p._status.class}">${p._status.icon} ${p._status.label}</span></td>

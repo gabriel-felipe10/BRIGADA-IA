@@ -276,7 +276,7 @@ window.BrigadaPereciveis = {
         <tr data-id="${p.id}">
           <td style="text-align: center;"><input type="checkbox" class="select-product-checkbox" data-id="${p.id}" style="cursor:pointer; width:16px; height:16px;"></td>
           <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-          <td data-label="Produto" class="product-name">${p.name}</td>
+          <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">${p.name}</td>
           <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
           <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category] || p.category}</span></td>
           <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>

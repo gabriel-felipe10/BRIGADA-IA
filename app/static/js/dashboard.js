@@ -812,7 +812,7 @@ window.BrigadaDashboard = {
             return `
             <tr>
               <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
-              <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView(${p.id})" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">
+              <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">
                 <div>${p.name}</div>
                 ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500; text-decoration: none;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
               </td>
