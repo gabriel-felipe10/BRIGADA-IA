@@ -120,7 +120,8 @@ def test_whatsapp():
                 data=req_data,
                 headers={
                     "Content-Type": "application/json",
-                    "apikey": api_token
+                    "apikey": api_token,
+                    "Authorization": f"Bearer {api_token}"
                 },
                 method="POST"
             )
@@ -214,7 +215,10 @@ def whatsapp_instance_status():
             try:
                 req = urllib.request.Request(
                     status_url,
-                    headers={"apikey": api_token}
+                    headers={
+                        "apikey": api_token,
+                        "Authorization": f"Bearer {api_token}"
+                    }
                 )
                 with urllib.request.urlopen(req, timeout=5) as response:
                     status_data = json.loads(response.read().decode('utf-8'))
@@ -233,7 +237,10 @@ def whatsapp_instance_status():
                     connect_url = f"{api_url}/instance/connect/{instance_id}"
                     conn_req = urllib.request.Request(
                         connect_url,
-                        headers={"apikey": api_token}
+                        headers={
+                            "apikey": api_token,
+                            "Authorization": f"Bearer {api_token}"
+                        }
                     )
                     with urllib.request.urlopen(conn_req, timeout=5) as conn_response:
                         conn_data = json.loads(conn_response.read().decode('utf-8'))
@@ -340,7 +347,8 @@ def whatsapp_connect():
                     data=req_data,
                     headers={
                         "Content-Type": "application/json",
-                        "apikey": api_token
+                        "apikey": api_token,
+                        "Authorization": f"Bearer {api_token}"
                     },
                     method="POST"
                 )
@@ -415,7 +423,10 @@ def whatsapp_disconnect():
             try:
                 req = urllib.request.Request(
                     logout_url,
-                    headers={"apikey": api_token},
+                    headers={
+                        "apikey": api_token,
+                        "Authorization": f"Bearer {api_token}"
+                    },
                     method="DELETE"
                 )
                 with urllib.request.urlopen(req, timeout=6) as response:

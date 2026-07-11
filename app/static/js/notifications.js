@@ -409,14 +409,19 @@
       fieldReminderActive.addEventListener('change', () => this.toggleSections(container));
 
       btnConnectInst.addEventListener('click', async () => {
-        window.BrigadaUI.showToast('Iniciando conexão da instância principal...', 'info');
+        window.BrigadaUI.showToast('Salvando configurações e iniciando conexão...', 'info');
         try {
+          const data = this.gatherFormData(container);
+          await window.BrigadaData.saveSettings('whatsapp', data);
+
           const res = await fetch('/api/settings/whatsapp/connect?type=primary', { method: 'POST' }).then(r => r.json());
           this.updateConnectionStatus(container, 'primary');
           if (res.status === 'QR_READY') {
             window.BrigadaUI.showToast('Instância principal pronta para escanear!', 'warning');
           } else if (res.status === 'CONNECTED') {
             window.BrigadaUI.showToast('Instância principal conectada com sucesso!', 'success');
+          } else if (res.error || res.success === false) {
+            window.BrigadaUI.showToast(`Erro: ${res.error || 'Falha ao iniciar conexão.'}`, 'error');
           }
         } catch (err) {
           window.BrigadaUI.showToast('Falha ao tentar conectar a instância principal.', 'error');
@@ -442,14 +447,19 @@
       });
 
       btnConnectInstFallback.addEventListener('click', async () => {
-        window.BrigadaUI.showToast('Iniciando conexão da instância de fallback...', 'info');
+        window.BrigadaUI.showToast('Salvando configurações e iniciando conexão...', 'info');
         try {
+          const data = this.gatherFormData(container);
+          await window.BrigadaData.saveSettings('whatsapp', data);
+
           const res = await fetch('/api/settings/whatsapp/connect?type=fallback', { method: 'POST' }).then(r => r.json());
           this.updateConnectionStatus(container, 'fallback');
           if (res.status === 'QR_READY') {
             window.BrigadaUI.showToast('Instância de fallback pronta para escanear!', 'warning');
           } else if (res.status === 'CONNECTED') {
             window.BrigadaUI.showToast('Instância de fallback conectada com sucesso!', 'success');
+          } else if (res.error || res.success === false) {
+            window.BrigadaUI.showToast(`Erro: ${res.error || 'Falha ao iniciar conexão.'}`, 'error');
           }
         } catch (err) {
           window.BrigadaUI.showToast('Falha ao tentar conectar a instância de fallback.', 'error');
