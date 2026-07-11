@@ -751,9 +751,11 @@ input[type="number"].form-input {
 /* Blinking Alerts (4 seconds interval) */
 .card-blink-orange {
   animation: cardBlinkOrange 4s infinite;
+  opacity: 1 !important;
 }
 .card-blink-warning {
   animation: cardBlinkWarning 4s infinite;
+  opacity: 1 !important;
 }
 @keyframes cardBlinkOrange {
   0%, 85%, 100% { border-color: var(--orange-border); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3); }
