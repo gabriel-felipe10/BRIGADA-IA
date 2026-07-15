@@ -52,18 +52,19 @@ def create_product():
             if not data.get(field):
                 return jsonify({"error": f"Campo '{field}' é obrigatório"}), 400
         
-        # Verifica se já existe um produto com o mesmo PLU
+        # Verifica se já existe um produto com o mesmo PLU e data de validade
         plu = data.get("plu").strip()
-        existing = supabase.table("produtos").select("id, name").eq("plu", plu).execute()
+        end_date = data.get("endDate")
+        existing = supabase.table("produtos").select("id, name").eq("plu", plu).eq("end_date", end_date).execute()
         if existing.data:
-            logger.warning("Tentativa de cadastrar PLU duplicado | plu={}", plu)
-            return jsonify({"error": f"Já existe um produto cadastrado com o PLU '{plu}' ({existing.data[0]['name']})."}), 409
+            logger.warning("Tentativa de cadastrar PLU e data de validade duplicados | plu={} end_date={}", plu, end_date)
+            return jsonify({"error": f"Já existe um produto cadastrado com o PLU '{plu}' e data de validade '{end_date}' ({existing.data[0]['name']})."}), 409
         
         # Mapeia camelCase para o snake_case do banco
         db_data = {
             "plu": plu,
             "barcode": data.get("barcode") if data.get("barcode") else None,
-            "name": data.get("name").strip(),
+            "name": data.get("name").strip().upper(),
             "category": data.get("category"),
             "start_date": data.get("startDate") if data.get("startDate") else None,
             "end_date": data.get("endDate"),
@@ -123,19 +124,31 @@ def update_product(product_id):
         data = request.get_json(force=True)
         logger.debug("Atualizando produto | id={} data={}", product_id, data)
         
-        # Se alterou o PLU, verifica se não vai duplicar outro produto
-        if "plu" in data:
-            plu = data["plu"].strip()
-            existing = supabase.table("produtos").select("id, name").eq("plu", plu).neq("id", product_id).execute()
-            if existing.data:
-                logger.warning("Tentativa de atualizar PLU para duplicado | id={} plu={}", product_id, plu)
-                return jsonify({"error": f"Já existe outro produto cadastrado com o PLU '{plu}' ({existing.data[0]['name']})."}), 409
+        # Se alterou o PLU ou a data de validade, verifica se não vai duplicar outro produto (mesmo PLU e mesma validade)
+        if "plu" in data or "endDate" in data:
+            plu = data.get("plu", "").strip()
+            end_date = data.get("endDate")
+            
+            # Se um deles não foi fornecido no payload, buscamos do registro atual
+            if not plu or not end_date:
+                curr = supabase.table("produtos").select("plu, end_date").eq("id", product_id).execute()
+                if curr.data:
+                    if not plu:
+                        plu = curr.data[0].get("plu", "").strip()
+                    if not end_date:
+                        end_date = curr.data[0].get("end_date")
+            
+            if plu and end_date:
+                existing = supabase.table("produtos").select("id, name").eq("plu", plu).eq("end_date", end_date).neq("id", product_id).execute()
+                if existing.data:
+                    logger.warning("Tentativa de atualizar produto para mesmo PLU e Validade duplicados | id={} plu={} end_date={}", product_id, plu, end_date)
+                    return jsonify({"error": f"Já existe outro produto cadastrado com o PLU '{plu}' e data de validade '{end_date}' ({existing.data[0]['name']})."}), 409
 
         # Mapeia campos do front-end para o banco
         db_data = {}
         if "plu" in data: db_data["plu"] = data["plu"].strip()
         if "barcode" in data: db_data["barcode"] = data["barcode"].strip() if data["barcode"] else None
-        if "name" in data: db_data["name"] = data["name"].strip()
+        if "name" in data: db_data["name"] = data["name"].strip().upper()
         if "category" in data: db_data["category"] = data["category"]
         if "startDate" in data: db_data["start_date"] = data["startDate"] if data["startDate"] else None
         if "endDate" in data: db_data["end_date"] = data["endDate"]

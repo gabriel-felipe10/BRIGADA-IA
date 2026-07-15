@@ -447,6 +447,11 @@ body::before {
   transition:border-color var(--t-fast);
 }
 .select-control:focus { border-color:var(--accent-border); }
+.select-control option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: 8px 12px;
+}
 
 /* ── Table ──────────────────────────────────────────────────────────────────── */
 .table-wrapper { margin-bottom:var(--sp-lg); }
@@ -604,6 +609,11 @@ body::before {
 select.form-input { cursor:pointer; -webkit-appearance:none; appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 12px center; padding-right:2.5rem;
+}
+select.form-input option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: 8px 12px;
 }
 input[type="date"].form-input { color-scheme:dark; }
 input[type="number"].form-input::-webkit-outer-spin-button,

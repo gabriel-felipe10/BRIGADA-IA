@@ -63,6 +63,13 @@ window.BrigadaDashboard = {
     this.currentYear = 'all';
     this.currentMonth = 'all';
     this.currentDay = 'all';
+    
+    if (window.BrigadaAuth.isPromotor()) {
+      container.innerHTML = this.buildPromotorHTML();
+      this.bindPromotorEvents(container);
+      return;
+    }
+
     const isSuperAdmin = role === 'superadmin';
     container.innerHTML = this.buildHTML(isSuperAdmin);
     this.bindEvents(container);
@@ -968,12 +975,12 @@ window.BrigadaDashboard = {
       return;
     }
 
-    // Validação local de PLU duplicado
+    // Validação local de PLU duplicado com a mesma data de validade
     const duplicate = window.BrigadaData.products.find(
-      p => p.plu.trim().toLowerCase() === plu.toLowerCase() && p.id !== this.editingId
+      p => p.plu.trim().toLowerCase() === plu.toLowerCase() && p.endDate === endDate && p.id !== this.editingId
     );
     if (duplicate) {
-      window.BrigadaUI.showToast(`Não é permitido cadastrar produtos com o mesmo PLU. O PLU "${plu}" já pertence a: ${duplicate.name}.`, 'error');
+      window.BrigadaUI.showToast(`Não é permitido cadastrar o mesmo PLU com a mesma data de validade. O PLU "${plu}" com vencimento em ${endDate} já existe.`, 'error');
       return;
     }
 
@@ -1119,4 +1126,174 @@ window.BrigadaDashboard = {
     `);
     printWindow.document.close();
   },
+
+  buildPromotorHTML() {
+    const today = new Date().toLocaleDateString('pt-BR', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    return `
+      <div class="panel-header">
+        <div class="panel-header__left">
+          <h2 class="panel-title">📊 Dashboard Brigada de Validade</h2>
+          <p class="panel-subtitle">Monitoramento em tempo real — Açougue Varejo</p>
+        </div>
+        <div class="date-badge">
+          <span>📅</span>
+          <span>${today}</span>
+        </div>
+      </div>
+
+      <!-- Atalho de navegação rápida para voltar para Conciliação -->
+      <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--primary); background: linear-gradient(90deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,0.02) 100%);">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span style="font-size: 2.2rem;">⚖️</span>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 4px 0;">Controle de Inventário</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Você possui acesso total para cadastrar e gerenciar a Conciliação de Estoque.</p>
+          </div>
+        </div>
+        <button id="btn-goto-conciliacao" class="btn btn--primary" style="display: flex; align-items: center; gap: 8px;">
+          <span>⚖️</span> Ir para Conciliação
+        </button>
+      </div>
+
+      <!-- Barra de Filtros por Data de Vencimento (Desabilitada) -->
+      <div class="toolbar" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); opacity: 0.7;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">🔍</span>
+          <span style="font-weight: 500; font-size: 0.95rem; color: var(--text-secondary);">Filtrar Validade:</span>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <select class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 90px; height: 38px;" disabled>
+            <option>Dia (Todos)</option>
+          </select>
+          <select class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 130px; height: 38px;" disabled>
+            <option>Mês (Todos)</option>
+          </select>
+          <select class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 110px; height: 38px;" disabled>
+            <option>Ano (Todos)</option>
+          </select>
+          <button class="btn btn--ghost" style="padding: 0 1rem; height: 38px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; border-radius: var(--r-full);" disabled>
+            <span>🧹</span> Limpar
+          </button>
+        </div>
+      </div>
+
+      <!-- Métricas Principais -->
+      <div class="dashboard-grid dashboard-grid--5 stagger" style="margin-bottom:2rem;">
+        <div class="metric-card">
+          <div class="metric-card__icon">📦</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Total Produtos</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--danger">
+          <div class="metric-card__icon">🔴</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Vencidos</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--warning">
+          <div class="metric-card__icon">⚠️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Atenção (1-3d)</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--success">
+          <div class="metric-card__icon">✅</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Produtos OK</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--info">
+          <div class="metric-card__icon">📉</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Aguardando Rebaixa</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outras métricas -->
+      <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:1rem;">
+        <div class="metric-card" style="border-left: 3px solid #ef4444;">
+          <div class="metric-card__icon">🗑️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Quebra</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+        <div class="metric-card" style="border-left: 3px solid #3b82f6;">
+          <div class="metric-card__icon">🔄</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Troca</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--orange">
+          <div class="metric-card__icon">🟠</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Vence Hoje</p>
+            <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Quebras Widget -->
+      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1.5rem;">
+        <div class="glass-panel" style="padding: 1.5rem;">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Semana)</h3>
+          <div style="display:flex; align-items:center; gap: 1rem;">
+            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">🗑️</div>
+            <div>
+              <p style="font-size:0.95rem; font-weight:bold; color:var(--error);">⚠️ Informação não autorizada</p>
+            </div>
+          </div>
+        </div>
+        <div class="glass-panel" style="padding: 1.5rem;">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Mês)</h3>
+          <div style="display:flex; align-items:center; gap: 1rem;">
+            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
+            <div>
+              <p style="font-size:0.95rem; font-weight:bold; color:var(--error);">⚠️ Informação não autorizada</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline de alertas -->
+      <div style="margin-bottom:2rem;">
+        <div class="glass-panel">
+          <h3 class="glass-panel__title">🚨 Alertas de Validade</h3>
+          <div style="padding: 1.5rem; text-align: center; color: var(--error); font-weight: 500;">
+            ⚠️ Informação não autorizada
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela rápida por categoria -->
+      <div class="glass-panel" style="margin-bottom:2rem;">
+        <div class="glass-panel__header">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <h3 class="glass-panel__title">🏪 Visão por Categoria</h3>
+            <p style="font-size:0.95rem; font-weight:600; color:var(--text-secondary);">Visualizando: Todos os produtos</p>
+          </div>
+        </div>
+        <div style="padding: 2rem; text-align: center; color: var(--error); font-weight: 500; border-top: 1px solid var(--glass-border);">
+          ⚠️ Informação não autorizada
+        </div>
+      </div>
+    `;
+  },
+
+  bindPromotorEvents(container) {
+    container.querySelector('#btn-goto-conciliacao')?.addEventListener('click', () => {
+      window.BrigadaRouter.navigate('conciliacao');
+    });
+  }
 };

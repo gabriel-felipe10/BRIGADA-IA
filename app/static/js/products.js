@@ -567,12 +567,12 @@ window.BrigadaProducts = {
       return;
     }
 
-    // Validação local de PLU duplicado (independente do nível de usuário)
+    // Validação local de PLU duplicado com a mesma data de validade (independente do nível de usuário)
     const duplicate = window.BrigadaData.products.find(
-      p => p.plu.trim().toLowerCase() === plu.toLowerCase() && p.id !== this.editingId
+      p => p.plu.trim().toLowerCase() === plu.toLowerCase() && p.endDate === endDate && p.id !== this.editingId
     );
     if (duplicate) {
-      window.BrigadaUI.showToast(`Não é permitido cadastrar produtos com o mesmo PLU. O PLU "${plu}" já pertence a: ${duplicate.name}.`, 'error');
+      window.BrigadaUI.showToast(`Não é permitido cadastrar o mesmo PLU com a mesma data de validade. O PLU "${plu}" com vencimento em ${endDate} já existe.`, 'error');
       return;
     }
 
@@ -829,8 +829,8 @@ window.BrigadaProducts = {
 
       if (!plu || !name || !endDate) { skipped++; continue; }
 
-      // Check duplicate PLU
-      if (window.BrigadaData.products.find(p => p.plu.trim().toLowerCase() === plu.toLowerCase())) {
+      // Check duplicate PLU with the same expiration date
+      if (window.BrigadaData.products.find(p => p.plu.trim().toLowerCase() === plu.toLowerCase() && p.endDate === endDate)) {
         skipped++;
         continue;
       }

@@ -67,8 +67,13 @@ window.BrigadaAuth = {
     return this.currentUser?.role === 'gestao';
   },
 
+  isPromotor() {
+    return this.currentUser?.role === 'promotor';
+  },
+
   hasSectorAccess(sector) {
     if (!this.currentUser) return false;
+    if (this.isPromotor()) return false; // Promotor só acessa conciliação
     if (this.isKiosk()) return true; // Kiosk can view catalog of any sector
     const email = this.currentUser.email.toLowerCase();
     if (email === 'admin@brigada.com' || email === 'marcos@brigada.com' || this.isSuperAdmin()) {
@@ -78,12 +83,12 @@ window.BrigadaAuth = {
   },
 
   canAddProduct() {
-    return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user' || this.currentUser?.role === 'lider';
+    return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user' || this.currentUser?.role === 'lider' || this.currentUser?.role === 'promotor';
   },
 
   canEditProduct(product) {
     if (!this.currentUser) return false;
-    if (this.isSuperAdmin() || this.currentUser.role === 'lider') return true;
+    if (this.isSuperAdmin() || this.currentUser.role === 'lider' || this.currentUser.role === 'promotor') return true;
 
     if (product && product.createdBy) {
       const email = this.currentUser.email.toLowerCase();
@@ -97,7 +102,7 @@ window.BrigadaAuth = {
 
   canDeleteProduct(product) {
     if (!this.currentUser) return false;
-    if (this.isSuperAdmin() || this.currentUser.role === 'lider') return true;
+    if (this.isSuperAdmin() || this.currentUser.role === 'lider' || this.currentUser.role === 'promotor') return true;
 
     if (product && product.createdBy) {
       const email = this.currentUser.email.toLowerCase();

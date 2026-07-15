@@ -483,53 +483,61 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📊</span>
               <span>Dashboard</span>
             </a>
+            ${!window.BrigadaAuth.isPromotor() ? `
             <a class="sidebar__link ${activePage === 'catalog' ? 'sidebar__link--active' : ''}" data-page="catalog" href="#">
               <span class="sidebar__link-icon">📖</span>
               <span>Catálogo</span>
             </a>
-            ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
+            ` : ''}
+            <a class="sidebar__link ${activePage === 'conciliacao' ? 'sidebar__link--active' : ''}" data-page="conciliacao" href="#">
+              <span class="sidebar__link-icon">⚖️</span>
+              <span>Conciliação</span>
+            </a>
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
               <span class="sidebar__link-icon">🥩</span>
               <span>Açougue</span>
             </a>
             ` : ''}
 
-            ${window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            ${!window.BrigadaAuth.isPromotor() && (window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis')) ? `
             <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
               <span class="sidebar__link-icon">❄️</span>
               <span>Câmaras Frias</span>
             </a>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
             <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
               <span class="sidebar__link-icon">🍎</span>
               <span>Perecíveis</span>
             </a>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('padaria') ? `
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('padaria') ? `
             <a class="sidebar__link ${activePage === 'padaria' ? 'sidebar__link--active' : ''}" data-page="padaria" href="#">
               <span class="sidebar__link-icon">🍞</span>
               <span>Padaria</span>
             </a>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
             <a class="sidebar__link ${activePage === 'hortifruti' ? 'sidebar__link--active' : ''}" data-page="hortifruti" href="#">
               <span class="sidebar__link-icon">🥦</span>
               <span>Hortifruti</span>
             </a>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('mercearia') ? `
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('mercearia') ? `
             <a class="sidebar__link ${activePage === 'mercearia' ? 'sidebar__link--active' : ''}" data-page="mercearia" href="#">
               <span class="sidebar__link-icon">🛒</span>
               <span>Mercearia</span>
             </a>
             ` : ''}
 
+            ${!window.BrigadaAuth.isPromotor() ? `
             <div class="sidebar__section-label">Configurações</div>
             <a class="sidebar__link ${activePage === 'notifications' ? 'sidebar__link--active' : ''}" data-page="notifications" href="#">
               <span class="sidebar__link-icon">🔔</span>
               <span>Notificações</span>
             </a>
+            ` : ''}
 
             ${isSuperAdmin ? `
             <div class="sidebar__section-label">Administração</div>
@@ -549,7 +557,7 @@ window.BrigadaRouter = {
               <div class="sidebar__avatar" id="sidebar-user-avatar" style="${hasImageAvatar ? '' : `background:${avatarColor}`}">${avatarHTML}</div>
               <div class="sidebar__user-info">
                 <p class="sidebar__user-name" id="sidebar-user-name">${user.name}</p>
-                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}</p>
+                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.isPromotor() ? '📋 Promotor' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}</p>
               </div>
             </div>
             <div class="sidebar__actions">
@@ -867,6 +875,12 @@ window.BrigadaRouter = {
 
     if (page === 'dashboard') {
       window.BrigadaDashboard.render(container, user.role);
+    } else if (page === 'conciliacao') {
+      if (window.BrigadaConciliacao) {
+        window.BrigadaConciliacao.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar conciliação</div>`;
+      }
     } else if (page === 'catalog') {
       if (window.BrigadaCatalog) {
         window.BrigadaCatalog.render(container);

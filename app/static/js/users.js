@@ -68,6 +68,7 @@ window.BrigadaUsers = {
                   <select id="user-field-role" class="form-input" required>
                     <option value="user">👤 Usuário</option>
                     <option value="lider">👤 Usuário/Líder</option>
+                    <option value="promotor">📋 Promotor</option>
                     <option value="gestao">👥 Gestão</option>
                     <option value="superadmin">🛡️ Super Admin</option>
                   </select>
@@ -182,8 +183,8 @@ window.BrigadaUsers = {
       return;
     }
 
-    const roleLabel = { superadmin: '🛡️ Super Admin', gestao: '👥 Gestão', lider: '👤 Usuário/Líder', user: '👤 Usuário' };
-    const roleClass = { superadmin: 'badge--superadmin', gestao: 'badge--gestao-role', lider: 'badge--lider-role', user: 'badge--user-role' };
+    const roleLabel = { superadmin: '🛡️ Super Admin', gestao: '👥 Gestão', lider: '👤 Usuário/Líder', promotor: '📋 Promotor', user: '👤 Usuário' };
+    const roleClass = { superadmin: 'badge--superadmin', gestao: 'badge--gestao-role', lider: 'badge--lider-role', promotor: 'badge--promotor-role', user: 'badge--user-role' };
 
     const rows = users.map(u => {
       const isCurrentUser = u.id === window.BrigadaAuth.currentUser?.id;
