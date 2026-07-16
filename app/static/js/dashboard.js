@@ -121,7 +121,7 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
-      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1rem;">
+      <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:1rem;">
         <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
           <div class="metric-card__icon">🗑️</div>
           <div class="metric-card__body">
@@ -134,6 +134,13 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Troca</p>
             <p class="metric-card__value" id="stat-troca-val">—</p>
+          </div>
+        </div>
+        <div class="metric-card" id="stat-tratado" style="border-left: 3px solid #10b981; cursor:pointer;">
+          <div class="metric-card__icon">✔️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Tratados com Sucesso</p>
+            <p class="metric-card__value" id="stat-tratado-val">—</p>
           </div>
         </div>
       </div>
@@ -198,7 +205,7 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
-      <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:1rem;">
+      <div class="dashboard-grid dashboard-grid--4" style="margin-bottom:1rem;">
         <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
           <div class="metric-card__icon">🗑️</div>
           <div class="metric-card__body">
@@ -211,6 +218,13 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Troca</p>
             <p class="metric-card__value" id="stat-troca-val">—</p>
+          </div>
+        </div>
+        <div class="metric-card" id="stat-tratado" style="border-left: 3px solid #10b981; cursor:pointer;">
+          <div class="metric-card__icon">✔️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Tratados com Sucesso</p>
+            <p class="metric-card__value" id="stat-tratado-val">—</p>
           </div>
         </div>
         <div class="metric-card metric-card--orange" id="stat-today">
@@ -501,6 +515,20 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
+
+      <!-- Status Panel Overlay -->
+      <div class="status-panel-overlay" id="status-panel-overlay">
+        <div class="status-panel">
+          <div class="status-panel__header">
+            <div class="status-panel__title">
+              <span id="status-panel-title-text">Produtos</span>
+              <span class="status-panel__count" id="status-panel-count">0</span>
+            </div>
+            <button class="status-panel__close" id="status-panel-close">✕</button>
+          </div>
+          <div class="status-panel__body" id="status-panel-body"></div>
+        </div>
+      </div>
     `;
   },
 
@@ -552,12 +580,12 @@ window.BrigadaDashboard = {
       });
     });
 
-    // Metric cards click to filter
+    // Metric cards click to filter — opens custom status panel
     const setStatusFilter = (status, clickedCard) => {
-      // Toggle: clicking same card again clears filter
+      // Toggle: clicking same card again closes the panel
       if (this.currentStatusFilter === status && status !== 'all') {
-        status = 'all';
-        clickedCard = container.querySelector('#stat-total');
+        this.closeStatusPanel(container);
+        return;
       }
       this.currentStatusFilter = status;
 
@@ -575,16 +603,16 @@ window.BrigadaDashboard = {
           ok: 'Produtos em dia (OK)',
           rebaixa: 'Produtos Aguardando Rebaixa',
           quebra: '🗑️ Produtos em Quebra',
-          troca: '🔄 Produtos em Troca'
+          troca: '🔄 Produtos em Troca',
+          tratado: '✔️ Produtos Tratados com Sucesso'
         };
         subtitleEl.textContent = `Visualizando: ${labels[status] || labels.all}`;
       }
       this.renderDashProducts(container, this.currentFilter);
 
-      // Scroll suave para a tabela de produtos
-      const tableSection = container.querySelector('#dash-products-table');
-      if (tableSection) {
-        tableSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Open the custom status panel instead of scrolling
+      if (status !== 'all') {
+        this.openStatusPanel(container, status);
       }
     };
 
@@ -596,6 +624,7 @@ window.BrigadaDashboard = {
     container.querySelector('#stat-rebaixa')?.addEventListener('click', (e) => setStatusFilter('rebaixa', e.currentTarget));
     container.querySelector('#stat-quebra')?.addEventListener('click', (e) => setStatusFilter('quebra', e.currentTarget));
     container.querySelector('#stat-troca')?.addEventListener('click', (e) => setStatusFilter('troca', e.currentTarget));
+    container.querySelector('#stat-tratado')?.addEventListener('click', (e) => setStatusFilter('tratado', e.currentTarget));
 
     // Users metrics redirect
     container.querySelector('#stat-users')?.addEventListener('click', () => {
@@ -650,6 +679,9 @@ window.BrigadaDashboard = {
       if (e.target.id === 'delete-modal') this.closeDeleteModal(container);
     });
 
+    // Status panel events
+    this.bindStatusPanel(container);
+
     this.renderDashProducts(container, 'all');
   },
 
@@ -670,6 +702,7 @@ window.BrigadaDashboard = {
     set('stat-rebaixa-val', stats.awaitingReduction);
     set('stat-quebra-val', stats.quebra);
     set('stat-troca-val', stats.troca);
+    set('stat-tratado-val', stats.tratado);
 
     const soonCard = container.querySelector('#stat-soon');
     if (soonCard) {
@@ -769,13 +802,14 @@ window.BrigadaDashboard = {
     if (this.currentStatusFilter && this.currentStatusFilter !== 'all') {
       products = products.filter(p => {
         const s = window.BrigadaData.getProductStatus(p);
-        if (this.currentStatusFilter === 'expired') return s.days < 0;
-        if (this.currentStatusFilter === 'today') return s.days === 0;
-        if (this.currentStatusFilter === 'soon') return s.days > 0 && s.days <= 3;
-        if (this.currentStatusFilter === 'ok') return s.days > 3;
+        if (this.currentStatusFilter === 'expired') return s.days < 0 && !p.expiredAction;
+        if (this.currentStatusFilter === 'today') return s.days === 0 && !p.expiredAction;
+        if (this.currentStatusFilter === 'soon') return s.days > 0 && s.days <= 3 && !p.expiredAction;
+        if (this.currentStatusFilter === 'ok') return s.days > 3 && !p.expiredAction;
         if (this.currentStatusFilter === 'rebaixa') return !!p.isAwaitingReduction;
         if (this.currentStatusFilter === 'quebra') return p.expiredAction === 'quebra';
         if (this.currentStatusFilter === 'troca') return p.expiredAction === 'troca';
+        if (this.currentStatusFilter === 'tratado') return p.expiredAction === 'tratado';
         return true;
       });
     }
@@ -843,9 +877,10 @@ window.BrigadaDashboard = {
               ${showActions ? `
               <td data-label="Ações" class="actions-cell">
                 ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}<span class="btn-label">${p.rebaixaStatus === 'ok' ? 'Voltar' : 'Rebaixa'}</span></button>` : ''}
-                ${p._status.days < 0 && canEditThis ? `
+                ${p._status.days <= 3 && canEditThis ? `
                   ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
                   ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                  ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
                   ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
                 ` : ''}
                 ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
@@ -884,12 +919,197 @@ window.BrigadaDashboard = {
             this.renderStats(container);
           });
         }
+        if (action === 'set-tratado') {
+          window.BrigadaData.setExpiredAction(id, 'tratado').then(() => {
+            this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
+          });
+        }
         if (action === 'clear-expired') {
           window.BrigadaData.setExpiredAction(id, null).then(() => {
             this.renderDashProducts(container, this.currentFilter);
             this.renderStats(container);
           });
         }
+      });
+    });
+  },
+
+  // ── Status Panel Methods ──────────────────────────────────────────────────
+  bindStatusPanel(container) {
+    const overlay = container.querySelector('#status-panel-overlay');
+    const closeBtn = container.querySelector('#status-panel-close');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeStatusPanel(container));
+    }
+    if (overlay) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) this.closeStatusPanel(container);
+      });
+    }
+    // Close on Escape key
+    this._statusPanelEscHandler = (e) => {
+      if (e.key === 'Escape') this.closeStatusPanel(container);
+    };
+    document.addEventListener('keydown', this._statusPanelEscHandler);
+  },
+
+  openStatusPanel(container, status) {
+    const overlay = container.querySelector('#status-panel-overlay');
+    if (!overlay) return;
+
+    const labels = {
+      expired: '🔴 Produtos Vencidos',
+      today: '🟠 Vencendo Hoje',
+      soon: '⚠️ Atenção (1-3 dias)',
+      ok: '✅ Produtos OK',
+      rebaixa: '📉 Aguardando Rebaixa',
+      quebra: '🗑️ Produtos em Quebra',
+      troca: '🔄 Produtos em Troca',
+      tratado: '✔️ Tratados com Sucesso'
+    };
+
+    const titleEl = container.querySelector('#status-panel-title-text');
+    if (titleEl) titleEl.textContent = labels[status] || 'Produtos';
+
+    this.renderStatusPanelProducts(container, status);
+
+    requestAnimationFrame(() => {
+      overlay.classList.add('status-panel-overlay--visible');
+    });
+  },
+
+  closeStatusPanel(container) {
+    const overlay = container.querySelector('#status-panel-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('status-panel-overlay--visible');
+
+    // Reset filter
+    this.currentStatusFilter = 'all';
+    container.querySelectorAll('.metric-card').forEach(c => c.classList.remove('metric-card--active'));
+    const subtitleEl = container.querySelector('#dash-table-subtitle');
+    if (subtitleEl) subtitleEl.textContent = 'Visualizando: Todos os produtos';
+    this.renderDashProducts(container, this.currentFilter);
+  },
+
+  renderStatusPanelProducts(container, status) {
+    const bodyEl = container.querySelector('#status-panel-body');
+    const countEl = container.querySelector('#status-panel-count');
+    if (!bodyEl) return;
+
+    let products = this.getFilteredProducts();
+    if (this.currentFilter && this.currentFilter !== 'all') {
+      products = products.filter(p => p.category === this.currentFilter);
+    }
+
+    // Filter by status
+    products = products.filter(p => {
+      const s = window.BrigadaData.getProductStatus(p);
+      if (status === 'expired') return s.days < 0 && !p.expiredAction;
+      if (status === 'today') return s.days === 0 && !p.expiredAction;
+      if (status === 'soon') return s.days > 0 && s.days <= 3 && !p.expiredAction;
+      if (status === 'ok') return s.days > 3 && !p.expiredAction;
+      if (status === 'rebaixa') return !!p.isAwaitingReduction;
+      if (status === 'quebra') return p.expiredAction === 'quebra';
+      if (status === 'troca') return p.expiredAction === 'troca';
+      if (status === 'tratado') return p.expiredAction === 'tratado';
+      return true;
+    });
+
+    // Sort: most critical first
+    products = products
+      .map(p => ({ ...p, _status: window.BrigadaData.getProductStatus(p) }))
+      .sort((a, b) => a._status.days - b._status.days);
+
+    if (countEl) countEl.textContent = products.length;
+
+    if (products.length === 0) {
+      bodyEl.innerHTML = `
+        <div class="status-panel__empty">
+          <div class="status-panel__empty-icon">📭</div>
+          <div class="status-panel__empty-text">Nenhum produto encontrado<br>para este filtro.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const catMap = {
+      aves: '🐔', suino: '🐷', bovino: '🐮', pescado: '🐟',
+      laticinios: '🧀', frios: '🥓', padaria: '🍞', hortifruti: '🥦'
+    };
+    const catNameMap = {
+      aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado',
+      laticinios: 'Laticínios', frios: 'Frios', padaria: 'Padaria', hortifruti: 'Hortifruti'
+    };
+
+    bodyEl.innerHTML = products.map((p, idx) => {
+      const canEditThis = window.BrigadaAuth.canEditProduct(p);
+      const icon = catMap[p.category] || '📦';
+
+      let actionsHtml = '';
+      if (p._status.days <= 3 && canEditThis) {
+        if (p.expiredAction !== 'quebra') actionsHtml += `<button class="btn-icon" data-panel-action="set-quebra" data-id="${p.id}" title="Quebra">🗑️ Quebra</button>`;
+        if (p.expiredAction !== 'troca') actionsHtml += `<button class="btn-icon" data-panel-action="set-troca" data-id="${p.id}" title="Troca">🔄 Troca</button>`;
+        if (p.expiredAction !== 'tratado') actionsHtml += `<button class="btn-icon" data-panel-action="set-tratado" data-id="${p.id}" title="Tratado">✔️ Tratado</button>`;
+        if (p.expiredAction) actionsHtml += `<button class="btn-icon" data-panel-action="clear-expired" data-id="${p.id}" title="Desfazer">↩️</button>`;
+      }
+
+      return `
+        <div class="status-product-card" style="animation-delay: ${idx * 0.04}s;" data-product-id="${p.id}">
+          <div class="status-product-card__header">
+            <div class="status-product-card__icon">${icon}</div>
+            <div class="status-product-card__name" title="${p.name}">${p.name}</div>
+            <span class="badge ${p._status.class} status-product-card__badge" style="font-size:0.6rem;">${p._status.icon} ${p._status.label}</span>
+          </div>
+          <div class="status-product-card__content">
+            <div class="status-product-card__meta">
+              <span class="status-product-card__meta-tag">🏷️ ${p.plu}</span>
+              <span class="status-product-card__meta-tag">${catMap[p.category] || ''} ${catNameMap[p.category] || p.category}</span>
+              <span class="status-product-card__meta-tag">📦 ${p.quantity !== undefined ? p.quantity : 0} ${p.unit || 'kg'}</span>
+            </div>
+            <div class="status-product-card__meta">
+              <span class="status-product-card__meta-tag">📅 ${window.BrigadaData.formatDate(p.endDate)}</span>
+              <span class="status-product-card__meta-tag">📍 ${window.BrigadaData.formatLocationFriendly(p)}</span>
+            </div>
+            ${p.createdBy ? `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px;">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
+            ${actionsHtml ? `<div class="status-product-card__actions">${actionsHtml}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Bind card click to open product detail view
+    bodyEl.querySelectorAll('.status-product-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Don't open product view if they clicked an action button
+        if (e.target.closest('[data-panel-action]')) return;
+        const id = card.dataset.productId;
+        if (id) window.BrigadaUI.showProductView(id);
+      });
+    });
+
+    // Bind action buttons inside the panel
+    bodyEl.querySelectorAll('[data-panel-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.panelAction;
+        const id = parseInt(btn.dataset.id);
+
+        const doAction = (actionType) => {
+          const promise = actionType === 'clear-expired'
+            ? window.BrigadaData.setExpiredAction(id, null)
+            : window.BrigadaData.setExpiredAction(id, actionType.replace('set-', ''));
+
+          promise.then(() => {
+            this.renderStatusPanelProducts(container, status);
+            this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
+          });
+        };
+
+        doAction(action);
       });
     });
   },

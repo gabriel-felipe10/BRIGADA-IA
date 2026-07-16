@@ -552,6 +552,210 @@ body::before {
 .btn--danger:hover { background:var(--error); color:#fff; }
 .btn--full { width:100%; justify-content:center; border-radius:var(--r-md); padding:var(--sp-md); font-size:1rem; }
 
+/* ── Status Panel Overlay ──────────────────────────────────────────────────── */
+.status-panel-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(13, 7, 26, 0.5);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-base);
+}
+.status-panel-overlay--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.status-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(520px, 92vw);
+  height: 100vh;
+  z-index: 601;
+  display: flex; flex-direction: column;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  background-color: var(--bg-primary);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: -16px 0 64px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255,255,255,0.05);
+  transform: translateX(100%);
+  transition: transform var(--t-slow);
+}
+.status-panel-overlay--visible .status-panel {
+  transform: translateX(0);
+}
+
+.status-panel__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-lg) var(--sp-xl);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+}
+.status-panel__title {
+  font-size: 1.05rem; font-weight: 700;
+  color: var(--text-primary);
+  display: flex; align-items: center; gap: var(--sp-sm);
+}
+.status-panel__count {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--text-accent);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  padding: 2px 10px;
+  border-radius: var(--r-full);
+}
+.status-panel__close {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.status-panel__close:hover {
+  background: var(--error-bg);
+  color: var(--error);
+  border-color: var(--error-border);
+  transform: rotate(90deg);
+}
+
+.status-panel__body {
+  flex: 1; overflow-y: auto;
+  padding: var(--sp-md) var(--sp-lg);
+  display: flex; flex-direction: column; gap: var(--sp-sm);
+}
+
+.status-panel__empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: var(--sp-2xl) var(--sp-md); gap: var(--sp-sm);
+  color: var(--text-secondary);
+}
+.status-panel__empty-icon { font-size: 2.5rem; opacity: 0.5; }
+.status-panel__empty-text { font-size: 0.9rem; text-align: center; }
+
+/* Product card inside the panel */
+.status-product-card {
+  display: flex; flex-direction: column; gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-lg);
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255,255,255,0.03);
+  transition: all var(--t-base);
+  animation: statusCardSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
+  cursor: pointer;
+  position: relative;
+}
+.status-product-card::before {
+  content: ''; position: absolute; inset: 0; opacity: 0;
+  transition: opacity var(--t-fast);
+  background: linear-gradient(135deg, rgba(99,102,241,0.06), transparent);
+  border-radius: var(--r-xl);
+  pointer-events: none;
+}
+.status-product-card:hover::before { opacity: 1; }
+.status-product-card:hover {
+  transform: translateX(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-color: var(--accent-border);
+}
+.status-product-card__header {
+  display: flex; align-items: center; gap: var(--sp-sm);
+}
+.status-product-card__icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+.status-product-card__name {
+  font-size: 0.88rem; font-weight: 700;
+  color: var(--text-primary);
+  flex: 1; min-width: 0;
+  word-break: break-word;
+  line-height: 1.3;
+}
+.status-product-card__badge {
+  flex-shrink: 0;
+}
+.status-product-card__content {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  padding-left: calc(34px + var(--sp-sm));
+}
+.status-product-card__meta {
+  font-size: 0.7rem; color: var(--text-tertiary);
+  display: flex; flex-wrap: wrap; gap: var(--sp-xs); align-items: center;
+}
+.status-product-card__meta-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px;
+  background: var(--glass-bg);
+  border-radius: var(--r-sm);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+.status-product-card__actions {
+  display: flex; flex-wrap: wrap; gap: var(--sp-xs);
+  margin-top: 2px;
+  position: relative; z-index: 1;
+}
+.status-product-card__actions .btn-icon {
+  width: auto;
+  height: auto;
+  min-height: 30px;
+  flex-direction: row;
+  gap: 6px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  position: relative; z-index: 1;
+}
+.status-product-card__actions .btn-icon:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+  color: var(--text-accent);
+}
+
+@keyframes statusCardSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Stagger animation delay for cards */
+.status-product-card:nth-child(1) { animation-delay: 0.03s; }
+.status-product-card:nth-child(2) { animation-delay: 0.06s; }
+.status-product-card:nth-child(3) { animation-delay: 0.09s; }
+.status-product-card:nth-child(4) { animation-delay: 0.12s; }
+.status-product-card:nth-child(5) { animation-delay: 0.15s; }
+.status-product-card:nth-child(6) { animation-delay: 0.18s; }
+.status-product-card:nth-child(7) { animation-delay: 0.21s; }
+.status-product-card:nth-child(8) { animation-delay: 0.24s; }
+.status-product-card:nth-child(9) { animation-delay: 0.27s; }
+.status-product-card:nth-child(10) { animation-delay: 0.30s; }
+
+@media (max-width: 600px) {
+  .status-panel { width: 100vw; }
+  .status-panel__header { padding: var(--sp-md); }
+  .status-panel__body { padding: var(--sp-sm); }
+  .status-product-card { padding: var(--sp-sm) var(--sp-md); }
+}
+
 /* ── Modal ──────────────────────────────────────────────────────────────────── */
 .modal-overlay {
   position:fixed; inset:0; z-index:500;
@@ -1445,6 +1649,37 @@ input[type="checkbox"]:focus-visible {
 .light-theme input[type='checkbox']:hover {
   border-color: rgba(16, 185, 129, 0.5);
   background: rgba(16, 185, 129, 0.1);
+}
+
+/* Light theme: Status Panel */
+.light-theme .status-panel-overlay {
+  background: rgba(244, 247, 251, 0.5);
+}
+.light-theme .status-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  background-color: var(--bg-secondary);
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: -16px 0 64px rgba(0, 0, 0, 0.1);
+}
+.light-theme .status-panel__header {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.light-theme .status-product-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.light-theme .status-product-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.light-theme .status-product-card__icon {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.light-theme .status-product-card__meta-tag {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* ==========================================================================

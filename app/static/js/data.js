@@ -885,9 +885,17 @@ window.BrigadaData = {
     const end = new Date(product.endDate + 'T00:00:00');
     const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
 
+    if (product.expiredAction === 'quebra') {
+      return { label: diffDays < 0 ? 'Vencido (Quebra)' : 'Quebra', class: 'badge--expired', icon: '🗑️', days: diffDays };
+    }
+    if (product.expiredAction === 'troca') {
+      return { label: diffDays < 0 ? 'Vencido (Troca)' : 'Troca', class: 'badge--expired', icon: '🔄', days: diffDays };
+    }
+    if (product.expiredAction === 'tratado') {
+      return { label: 'Tratado com Sucesso', class: 'badge--ok', icon: '✔️', days: diffDays };
+    }
+
     if (diffDays < 0) {
-      if (product.expiredAction === 'quebra') return { label: 'Vencido (Quebra)', class: 'badge--expired', icon: '🗑️', days: diffDays };
-      if (product.expiredAction === 'troca') return { label: 'Vencido (Troca)', class: 'badge--expired', icon: '🔄', days: diffDays };
       return { label: 'Vencido', class: 'badge--expired', icon: '🔴', days: diffDays };
     }
     if (diffDays === 0) return { label: 'Vence Hoje', class: 'badge--today', icon: '🟠', days: 0 };
@@ -973,13 +981,16 @@ window.BrigadaData = {
       }
     }
 
-    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0, quebra = 0, troca = 0;
+    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0, quebra = 0, troca = 0, tratado = 0;
     allowedProducts.forEach(p => {
       if (p.isAwaitingReduction) awaitingReduction++;
       if (p.expiredAction === 'quebra') quebra++;
       if (p.expiredAction === 'troca') troca++;
+      if (p.expiredAction === 'tratado') tratado++;
       const s = this.getProductStatus(p);
-      if (s.days < 0) expired++;
+      if (s.days < 0) {
+        if (!p.expiredAction) expired++;
+      }
       else if (s.days === 0) expiresToday++;
       else if (s.days <= 3) expiresSoon++;
       else ok++;
@@ -994,6 +1005,7 @@ window.BrigadaData = {
       awaitingReduction,
       quebra,
       troca,
+      tratado,
       totalUsers: this.users.length,
       activeUsers: this.users.filter(u => u.status === 'active').length,
     };
