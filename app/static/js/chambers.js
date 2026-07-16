@@ -835,17 +835,13 @@ window.BrigadaChambers = {
 
   // Get unallocated products for manual list
   getAvailableProductsForAllocation() {
-    const meatProducts = this.getMeatProducts();
+    const catalog = window.BrigadaData.catalog || [];
     const query = this.searchAvailable.toLowerCase().trim();
     
-    // Filter out already allocated in grid
-    return meatProducts.filter(p => {
-      const parsed = this.parseLocation(p.location);
-      if (parsed) return false; // already allocated in grid
-      
+    return catalog.filter(p => {
       // Filter by search query
       if (query) {
-        return p.name.toLowerCase().includes(query) || p.plu.toLowerCase().includes(query);
+        return (p.name || '').toLowerCase().includes(query) || (p.plu || '').toLowerCase().includes(query);
       }
       return true;
     });
@@ -876,7 +872,7 @@ window.BrigadaChambers = {
                 <img src="${photo}" alt="Foto do Palete" class="pallet-large-photo" style="width:100%; height:auto; border-radius: var(--radius-md); border:1px solid var(--border-color);" />
               </div>
               <div class="pallet-data-details">
-                <div class="address-badge" style="background: var(--bg-tertiary); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; display: flex; align-items: center; gap: 6px; margin-bottom: 1rem; color: var(--accent-3);">
+                <div class="address-badge" style="background: var(--bg-tertiary); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; display: flex; align-items: center; gap: 6px; margin-bottom: 1rem; color: #38bdf8;">
                   ${this.icons.Warehouse}
                   <span>${parsed.chamber} • Col. ${parsed.column} • Nív. ${parsed.level} • Pos. ${parsed.position.toUpperCase()}</span>
                 </div>
@@ -957,12 +953,52 @@ window.BrigadaChambers = {
     overlay.className = 'modal-overlay modal-overlay--visible';
     overlay.id = 'allocation-modal';
     
+    const renderRegisterForm = (catalogProduct) => {
+      return `
+        <div class="allocation-register-form" style="display:flex; flex-direction:column; gap:12px; padding:0.5rem 0;">
+          <div style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 12px; border-radius:6px; font-size:0.9rem; margin-bottom:0.5rem;">
+            <strong style="color:var(--text-secondary);">Produto:</strong> <span style="color:var(--text-primary); font-weight:600;">${catalogProduct.name}</span>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">PLU: ${catalogProduct.plu}</div>
+          </div>
+          
+          <div class="form-group" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 0.75rem;">
+            <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Data de Validade *</label>
+            <input type="date" id="alloc-field-enddate" class="form-input" required style="width:100%; color-scheme:dark;" />
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px; margin-bottom: 0.75rem;">
+            <div class="form-group" style="display:flex; flex-direction:column; gap:4px;">
+              <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Quantidade</label>
+              <input type="number" id="alloc-field-quantity" class="form-input" placeholder="ex: 1500" value="1500" min="0" step="any" style="width:100%;" />
+            </div>
+            <div class="form-group" style="display:flex; flex-direction:column; gap:4px;">
+              <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Unidade</label>
+              <select id="alloc-field-unit" class="form-input" style="width:100%; cursor:pointer;">
+                <option value="kg">kg</option>
+                <option value="un">un</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 1rem;">
+            <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Fornecedor</label>
+            <input type="text" id="alloc-field-supplier" class="form-input" placeholder="Nome do fornecedor (opcional)" style="width:100%;" />
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top:0.5rem;">
+            <button class="btn btn-outline" id="btn-alloc-register-back" style="flex:1;">Voltar</button>
+            <button class="btn btn-primary" id="btn-alloc-register-submit" style="flex:1;">Confirmar Cadastro</button>
+          </div>
+        </div>
+      `;
+    };
+
     const renderManualTab = () => {
+      const available = this.getAvailableProductsForAllocation();
       const prodsListHTML = available.length === 0 ? `
         <div class="empty-allocator-state" style="text-align:center; padding:2rem; color:var(--text-tertiary);">
           <div style="font-size:2rem; margin-bottom:8px;">⚠️</div>
-          <span>Nenhum produto disponível para alocação.</span>
-          <p style="font-size:0.8rem; margin-top:4px;">Todos os produtos do açougue já estão alocados ou sua busca não retornou resultados.</p>
+          <span>Nenhum produto disponível no catálogo.</span>
         </div>
       ` : available.map(p => `
         <div class="available-product-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-tertiary); border-radius:6px; margin-bottom:8px; border:1px solid var(--border-color);">
@@ -970,11 +1006,10 @@ window.BrigadaChambers = {
             <span class="prod-name" style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">${p.name}</span>
             <div class="prod-meta" style="display:flex; gap:8px; font-size:0.75rem; color:var(--text-secondary);">
               <span class="prod-sku">PLU: ${p.plu}</span>
-              <span class="prod-qty">Estoque: ${p.quantity || 0} ${p.unit || 'kg'}</span>
+              <span class="prod-category" style="text-transform:capitalize;">Categoria: ${p.category}</span>
             </div>
-            <span class="prod-supplier" style="font-size:0.7rem; color:var(--text-tertiary);">Validade: ${window.BrigadaData.formatDate(p.endDate)}</span>
           </div>
-          <button class="btn btn-primary btn-sm" data-action="allocate-confirm" data-id="${p.id}">
+          <button class="btn btn-primary btn-sm" data-action="allocate-select-catalog" data-id="${p.id}">
             Selecionar
           </button>
         </div>
@@ -983,14 +1018,14 @@ window.BrigadaChambers = {
       return `
         <div class="allocator-search-wrapper" style="position:relative; display:flex; align-items:center; margin-bottom:1.5rem; background:var(--bg-tertiary); border-radius:var(--radius-md); border:1px solid var(--border-color); padding:0 12px;">
           <div style="color:var(--text-tertiary); margin-right:8px;">${this.icons.Search}</div>
-          <input type="text" id="allocator-search-input" placeholder="${this.isListening ? 'Ouvindo... fale agora' : 'Buscar por nome, PLU ou código de balança...'}" value="${this.searchAvailable}" style="flex:1; padding:10px 0; border:none; background:transparent; font-size:0.9rem;" autofocus />
+          <input type="text" id="allocator-search-input" class="allocator-search-input" placeholder="${this.isListening ? 'Ouvindo... fale agora' : 'Buscar por nome, PLU ou código de balança...'}" value="${this.searchAvailable}" style="flex:1; padding:10px 0; border:none; background:transparent; font-size:0.9rem;" autofocus />
           <button type="button" id="allocator-voice-btn" class="search-mic-btn ${this.isListening ? 'listening' : ''}" style="color:${this.isListening ? '#ef4444' : 'var(--text-secondary)'}; padding:8px; cursor:pointer;">
             ${this.icons.Mic}
           </button>
         </div>
 
-        <h4 class="list-title" style="font-size:0.95rem; font-weight:600; margin-bottom:4px;">Produtos Disponíveis para Alocação (${available.length})</h4>
-        <p class="list-desc" style="font-size:0.75rem; color:var(--text-tertiary); margin-bottom:1rem;">Selecione um produto abaixo para alocá-lo no slot correspondente.</p>
+        <h4 class="list-title" style="font-size:0.95rem; font-weight:600; margin-bottom:4px;">Produtos no Catálogo (${available.length})</h4>
+        <p class="list-desc" style="font-size:0.75rem; color:var(--text-tertiary); margin-bottom:1rem;">Selecione um produto do catálogo base para registrar e alocar neste slot.</p>
 
         <div class="available-products-list" style="max-height: 280px; overflow-y:auto; padding-right:4px;">
           ${prodsListHTML}
@@ -1002,7 +1037,7 @@ window.BrigadaChambers = {
       if (this.scanStep === 'idle') {
         return `
           <div class="smart-scanner-workspace" style="text-align:center; padding:1.5rem 0;">
-            <div style="font-size:3rem; margin-bottom:8px; color:var(--accent-3); animation: pulse 2s infinite;">📷</div>
+            <div style="font-size:3rem; margin-bottom:8px; color:#38bdf8; animation: pulse 2s infinite;">📷</div>
             <h3 style="font-size:1.1rem; font-weight:600; margin-bottom:6px;">Simulação de Scanner de Palete</h3>
             <p style="font-size:0.8rem; color:var(--text-secondary); max-width:400px; margin:0 auto 1.5rem;">
               Leia o código de barras da etiqueta anexada ao palete para identificar o código do produto (PLU) e a data de validade automaticamente.
@@ -1031,7 +1066,7 @@ window.BrigadaChambers = {
       } else if (this.scanStep === 'scanning') {
         return `
           <div class="scanner-active-view" style="text-align:center; padding:2rem 0;">
-            <div class="simulated-viewfinder" style="width:240px; height:180px; border:2px dashed var(--accent-3); border-radius:8px; margin:0 auto 1rem; display:flex; flex-direction:column; justify-content:center; align-items:center; background:rgba(255,255,255,0.01); position:relative; overflow:hidden;">
+            <div class="simulated-viewfinder" style="width:240px; height:180px; border:2px dashed #38bdf8; border-radius:8px; margin:0 auto 1rem; display:flex; flex-direction:column; justify-content:center; align-items:center; background:rgba(255,255,255,0.01); position:relative; overflow:hidden;">
               <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
               <span style="font-size:0.8rem; color:var(--text-secondary);">Escaneando Etiqueta WMS...</span>
               <div class="scanner-laser-line" style="position:absolute; width:100%; height:2px; background:#ef4444; top:50%; left:0; box-shadow:0 0 8px #ef4444; animation: laserSweep 1.5s infinite;"></div>
@@ -1079,17 +1114,17 @@ window.BrigadaChambers = {
           <div class="allocator-modal-content">
             <div class="allocator-target-info" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 12px; border-radius:6px; font-size:0.85rem; margin-bottom:1rem; display:flex; justify-content:space-between;">
               <span class="target-label" style="color:var(--text-secondary);">Local de Destino:</span>
-              <span class="target-value" style="font-weight:600; color:var(--accent-3);">
+              <span class="target-value" style="font-weight:600; color:#38bdf8;">
                 Col. ${this.selectedColumn} • Nível ${this.allocatingSlot.level} • Pos. ${this.allocatingSlot.position.toUpperCase()}
               </span>
             </div>
 
             <!-- Tab Selector -->
             <div class="allocator-tabs" style="display:flex; border-bottom:1px solid var(--border-color); margin-bottom:1.5rem; gap:12px;">
-              <button class="allocator-tab-btn ${this.allocationTab === 'manual' ? 'active' : ''}" id="btn-tab-manual" style="padding:8px 4px; font-weight:600; font-size:0.85rem; border-bottom:2px solid ${this.allocationTab === 'manual' ? 'var(--accent-3)' : 'transparent'}; color:${this.allocationTab === 'manual' ? 'var(--text-primary)' : 'var(--text-secondary)'}; cursor:pointer;">
+              <button class="allocator-tab-btn ${this.allocationTab === 'manual' ? 'active' : ''}" id="btn-tab-manual" style="padding:8px 12px; font-weight:600; font-size:0.85rem; border:none; border-bottom:2px solid ${this.allocationTab === 'manual' ? '#38bdf8' : 'transparent'}; background:transparent; color:${this.allocationTab === 'manual' ? 'var(--text-primary)' : 'var(--text-secondary)'}; cursor:pointer;">
                 📑 Alocação Manual
               </button>
-              <button class="allocator-tab-btn ${this.allocationTab === 'scanner' ? 'active' : ''}" id="btn-tab-scanner" style="padding:8px 4px; font-weight:600; font-size:0.85rem; border-bottom:2px solid ${this.allocationTab === 'scanner' ? 'var(--accent-3)' : 'transparent'}; color:${this.allocationTab === 'scanner' ? 'var(--text-primary)' : 'var(--text-secondary)'}; cursor:pointer;">
+              <button class="allocator-tab-btn ${this.allocationTab === 'scanner' ? 'active' : ''}" id="btn-tab-scanner" style="padding:8px 12px; font-weight:600; font-size:0.85rem; border:none; border-bottom:2px solid ${this.allocationTab === 'scanner' ? '#38bdf8' : 'transparent'}; background:transparent; color:${this.allocationTab === 'scanner' ? 'var(--text-primary)' : 'var(--text-secondary)'}; cursor:pointer;">
                 📷 Leitor Inteligente (Simulação)
               </button>
             </div>
@@ -1131,7 +1166,7 @@ window.BrigadaChambers = {
     if (manualTabBtn && scannerTabBtn) {
       manualTabBtn.addEventListener('click', () => {
         this.allocationTab = 'manual';
-        manualTabBtn.style.borderBottomColor = 'var(--accent-3)';
+        manualTabBtn.style.borderBottomColor = '#38bdf8';
         manualTabBtn.style.color = 'var(--text-primary)';
         scannerTabBtn.style.borderBottomColor = 'transparent';
         scannerTabBtn.style.color = 'var(--text-secondary)';
@@ -1143,7 +1178,7 @@ window.BrigadaChambers = {
         this.allocationTab = 'scanner';
         this.scanStep = 'idle';
         this.scannedResult = null;
-        scannerTabBtn.style.borderBottomColor = 'var(--accent-3)';
+        scannerTabBtn.style.borderBottomColor = '#38bdf8';
         scannerTabBtn.style.color = 'var(--text-primary)';
         manualTabBtn.style.borderBottomColor = 'transparent';
         manualTabBtn.style.color = 'var(--text-secondary)';
@@ -1157,6 +1192,76 @@ window.BrigadaChambers = {
       const searchInput = modalEl.querySelector('#allocator-search-input');
       const voiceBtn = modalEl.querySelector('#allocator-voice-btn');
 
+      // Helper function to bind registration form submission
+      const bindRegisterFormEvents = (catalogProduct) => {
+        const backBtn = modalEl.querySelector('#btn-alloc-register-back');
+        const submitBtn = modalEl.querySelector('#btn-alloc-register-submit');
+
+        if (backBtn) {
+          backBtn.addEventListener('click', () => {
+            contentWrapper.innerHTML = renderManualTab();
+            this.bindAllocationModalEvents(modalEl, renderManualTab, renderScannerTab);
+          });
+        }
+
+        if (submitBtn) {
+          submitBtn.addEventListener('click', async () => {
+            const endDateVal = modalEl.querySelector('#alloc-field-enddate')?.value;
+            const qtyVal = modalEl.querySelector('#alloc-field-quantity')?.value;
+            const unitVal = modalEl.querySelector('#alloc-field-unit')?.value;
+            const supplierVal = modalEl.querySelector('#alloc-field-supplier')?.value;
+
+            if (!endDateVal) {
+              window.BrigadaUI.showToast('Por favor, informe a data de validade.', 'warning');
+              return;
+            }
+
+            const chamberId = this.selectedChamber === 'Câmara Resfriada' ? 'resfriado' : 'congelado';
+            const locString = this.formatLocation(
+              chamberId,
+              this.selectedColumn,
+              this.allocatingSlot.level,
+              this.allocatingSlot.position
+            );
+
+            window.BrigadaUI.showToast('Cadastrando e alocando lote...', 'info');
+            try {
+              await window.BrigadaData.addProduct({
+                plu: catalogProduct.plu,
+                name: catalogProduct.name,
+                category: catalogProduct.category,
+                barcode: catalogProduct.barcode || '',
+                startDate: new Date().toISOString().split('T')[0],
+                endDate: endDateVal,
+                quantity: parseFloat(qtyVal) || 0.0,
+                unit: unitVal,
+                supplier: supplierVal || '',
+                location: locString
+              });
+              window.BrigadaUI.showToast('Lote cadastrado e alocado com sucesso!', 'success');
+              
+              // Close allocation modal
+              this.closeModal('allocation-modal');
+              this.allocatingSlot = null;
+
+              // Re-render
+              this.render(this.container);
+            } catch (err) {
+              window.BrigadaUI.showToast('Erro ao cadastrar lote: ' + err.message, 'error');
+            }
+          });
+        }
+      };
+
+      const handleCatalogSelection = (btn) => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        const catalogProduct = (window.BrigadaData.catalog || []).find(c => c.id === prodId);
+        if (catalogProduct) {
+          contentWrapper.innerHTML = renderRegisterForm(catalogProduct);
+          bindRegisterFormEvents(catalogProduct);
+        }
+      };
+
       if (searchInput) {
         searchInput.addEventListener('input', (e) => {
           this.searchAvailable = e.target.value;
@@ -1167,7 +1272,7 @@ window.BrigadaChambers = {
             listWrapper.innerHTML = available.length === 0 ? `
               <div class="empty-allocator-state" style="text-align:center; padding:2rem; color:var(--text-tertiary);">
                 <div style="font-size:2rem; margin-bottom:8px;">⚠️</div>
-                <span>Nenhum produto disponível.</span>
+                <span>Nenhum produto disponível no catálogo.</span>
               </div>
             ` : available.map(p => `
               <div class="available-product-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-tertiary); border-radius:6px; margin-bottom:8px; border:1px solid var(--border-color);">
@@ -1175,22 +1280,18 @@ window.BrigadaChambers = {
                   <span class="prod-name" style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">${p.name}</span>
                   <div class="prod-meta" style="display:flex; gap:8px; font-size:0.75rem; color:var(--text-secondary);">
                     <span class="prod-sku">PLU: ${p.plu}</span>
-                    <span class="prod-qty">Estoque: ${p.quantity || 0} ${p.unit || 'kg'}</span>
+                    <span class="prod-category" style="text-transform:capitalize;">Categoria: ${p.category}</span>
                   </div>
-                  <span class="prod-supplier" style="font-size:0.7rem; color:var(--text-tertiary);">Validade: ${window.BrigadaData.formatDate(p.endDate)}</span>
                 </div>
-                <button class="btn btn-primary btn-sm" data-action="allocate-confirm" data-id="${p.id}">
+                <button class="btn btn-primary btn-sm" data-action="allocate-select-catalog" data-id="${p.id}">
                   Selecionar
                 </button>
               </div>
             `).join('');
 
             // Rebind manual selection on keypress/input refresh
-            listWrapper.querySelectorAll('[data-action="allocate-confirm"]').forEach(btn => {
-              btn.addEventListener('click', async () => {
-                const prodId = parseInt(btn.dataset.id, 10);
-                await this.allocateProduct(prodId);
-              });
+            listWrapper.querySelectorAll('[data-action="allocate-select-catalog"]').forEach(btn => {
+              btn.addEventListener('click', () => handleCatalogSelection(btn));
             });
           }
         });
@@ -1203,12 +1304,9 @@ window.BrigadaChambers = {
         });
       }
 
-      // Manual allocation confirm
-      modalEl.querySelectorAll('[data-action="allocate-confirm"]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const prodId = parseInt(btn.dataset.id, 10);
-          await this.allocateProduct(prodId);
-        });
+      // Manual allocation confirm (initial list)
+      modalEl.querySelectorAll('[data-action="allocate-select-catalog"]').forEach(btn => {
+        btn.addEventListener('click', () => handleCatalogSelection(btn));
       });
     }
 
