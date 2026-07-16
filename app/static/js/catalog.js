@@ -131,50 +131,30 @@ window.BrigadaCatalog = {
       const selectedProducts = catalog.filter(p => selectedPlus.includes(p.plu));
       
       let printContent = `
-        <html>
-        <head>
-          <title>Impressão - Catálogo de Produtos</title>
-          <style>
-            body { font-family: sans-serif; padding: 20px; }
-            h2 { text-align: center; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-          </style>
-        </head>
-        <body>
-          <h2>Lista de Produtos Selecionados</h2>
-          <table>
+        <div style="font-family: sans-serif; padding: 20px; color: #000; background: #fff;">
+          <h2 style="text-align: center; margin-bottom: 20px;">Lista de Produtos Selecionados</h2>
+          <table style="width: 100%; border-collapse: collapse;">
             <thead>
-              <tr>
-                <th>PLU</th>
-                <th>Nome do Produto</th>
-                <th>Categoria</th>
+              <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">PLU</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nome do Produto</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Categoria</th>
               </tr>
             </thead>
             <tbody>
               ${selectedProducts.map(p => `
                 <tr>
-                  <td>${p.plu || ''}</td>
-                  <td>${p.name || ''}</td>
-                  <td>${p.category || ''}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${p.plu || ''}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${p.name || ''}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${p.category || ''}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function(){ window.close(); }, 500);
-            }
-          </script>
-        </body>
-        </html>
+        </div>
       `;
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(printContent);
-      printWindow.document.close();
+      window.BrigadaUI.printContent(printContent);
     });
   },
 

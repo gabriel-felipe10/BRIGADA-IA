@@ -697,46 +697,27 @@ window.BrigadaProducts = {
       return `
         <tr>
           <td style="font-family:monospace;color:#6366f1;font-weight:600;">${p.plu}</td>
-          <td style="font-weight:500;">${p.name}</td>
-          <td style="text-align:center;">${p.quantity !== undefined ? p.quantity : 0} ${p.unit || 'kg'}</td>
-          <td>${catMap[p.category] || p.category}</td>
-          <td>${window.BrigadaData.formatDate(p.endDate)}</td>
-          <td style="color:${statusColor};font-weight:700;">${s.label}</td>
-          <td>${window.BrigadaData.formatLocationFriendly(p)}</td>
-        </tr>`;
-    }).join('');
-
-    const stats = window.BrigadaData.getStats();
-
-    const html = `
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8">
-        <title>Relatório de Produtos — BRIGADA-IA</title>
+      const printContent = `
+      <div class="print-container">
         <style>
-          * { margin:0; padding:0; box-sizing:border-box; }
-          body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; padding:24px; font-size:11px; }
-          .header { text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #6366f1; }
-          .header h1 { font-size:20px; color:#6366f1; margin-bottom:4px; }
-          .header p { color:#64748b; font-size:12px; }
-          .summary { display:flex; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
-          .summary-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 16px; text-align:center; }
-          .summary-item .num { font-size:18px; font-weight:800; }
-          .summary-item .label { font-size:9px; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
-          .num-total { color:#6366f1; }
-          .num-ok { color:#22c55e; }
-          .num-warn { color:#f59e0b; }
-          .num-exp { color:#ef4444; }
-          table { width:100%; border-collapse:collapse; margin-top:8px; }
-          th { background:#6366f1; color:#fff; padding:8px 6px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
-          td { padding:6px; border-bottom:1px solid #e2e8f0; font-size:11px; }
-          tr:nth-child(even) td { background:#f8fafc; }
-          .footer { margin-top:20px; text-align:center; color:#94a3b8; font-size:9px; border-top:1px solid #e2e8f0; padding-top:12px; }
-          @media print { body { padding:12px; } }
+          .print-container { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; padding:24px; font-size:11px; background:#ffffff; }
+          .print-container .header { text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #6366f1; }
+          .print-container .header h1 { font-size:20px; color:#6366f1; margin-bottom:4px; }
+          .print-container .header p { color:#64748b; font-size:12px; }
+          .print-container .summary { display:flex; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
+          .print-container .summary-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 16px; text-align:center; }
+          .print-container .summary-item .num { font-size:18px; font-weight:800; }
+          .print-container .summary-item .label { font-size:9px; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
+          .print-container .num-total { color:#6366f1; }
+          .print-container .num-ok { color:#22c55e; }
+          .print-container .num-warn { color:#f59e0b; }
+          .print-container .num-exp { color:#ef4444; }
+          .print-container table { width:100%; border-collapse:collapse; margin-top:8px; }
+          .print-container th { background:#6366f1; color:#fff; padding:8px 6px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
+          .print-container td { padding:6px; border-bottom:1px solid #e2e8f0; font-size:11px; color:#1e293b; }
+          .print-container tr:nth-child(even) td { background:#f8fafc; }
+          .print-container .footer { margin-top:20px; text-align:center; color:#94a3b8; font-size:9px; border-top:1px solid #e2e8f0; padding-top:12px; }
         </style>
-      </head>
-      <body>
         <div class="header">
           <h1>🛡️ BRIGADA-IA — Relatório de Produtos</h1>
           <p>Gerado em ${now} · Açougue Varejo</p>
@@ -754,17 +735,10 @@ window.BrigadaProducts = {
           <tbody>${rows}</tbody>
         </table>
         <div class="footer">BRIGADA-IA v1.0 · Brigada de Validade · ${products.length} produtos listados</div>
-      </body>
-      </html>`;
+      </div>`;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 400);
-    window.BrigadaUI.showToast('PDF gerado! Use "Salvar como PDF" na janela de impressão.', 'success');
+    window.BrigadaUI.printContent(printContent);
+    window.BrigadaUI.showToast('Visualização de impressão aberta! Use "Salvar como PDF" se desejar.', 'success');
   },
 
   // ── Import CSV ────────────────────────────────────────────────────────────

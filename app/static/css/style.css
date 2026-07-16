@@ -3541,3 +3541,40 @@ input[type="checkbox"]:focus-visible {
 .keypad-action:hover {
   background: var(--glass-border);
 }
+
+/* ── Print Area Styling ────────────────────────────────────────────────────── */
+#print-area {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  /* Hide all siblings of print-area */
+  body > :not(#print-area) {
+    display: none !important;
+  }
+  
+  #print-area {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #000000;
+  }
+
+  /* Assure table components display correctly when printing */
+  #print-area table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
+  #print-area thead { display: table-header-group !important; }
+  #print-area tbody { display: table-row-group !important; }
+  #print-area tr { display: table-row !important; }
+  #print-area th, #print-area td { display: table-cell !important; }
+}
+

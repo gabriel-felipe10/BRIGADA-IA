@@ -596,23 +596,19 @@ window.BrigadaMercearia = {
     const now = new Date().toLocaleString('pt-BR');
     
     let htmlContent = `
-      <html>
-      <head>
-        <title>Relatório de Validades — Setor de Mercearia</title>
+      <div class="print-container">
         <style>
-          body { font-family: sans-serif; padding: 20px; background-color: #ffffff; color: #333333; }
-          h1 { color: #0f172a; border-bottom: 2px solid #334155; padding-bottom: 8px; font-size: 1.5rem; }
-          p { font-size: 0.8rem; color: #64748b; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; font-size: 0.85rem; }
-          th { background-color: #f1f5f9; }
-          .expired { color: #ef4444; font-weight: bold; }
-          .today { color: #f97316; font-weight: bold; }
-          .warning { color: #eab308; }
-          .ok { color: #22c55e; }
+          .print-container { font-family: sans-serif; padding: 20px; background-color: #ffffff; color: #333333; }
+          .print-container h1 { color: #0f172a; border-bottom: 2px solid #334155; padding-bottom: 8px; font-size: 1.5rem; }
+          .print-container p { font-size: 0.8rem; color: #64748b; }
+          .print-container table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          .print-container th, .print-container td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; font-size: 0.85rem; color: #333333; }
+          .print-container th { background-color: #f1f5f9; }
+          .print-container .expired { color: #ef4444; font-weight: bold; }
+          .print-container .today { color: #f97316; font-weight: bold; }
+          .print-container .warning { color: #eab308; }
+          .print-container .ok { color: #22c55e; }
         </style>
-      </head>
-      <body>
         <h1>🛡️ Relatório de Validades — Setor de Mercearia</h1>
         <p>Gerado em ${now} · BRIGADA-IA</p>
         <table>
@@ -643,13 +639,9 @@ window.BrigadaMercearia = {
             }).join('')}
           </tbody>
         </table>
-      </body>
-      </html>
+      </div>
     `;
 
-    const win = window.open('', '_blank');
-    win.document.write(htmlContent);
-    win.document.close();
-    win.print();
+    window.BrigadaUI.printContent(htmlContent);
   }
 };

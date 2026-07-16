@@ -799,27 +799,20 @@ window.BrigadaConciliacao = {
     });
 
     let printContent = `
-      <html>
-      <head>
-        <title>Relatório de Conciliação de Estoque</title>
+      <div class="print-container">
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 30px; color: #1e293b; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; }
-          .title { margin: 0; font-size: 1.8rem; color: #1e3a8a; text-transform: uppercase; }
-          .meta { font-size: 0.85rem; color: #64748b; margin-top: 5px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 0.9rem; }
-          th { background-color: #f1f5f9; color: #1e293b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
-          tr:nth-child(even) { background-color: #f8fafc; }
-          .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-          .badge--ok { background-color: #dcfce7; color: #15803d; }
-          .badge--warning { background-color: #fef9c3; color: #a16207; }
-          .badge--expired { background-color: #fee2e2; color: #b91c1c; }
-          .footer { margin-top: 50px; display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; }
-          .signature-box { border-top: 1px dashed #94a3b8; width: 250px; text-align: center; padding-top: 5px; margin-top: 40px; }
+          .print-container { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 30px; color: #1e293b; background: #ffffff; }
+          .print-container .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; }
+          .print-container .title { margin: 0; font-size: 1.8rem; color: #1e3a8a; text-transform: uppercase; }
+          .print-container .meta { font-size: 0.85rem; color: #64748b; margin-top: 5px; }
+          .print-container table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          .print-container th, .print-container td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 0.9rem; color: #1e293b; }
+          .print-container th { background-color: #f1f5f9; color: #1e293b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+          .print-container tr:nth-child(even) td { background-color: #f8fafc; }
+          .print-container .footer { margin-top: 50px; display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; }
+          .print-container .signature-box { border-top: 1px dashed #94a3b8; width: 250px; text-align: center; padding-top: 5px; margin-top: 40px; }
         </style>
-      </head>
-      <body>
+
         <div class="header">
           <h2 class="title">⚖️ Relatório de Conciliação de Estoque</h2>
           <div class="meta">Gerado em: ${today} · BRIGADA-IA</div>
@@ -860,19 +853,9 @@ window.BrigadaConciliacao = {
             <div class="signature-box">Assinatura Gerente</div>
           </div>
         </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(function(){ window.close(); }, 500);
-          }
-        </script>
-      </body>
-      </html>
+      </div>
     `;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
+    window.BrigadaUI.printContent(printContent);
   }
 };

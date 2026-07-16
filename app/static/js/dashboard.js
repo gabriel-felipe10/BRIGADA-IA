@@ -1286,65 +1286,47 @@ window.BrigadaDashboard = {
   printTop10(title, dataList) {
     if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para imprimir.', 'error');
     
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return window.BrigadaUI.showToast('Bloqueador de pop-ups ativo. Permita pop-ups para imprimir.', 'error');
-    
     const dateStr = new Date().toLocaleString('pt-BR');
     
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Imprimir - ${title}</title>
-          <style>
-            body { font-family: system-ui, -apple-system, sans-serif; color: #111; padding: 20px; }
-            h1 { font-size: 1.5rem; margin-bottom: 5px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-            p { color: #555; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f4f4f5; font-weight: 600; color: #333; }
-            td { font-size: 0.95rem; }
-            .pos { font-weight: bold; }
-            @media print {
-              body { margin: 0; padding: 0; }
-              @page { margin: 1cm; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>${title}</h1>
-          <p>Gerado em: ${dateStr}</p>
-          <table>
-            <thead>
+    const printContent = `
+      <div class="print-container">
+        <style>
+          .print-container { font-family: system-ui, -apple-system, sans-serif; color: #111; padding: 20px; background: #ffffff; }
+          .print-container h1 { font-size: 1.5rem; margin-bottom: 5px; border-bottom: 2px solid #ccc; padding-bottom: 10px; color: #111; }
+          .print-container p { color: #555; margin-bottom: 20px; }
+          .print-container table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          .print-container th, .print-container td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; color: #111; }
+          .print-container th { background-color: #f4f4f5; font-weight: 600; color: #333; }
+          .print-container td { font-size: 0.95rem; }
+          .print-container .pos { font-weight: bold; }
+        </style>
+        <h1>${title}</h1>
+        <p>Gerado em: ${dateStr}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>PLU</th>
+              <th>Produto</th>
+              <th>Ação</th>
+              <th>Qtd. Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dataList.map((item, index) => `
               <tr>
-                <th>Posição</th>
-                <th>PLU</th>
-                <th>Produto</th>
-                <th>Ação</th>
-                <th>Qtd. Total</th>
+                <td class="pos">${index + 1}º</td>
+                <td>${item.plu}</td>
+                <td>${item.name}</td>
+                <td>${item.action === 'quebra' ? 'Quebra' : 'Troca'}</td>
+                <td><strong>${item.count}</strong></td>
               </tr>
-            </thead>
-            <tbody>
-              ${dataList.map((item, index) => `
-                <tr>
-                  <td class="pos">${index + 1}º</td>
-                  <td>${item.plu}</td>
-                  <td>${item.name}</td>
-                  <td>${item.action === 'quebra' ? 'Quebra' : 'Troca'}</td>
-                  <td><strong>${item.count}</strong></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(() => window.close(), 500);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    window.BrigadaUI.printContent(printContent);
   },
 
   buildPromotorHTML() {

@@ -25,6 +25,17 @@ window.BrigadaUI = {
       setTimeout(() => toast.remove(), 300);
     }, 3500);
   },
+
+  printContent(html) {
+    let printArea = document.getElementById('print-area');
+    if (!printArea) {
+      printArea = document.createElement('div');
+      printArea.id = 'print-area';
+      document.body.appendChild(printArea);
+    }
+    printArea.innerHTML = html;
+    window.print();
+  },
   
   // ── Scanner ─────────────────────────────────────────────────────────────
   scannerInstance: null,
