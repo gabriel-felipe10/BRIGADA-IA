@@ -41,6 +41,7 @@ def index():
 @dashboard_bp.route("/padaria")
 @dashboard_bp.route("/hortifruti")
 @dashboard_bp.route("/mercearia")
+@dashboard_bp.route("/produtos-sem-nota")
 @dashboard_bp.route("/dashboard")
 def spa_routes():
     """Redireciona rotas SPA para o index (cliente gerencia o roteamento)."""

@@ -68,6 +68,36 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS produtos_sem_nota (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            plu          TEXT NOT NULL,
+            name         TEXT NOT NULL,
+            quantity     REAL NOT NULL,
+            arrival_date TEXT NOT NULL,
+            created_by   TEXT NOT NULL,
+            signature    TEXT,
+            responsible_name TEXT,
+            created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Migração para bases SQLite já existentes
+    try:
+        cursor.execute("ALTER TABLE produtos_sem_nota ADD COLUMN signature TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE produtos_sem_nota ADD COLUMN responsible_name TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_sem_nota_plu
+        ON produtos_sem_nota(plu)
+    """)
+
     conn.commit()
     logger.info("Banco de dados inicializado | path={}", Config.DB_PATH)
     conn.close()

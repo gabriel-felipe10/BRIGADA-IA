@@ -36,6 +36,7 @@ def create_app():
     from app.routes.products import products_bp
     from app.routes.users import users_bp
     from app.routes.settings import settings_bp
+    from app.routes.produtos_sem_nota import produtos_sem_nota_bp
 
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_bp)
@@ -43,8 +44,9 @@ def create_app():
     app.register_blueprint(products_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(produtos_sem_nota_bp)
 
-    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings")
+    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota")
     logger.info("🛡️  BRIGADA-IA pronta para receber requisições")
 
     return app

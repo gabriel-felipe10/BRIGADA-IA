@@ -529,6 +529,10 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">⚖️</span>
               <span>Conciliação</span>
             </a>
+            <a class="sidebar__link ${activePage === 'produtos-sem-nota' ? 'sidebar__link--active' : ''}" data-page="produtos-sem-nota" href="#">
+              <span class="sidebar__link-icon">📄</span>
+              <span>Sem Nota</span>
+            </a>
             ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
               <span class="sidebar__link-icon">🥩</span>
@@ -978,6 +982,12 @@ window.BrigadaRouter = {
       window.BrigadaUsers.render(container);
     } else if (page === 'notifications') {
       window.BrigadaNotifications.render(container);
+    } else if (page === 'produtos-sem-nota') {
+      if (window.BrigadaProdutosSemNota) {
+        window.BrigadaProdutosSemNota.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar página de Produtos Sem Nota</div>`;
+      }
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       this.renderAdminPanel(container);

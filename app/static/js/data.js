@@ -670,6 +670,7 @@ window.BrigadaData = {
   users: [],
   products: [],
   catalog: [],
+  produtosSemNota: [],
 
   parseProductCreator(p) {
     if (!p.supplier) {
@@ -1138,6 +1139,90 @@ window.BrigadaData = {
         simulated: true,
         message: `Mensagem de teste simulada offline enviada com sucesso para ${config.alertPhone}!`
       };
+    }
+  },
+
+  async loadProdutosSemNota() {
+    try {
+      const res = await fetch('/api/produtos-sem-nota');
+      if (!res.ok) throw new Error('Falha ao buscar produtos sem nota');
+      this.produtosSemNota = await res.json();
+      return this.produtosSemNota;
+    } catch (err) {
+      console.error('Erro na API ao carregar produtos sem nota (usando fallback local):', err);
+      const cached = localStorage.getItem('brigada_produtos_sem_nota');
+      this.produtosSemNota = cached ? JSON.parse(cached) : [];
+      return this.produtosSemNota;
+    }
+  },
+
+  async addProdutoSemNota(plu, quantity, arrivalDate, signature = null, responsibleName = null) {
+    const creatorEmail = window.BrigadaAuth.currentUser?.email || 'sistema';
+    // Tenta encontrar o nome do produto no catálogo local
+    const catItem = this.catalog.find(c => c.plu === plu);
+    const name = catItem ? catItem.name : `PRODUTO PLU ${plu}`;
+
+    const payload = {
+      plu,
+      name,
+      quantity: parseFloat(quantity),
+      arrivalDate,
+      createdBy: creatorEmail,
+      signature,
+      responsibleName
+    };
+
+    try {
+      const res = await fetch('/api/produtos-sem-nota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao salvar produto sem nota no servidor');
+      }
+      const created = await res.json();
+      this.produtosSemNota.unshift(created);
+      localStorage.setItem('brigada_produtos_sem_nota', JSON.stringify(this.produtosSemNota));
+      return created;
+    } catch (err) {
+      console.error('Erro na API ao registrar produto sem nota (usando fallback local):', err);
+      const local = {
+        id: Date.now(),
+        ...payload,
+        createdAt: new Date().toISOString()
+      };
+      this.produtosSemNota.unshift(local);
+      localStorage.setItem('brigada_produtos_sem_nota', JSON.stringify(this.produtosSemNota));
+      return local;
+    }
+  },
+
+  async deleteProdutoSemNota(id) {
+    try {
+      // Se for id gerado localmente pelo fallback (timestamp grande), remove direto do local
+      if (id > 1000000000000) {
+        this.produtosSemNota = this.produtosSemNota.filter(p => p.id !== id);
+        localStorage.setItem('brigada_produtos_sem_nota', JSON.stringify(this.produtosSemNota));
+        return { success: true };
+      }
+
+      const res = await fetch(`/api/produtos-sem-nota/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao excluir produto sem nota do servidor');
+      }
+      this.produtosSemNota = this.produtosSemNota.filter(p => p.id !== id);
+      localStorage.setItem('brigada_produtos_sem_nota', JSON.stringify(this.produtosSemNota));
+      return { success: true };
+    } catch (err) {
+      console.error('Erro na API ao excluir produto sem nota (usando fallback local):', err);
+      this.produtosSemNota = this.produtosSemNota.filter(p => p.id !== id);
+      localStorage.setItem('brigada_produtos_sem_nota', JSON.stringify(this.produtosSemNota));
+      return { success: true };
     }
   }
 };
