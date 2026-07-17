@@ -691,13 +691,35 @@ window.BrigadaProducts = {
     const catMap = { aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado' };
     const now = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+    const stats = {
+      total: products.length,
+      ok: 0,
+      expiresSoon: 0,
+      expired: 0
+    };
+
     const rows = products.map(p => {
       const s = window.BrigadaData.getProductStatus(p);
       const statusColor = s.days < 0 ? '#ef4444' : s.days === 0 ? '#f97316' : s.days <= 3 ? '#f59e0b' : '#22c55e';
+      
+      if (s.days < 0) stats.expired++;
+      else if (s.days <= 3) stats.expiresSoon++;
+      else stats.ok++;
+
       return `
         <tr>
           <td style="font-family:monospace;color:#6366f1;font-weight:600;">${p.plu}</td>
-      const printContent = `
+          <td>${p.name}</td>
+          <td>${p.quantity || 0} ${p.unit || 'kg'}</td>
+          <td>${catMap[p.category] || p.category}</td>
+          <td>${window.BrigadaData.formatDate ? window.BrigadaData.formatDate(p.endDate) : p.endDate}</td>
+          <td><span style="color:${statusColor}">${s.label || s.text || ''}</span></td>
+          <td>${p.location || '—'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const printContent = `
       <div class="print-container">
         <style>
           .print-container { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; padding:24px; font-size:11px; background:#ffffff; }

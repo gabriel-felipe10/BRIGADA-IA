@@ -723,6 +723,20 @@ window.BrigadaData = {
       // Se falhar (por exemplo, sem tabelas criadas no banco), usa os dados locais mockados
       this.products = PRODUCTS_DB.map(p => this.parseProductCreator(p));
       this.users = [...USERS_DB];
+      
+      // Cria catálogo de fallback a partir dos produtos mockados
+      const seenPlus = new Set();
+      this.catalog = [];
+      this.products.forEach(p => {
+        if (!seenPlus.has(p.plu)) {
+          seenPlus.add(p.plu);
+          this.catalog.push({
+            plu: p.plu,
+            name: p.name,
+            category: p.category
+          });
+        }
+      });
       return false;
     }
   },

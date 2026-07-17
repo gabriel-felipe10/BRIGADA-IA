@@ -34,7 +34,32 @@ window.BrigadaUI = {
       document.body.appendChild(printArea);
     }
     printArea.innerHTML = html;
-    window.print();
+
+    // Espera as imagens (como as assinaturas em base64) carregarem antes de imprimir
+    const images = printArea.querySelectorAll('img');
+    if (images.length > 0) {
+      let loadedCount = 0;
+      const onImageLoad = () => {
+        loadedCount++;
+        if (loadedCount === images.length) {
+          setTimeout(() => {
+            window.print();
+          }, 150);
+        }
+      };
+      images.forEach(img => {
+        if (img.complete) {
+          onImageLoad();
+        } else {
+          img.addEventListener('load', onImageLoad);
+          img.addEventListener('error', onImageLoad);
+        }
+      });
+    } else {
+      setTimeout(() => {
+        window.print();
+      }, 100);
+    }
   },
   
   // ── Scanner ─────────────────────────────────────────────────────────────

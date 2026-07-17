@@ -784,6 +784,187 @@ window.BrigadaConciliacao = {
     }
   },
 
+  signatureInitialized: false,
+  currentReconciliationItems: null,
+  hasSigned1: false,
+  hasSigned2: false,
+
+  initSignatureModal() {
+    if (this.signatureInitialized) return;
+
+    const modal = document.getElementById('signature-modal-overlay');
+    const closeBtn = document.getElementById('close-signature-btn');
+    const cancelBtn = document.getElementById('btn-cancel-signature');
+    const confirmBtn = document.getElementById('btn-confirm-signature');
+    const canvas1 = document.getElementById('sig-canvas-1');
+    const canvas2 = document.getElementById('sig-canvas-2');
+    const clearBtn1 = document.getElementById('clear-sig-1-btn');
+    const clearBtn2 = document.getElementById('clear-sig-2-btn');
+
+    if (!modal || !canvas1 || !canvas2) return;
+
+    // Helper para obter coordenadas do toque/mouse relativas ao canvas
+    const getMousePos = (canvas, evt) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    };
+
+    // Helper para registrar eventos de desenho no canvas
+    const setupDrawing = (canvas, key) => {
+      const ctx = canvas.getContext('2d');
+      let drawing = false;
+      let lastPos = { x: 0, y: 0 };
+
+      const startDrawing = (e) => {
+        if (e.cancelable) e.preventDefault();
+        drawing = true;
+        lastPos = getMousePos(canvas, e);
+        ctx.beginPath();
+        ctx.moveTo(lastPos.x, lastPos.y);
+        this[key] = true; // Define hasSigned1 ou hasSigned2 como true
+      };
+
+      const draw = (e) => {
+        if (!drawing) return;
+        if (e.cancelable) e.preventDefault();
+        const currentPos = getMousePos(canvas, e);
+        ctx.lineTo(currentPos.x, currentPos.y);
+        ctx.stroke();
+        lastPos = currentPos;
+      };
+
+      const stopDrawing = () => {
+        drawing = false;
+      };
+
+      // Eventos de mouse
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+
+      // Eventos de toque (mobile)
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      canvas.addEventListener('touchend', stopDrawing);
+      canvas.addEventListener('touchcancel', stopDrawing);
+    };
+
+    setupDrawing(canvas1, 'hasSigned1');
+    setupDrawing(canvas2, 'hasSigned2');
+
+    // Botão de limpar
+    clearBtn1.addEventListener('click', (e) => {
+      e.preventDefault();
+      const ctx = canvas1.getContext('2d');
+      ctx.clearRect(0, 0, canvas1.width, canvas1.height);
+      this.hasSigned1 = false;
+    });
+
+    clearBtn2.addEventListener('click', (e) => {
+      e.preventDefault();
+      const ctx = canvas2.getContext('2d');
+      ctx.clearRect(0, 0, canvas2.width, canvas2.height);
+      this.hasSigned2 = false;
+    });
+
+    // Ações de fechar
+    const closeModal = () => {
+      modal.classList.remove('modal-overlay--visible');
+      setTimeout(() => { modal.style.display = 'none'; }, 200);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Botão confirmar
+    confirmBtn.addEventListener('click', () => {
+      if (!this.hasSigned1 || !this.hasSigned2) {
+        window.BrigadaUI.showToast('Ambas as assinaturas (Responsável e Liderança) são obrigatórias.', 'error');
+        return;
+      }
+
+      const select1 = document.getElementById('sig-user-1-input');
+      const select2 = document.getElementById('sig-user-2-input');
+      const sigImg1 = canvas1.toDataURL('image/png');
+      const sigImg2 = canvas2.toDataURL('image/png');
+      const name1 = select1.value.trim() || 'Responsável';
+      const name2 = select2.value.trim() || 'Liderança';
+
+      closeModal();
+      this.generateSignedPDF(this.currentReconciliationItems, name1, sigImg1, name2, sigImg2);
+    });
+
+    this.signatureInitialized = true;
+  },
+
+  openSignatureModal(items) {
+    this.currentReconciliationItems = items;
+
+    // Inicializa os listeners uma única vez
+    this.initSignatureModal();
+
+    const modal = document.getElementById('signature-modal-overlay');
+    const select1 = document.getElementById('sig-user-1-input');
+    const select2 = document.getElementById('sig-user-2-input');
+    const datalist = document.getElementById('sig-users-list');
+    const canvas1 = document.getElementById('sig-canvas-1');
+    const canvas2 = document.getElementById('sig-canvas-2');
+
+    if (!modal || !canvas1 || !canvas2 || !datalist) {
+      window.BrigadaUI.showToast('Erro ao carregar o modal de assinaturas.', 'error');
+      return;
+    }
+
+    // Preenche a lista de sugestões (datalist)
+    const users = window.BrigadaData.users && window.BrigadaData.users.length ? window.BrigadaData.users : [
+      { name: 'Marcos', role: 'gestao' },
+      { name: 'Jefferson', role: 'gestao' },
+      { name: 'Administrador', role: 'superadmin' }
+    ];
+
+    datalist.innerHTML = users.map(u => `<option value="${u.name}">`).join('');
+
+    // Deixa as caixas para digitar sempre limpas por padrão
+    select1.value = '';
+    select2.value = '';
+
+    // Reseta flags de validação
+    this.hasSigned1 = false;
+    this.hasSigned2 = false;
+
+    const clearAndStyleCanvas = (canvas) => {
+      // Usamos dimensões lógicas fixas para evitar distorção de aspect-ratio no canvas
+      canvas.width = 500;
+      canvas.height = 120;
+      
+      const ctx = canvas.getContext('2d');
+      // Mantém fundo transparente para imprimir corretamente no PDF independente de blend-mode
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // O estilo de traçado precisa ser configurado sempre que a largura/altura muda
+      ctx.strokeStyle = '#1e3a8a';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    };
+
+    // Abre o modal
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+
+    // Executa o ajuste dos canvases pós-exibição
+    setTimeout(() => {
+      clearAndStyleCanvas(canvas1);
+      clearAndStyleCanvas(canvas2);
+    }, 150);
+  },
+
   printSelected(container) {
     const checkedBoxes = container.querySelectorAll('.select-conciliacao-row:checked');
     if (checkedBoxes.length === 0) {
@@ -794,6 +975,10 @@ window.BrigadaConciliacao = {
     const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
     const items = window.BrigadaData.products.filter(p => selectedIds.includes(p.id));
 
+    this.openSignatureModal(items);
+  },
+
+  generateSignedPDF(items, name1, sigImg1, name2, sigImg2) {
     const today = new Date().toLocaleDateString('pt-BR', {
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
@@ -809,8 +994,12 @@ window.BrigadaConciliacao = {
           .print-container th, .print-container td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 0.9rem; color: #1e293b; }
           .print-container th { background-color: #f1f5f9; color: #1e293b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
           .print-container tr:nth-child(even) td { background-color: #f8fafc; }
-          .print-container .footer { margin-top: 50px; display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; }
-          .print-container .signature-box { border-top: 1px dashed #94a3b8; width: 250px; text-align: center; padding-top: 5px; margin-top: 40px; }
+          .print-container .footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.85rem; color: #64748b; }
+          .print-container .signature-area { display: flex; gap: 40px; }
+          .print-container .signature-box { border-top: 1px dashed #94a3b8; width: 220px; text-align: center; padding-top: 5px; margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
+          .print-container .signature-image { max-height: 48px; max-width: 180px; margin-bottom: 4px; display: block; }
+          .print-container .signature-name { font-weight: 600; font-size: 0.85rem; color: #0f172a; }
+          .print-container .signature-title { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
         </style>
 
         <div class="header">
@@ -846,11 +1035,19 @@ window.BrigadaConciliacao = {
 
         <div class="footer">
           <div>
-            <p>Total de itens conciliados: <strong>${items.length}</strong></p>
+            <p style="margin: 0;">Total de itens conciliados: <strong>${items.length}</strong></p>
           </div>
-          <div style="display: flex; gap: 40px;">
-            <div class="signature-box">Responsável Contagem</div>
-            <div class="signature-box">Assinatura Gerente</div>
+          <div class="signature-area">
+            <div class="signature-box">
+              <img src="${sigImg1}" class="signature-image" alt="Assinatura Responsável">
+              <div class="signature-name">${name1}</div>
+              <div class="signature-title">Responsável Contagem</div>
+            </div>
+            <div class="signature-box">
+              <img src="${sigImg2}" class="signature-image" alt="Assinatura Liderança">
+              <div class="signature-name">${name2}</div>
+              <div class="signature-title">Assinatura Liderança</div>
+            </div>
           </div>
         </div>
       </div>
