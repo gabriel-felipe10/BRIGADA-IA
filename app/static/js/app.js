@@ -5,6 +5,84 @@
 
 // ── UI Helpers ────────────────────────────────────────────────────────────────
 window.BrigadaUI = {
+  setupPluAutocomplete(container, inputSelector, suggestionsContainerSelector, fieldsMapping) {
+    const input = container.querySelector(inputSelector);
+    const suggContainer = container.querySelector(suggestionsContainerSelector);
+    if (!input || !suggContainer) return;
+
+    input.setAttribute('autocomplete', 'off');
+
+    const handleInput = () => {
+      const query = input.value.trim().toLowerCase();
+      if (!query) {
+        suggContainer.style.display = 'none';
+        return;
+      }
+
+      // Search central catalog
+      const catalog = window.BrigadaData.catalog || [];
+      const matches = catalog.filter(item => 
+        (item.plu && item.plu.toLowerCase().includes(query)) ||
+        (item.barcode && item.barcode.toLowerCase().includes(query)) ||
+        (item.name && item.name.toLowerCase().includes(query))
+      ).slice(0, 5); // limit to 5 suggestions
+
+      if (matches.length === 0) {
+        suggContainer.style.display = 'none';
+        return;
+      }
+
+      suggContainer.innerHTML = matches.map(item => `
+        <div class="autocomplete-suggestion-item" data-plu="${item.plu}">
+          <span class="suggestion-plu">${item.plu}</span>
+          <span class="suggestion-name">${item.name}</span>
+        </div>
+      `).join('');
+      suggContainer.style.display = 'block';
+
+      // Bind selection clicks
+      suggContainer.querySelectorAll('.autocomplete-suggestion-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const plu = el.dataset.plu;
+          const selected = catalog.find(item => item.plu === plu);
+          if (selected) {
+            input.value = selected.plu;
+            
+            // Pre-fill mapped fields
+            if (fieldsMapping.name) {
+              const nameEl = container.querySelector(fieldsMapping.name);
+              if (nameEl) nameEl.value = selected.name || '';
+            }
+            if (fieldsMapping.category) {
+              const catEl = container.querySelector(fieldsMapping.category);
+              if (catEl) catEl.value = selected.category || '';
+            }
+            if (fieldsMapping.barcode) {
+              const barEl = container.querySelector(fieldsMapping.barcode);
+              if (barEl) barEl.value = selected.barcode || '';
+            }
+            if (fieldsMapping.unit && selected.unit) {
+              const unitEl = container.querySelector(fieldsMapping.unit);
+              if (unitEl) unitEl.value = selected.unit || '';
+            }
+          }
+          suggContainer.style.display = 'none';
+        });
+      });
+    };
+
+    input.addEventListener('input', handleInput);
+    input.addEventListener('focus', handleInput);
+
+    // Close suggestion list when clicking outside
+    const handleOutsideClick = (e) => {
+      if (e.target !== input && e.target !== suggContainer && !suggContainer.contains(e.target)) {
+        suggContainer.style.display = 'none';
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+  },
+
   showToast(message, type = 'success') {
     let container = document.getElementById('toast-container');
     if (!container) {

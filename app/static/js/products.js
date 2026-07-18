@@ -94,9 +94,10 @@ window.BrigadaProducts = {
             <form id="product-form">
               <input type="hidden" id="field-id">
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                   <label class="form-label">PLU *</label>
-                  <input type="text" id="field-plu" class="form-input" placeholder="ex: AV001" required>
+                  <input type="text" id="field-plu" class="form-input" placeholder="ex: AV001" autocomplete="off" required>
+                  <div id="plu-suggestions" class="autocomplete-suggestions"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Categoria *</label>
@@ -467,6 +468,14 @@ window.BrigadaProducts = {
     });
     container.querySelector('#delete-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'delete-modal') this.closeDeleteModal(container);
+    });
+
+    // Initialize PLU catalog autocomplete
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-plu', '#plu-suggestions', {
+      name: '#field-name',
+      category: '#field-category',
+      barcode: '#field-barcode',
+      unit: '#field-unit'
     });
   },
 

@@ -80,9 +80,10 @@ window.BrigadaHortifruti = {
             <form id="product-form-hortifruti">
               <input type="hidden" id="field-id-hortifruti">
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                   <label class="form-label">PLU *</label>
-                  <input type="text" id="field-plu-hortifruti" class="form-input" placeholder="ex: HF001" required>
+                  <input type="text" id="field-plu-hortifruti" class="form-input" placeholder="ex: HF001" autocomplete="off" required>
+                  <div id="plu-suggestions-hortifruti" class="autocomplete-suggestions"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Categoria *</label>
@@ -393,6 +394,14 @@ window.BrigadaHortifruti = {
     // PDF Export
     const btnPdf = container.querySelector('#btn-export-pdf-hortifruti');
     btnPdf?.addEventListener('click', () => this.exportPDF());
+
+    // Initialize PLU catalog autocomplete
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-plu-hortifruti', '#plu-suggestions-hortifruti', {
+      name: '#field-name-hortifruti',
+      category: '#field-category-hortifruti',
+      barcode: '#field-barcode-hortifruti',
+      unit: '#field-unit-hortifruti'
+    });
   },
 
   openModal(container, id = null) {

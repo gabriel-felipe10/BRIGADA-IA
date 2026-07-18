@@ -80,9 +80,10 @@ window.BrigadaMercearia = {
             <form id="product-form-mercearia">
               <input type="hidden" id="field-id-mercearia">
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                   <label class="form-label">PLU *</label>
-                  <input type="text" id="field-plu-mercearia" class="form-input" placeholder="ex: ME001" required>
+                  <input type="text" id="field-plu-mercearia" class="form-input" placeholder="ex: ME001" autocomplete="off" required>
+                  <div id="plu-suggestions-mercearia" class="autocomplete-suggestions"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Categoria *</label>
@@ -387,6 +388,14 @@ window.BrigadaMercearia = {
     // PDF Export
     const btnPdf = container.querySelector('#btn-export-pdf-mercearia');
     btnPdf?.addEventListener('click', () => this.exportPDF());
+
+    // Initialize PLU catalog autocomplete
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-plu-mercearia', '#plu-suggestions-mercearia', {
+      name: '#field-name-mercearia',
+      category: '#field-category-mercearia',
+      barcode: '#field-barcode-mercearia',
+      unit: '#field-unit-mercearia'
+    });
   },
 
   openModal(container, id = null) {

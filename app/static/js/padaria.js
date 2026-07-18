@@ -80,9 +80,10 @@ window.BrigadaPadaria = {
             <form id="product-form-padaria">
               <input type="hidden" id="field-id-padaria">
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                   <label class="form-label">PLU *</label>
-                  <input type="text" id="field-plu-padaria" class="form-input" placeholder="ex: PA001" required>
+                  <input type="text" id="field-plu-padaria" class="form-input" placeholder="ex: PA001" autocomplete="off" required>
+                  <div id="plu-suggestions-padaria" class="autocomplete-suggestions"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Categoria *</label>
@@ -394,6 +395,14 @@ window.BrigadaPadaria = {
     // PDF Export
     const btnPdf = container.querySelector('#btn-export-pdf-padaria');
     btnPdf?.addEventListener('click', () => this.exportPDF());
+
+    // Initialize PLU catalog autocomplete
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-plu-padaria', '#plu-suggestions-padaria', {
+      name: '#field-name-padaria',
+      category: '#field-category-padaria',
+      barcode: '#field-barcode-padaria',
+      unit: '#field-unit-padaria'
+    });
   },
 
   openModal(container, id = null) {
