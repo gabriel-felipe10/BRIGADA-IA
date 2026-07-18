@@ -19,8 +19,6 @@ window.BrigadaDashboard = {
         const sector = window.BrigadaAuth.currentUser.sector;
         if (sector === 'açougue') {
           products = products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
-        } else if (sector === 'pereciveis') {
-          products = products.filter(p => ['laticinios', 'frios', 'padaria', 'hortifruti'].includes(p.category));
         }
       }
     }
@@ -357,10 +355,10 @@ window.BrigadaDashboard = {
             <button class="cat-tab cat-tab--sm" data-cat="bovino">🐮 Bovino</button>
             <button class="cat-tab cat-tab--sm" data-cat="pescado">🐟 Pescado</button>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
-            <button class="cat-tab cat-tab--sm" data-cat="laticinios">🧀 Laticínios</button>
-            <button class="cat-tab cat-tab--sm" data-cat="frios">🥓 Frios</button>
+            ${window.BrigadaAuth.hasSectorAccess('padaria') ? `
             <button class="cat-tab cat-tab--sm" data-cat="padaria">🍞 Padaria</button>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
             <button class="cat-tab cat-tab--sm" data-cat="hortifruti">🥦 Hortifruti</button>
             ` : ''}
           </div>
@@ -820,8 +818,7 @@ window.BrigadaDashboard = {
       .sort((a, b) => a._status.days - b._status.days);
 
     const catMap = { 
-      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
-      laticinios: '🧀 Laticínios', frios: '🥓 Frios', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
+      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
     };
     const showActions = products.some(p => window.BrigadaAuth.canEditProduct(p) || window.BrigadaAuth.canDeleteProduct(p));
 
@@ -1036,12 +1033,10 @@ window.BrigadaDashboard = {
     }
 
     const catMap = {
-      aves: '🐔', suino: '🐷', bovino: '🐮', pescado: '🐟',
-      laticinios: '🧀', frios: '🥓', padaria: '🍞', hortifruti: '🥦'
+      aves: '🐔', suino: '🐷', bovino: '🐮', pescado: '🐟', padaria: '🍞', hortifruti: '🥦'
     };
     const catNameMap = {
-      aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado',
-      laticinios: 'Laticínios', frios: 'Frios', padaria: 'Padaria', hortifruti: 'Hortifruti'
+      aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado', padaria: 'Padaria', hortifruti: 'Hortifruti'
     };
 
     bodyEl.innerHTML = products.map((p, idx) => {

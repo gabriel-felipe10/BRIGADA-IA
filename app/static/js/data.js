@@ -983,8 +983,6 @@ window.BrigadaData = {
           const sector = window.BrigadaAuth.currentUser.sector;
           if (sector === 'açougue') {
             allowedProducts = this.products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
-          } else if (sector === 'pereciveis') {
-            allowedProducts = this.products.filter(p => ['laticinios', 'frios'].includes(p.category));
           } else if (sector === 'padaria') {
             allowedProducts = this.products.filter(p => ['padaria'].includes(p.category));
           } else if (sector === 'hortifruti') {

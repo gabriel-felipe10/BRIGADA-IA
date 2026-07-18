@@ -15,6 +15,8 @@ window.BrigadaChambers = {
   isListening: false,
   directorySearch: '',
   directoryFilter: 'all',
+  sidebarSearch: '',
+  sidebarFilter: 'all',
 
   CHAMBER_CONFIGS: {
     'Câmara Resfriada': {
@@ -136,12 +138,15 @@ window.BrigadaChambers = {
     this.container = container;
     container.innerHTML = this.buildHTML();
     this.bindEvents();
+    if (this.selectedChamber) {
+      this.updateSidebarList();
+    }
   },
 
-  // Filter products in meat and perishables categories
+  // Filter products in meat categories
   getMeatProducts() {
     return (window.BrigadaData.products || []).filter(p => 
-      ['aves', 'suino', 'bovino', 'pescado', 'laticinios', 'frios'].includes(p.category)
+      ['aves', 'suino', 'bovino', 'pescado'].includes(p.category)
     );
   },
 
@@ -212,8 +217,7 @@ window.BrigadaChambers = {
       const chamberLabel = parsed.chamber === 'Câmara Resfriada' ? 'Resfriada' : 'Congelada';
       const addressLabel = `C${parsed.column.toString().padStart(2, '0')}-N${parsed.level}-${parsed.position === 'esquerda' ? 'E' : 'D'}`;
       const catMap = { 
-        aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
-        laticinios: '🧀 Laticínios', frios: '🥓 Frios'
+        aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado'
       };
       
       return `
@@ -256,8 +260,6 @@ window.BrigadaChambers = {
             <button class="cat-tab cat-tab--sm ${this.directoryFilter === 'suino' ? 'cat-tab--active' : ''}" data-dir-cat="suino">🐷 Suíno</button>
             <button class="cat-tab cat-tab--sm ${this.directoryFilter === 'bovino' ? 'cat-tab--active' : ''}" data-dir-cat="bovino">🐮 Bovino</button>
             <button class="cat-tab cat-tab--sm ${this.directoryFilter === 'pescado' ? 'cat-tab--active' : ''}" data-dir-cat="pescado">🐟 Pescado</button>
-            <button class="cat-tab cat-tab--sm ${this.directoryFilter === 'laticinios' ? 'cat-tab--active' : ''}" data-dir-cat="laticinios">🧀 Laticínios</button>
-            <button class="cat-tab cat-tab--sm ${this.directoryFilter === 'frios' ? 'cat-tab--active' : ''}" data-dir-cat="frios">🥓 Frios</button>
           </div>
         </div>
 
@@ -545,6 +547,23 @@ window.BrigadaChambers = {
       const config = this.CHAMBER_CONFIGS[this.selectedChamber];
       const activeStats = stats[this.selectedChamber];
       
+      const sidebarTabs = this.selectedChamber === 'Câmara Resfriada' ? `
+        <div class="cat-quick-tabs" id="sidebar-cat-tabs" style="display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'all' ? 'cat-tab--active' : ''}" data-side-cat="all">Todos</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'aves' ? 'cat-tab--active' : ''}" data-side-cat="aves">🐔 Aves</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'bovino' ? 'cat-tab--active' : ''}" data-side-cat="bovino">🐮 Bovino</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'suino' ? 'cat-tab--active' : ''}" data-side-cat="suino">🐷 Suíno</button>
+        </div>
+      ` : `
+        <div class="cat-quick-tabs" id="sidebar-cat-tabs" style="display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'all' ? 'cat-tab--active' : ''}" data-side-cat="all">Todos</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'aves' ? 'cat-tab--active' : ''}" data-side-cat="aves">🐔 Aves</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'bovino' ? 'cat-tab--active' : ''}" data-side-cat="bovino">🐮 Bovino</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'suino' ? 'cat-tab--active' : ''}" data-side-cat="suino">🐷 Suíno</button>
+          <button class="cat-tab cat-tab--sm ${this.sidebarFilter === 'pescado' ? 'cat-tab--active' : ''}" data-side-cat="pescado">🐟 Pescado</button>
+        </div>
+      `;
+      
       const columnCardsHTML = Array.from({ length: config.columnsCount }, (_, i) => {
         const colNum = i + 1;
         const isActive = this.selectedColumn === colNum;
@@ -632,12 +651,12 @@ window.BrigadaChambers = {
 
             <div class="rack-shelves-container">
               <!-- Left slot -->
-              <div class="pallet-slot ${leftProduct ? 'occupied' : 'empty'}">
+              <div class="pallet-slot ${leftProduct ? 'occupied' : 'empty'}" data-level="${level}" data-pos="esquerda">
                 ${renderSlot(leftProduct, 'esquerda')}
               </div>
 
               <!-- Right slot -->
-              <div class="pallet-slot ${rightProduct ? 'occupied' : 'empty'}">
+              <div class="pallet-slot ${rightProduct ? 'occupied' : 'empty'}" data-level="${level}" data-pos="direita">
                 ${renderSlot(rightProduct, 'direita')}
               </div>
             </div>
@@ -672,7 +691,7 @@ window.BrigadaChambers = {
               </div>
             </div>
 
-            <div class="chamber-workspace-grid" style="display: grid; grid-template-columns: 320px 1fr; gap: 2rem;">
+            <div class="chamber-workspace-grid">
               <!-- LEFT COLUMN: COLUMNS SELECTION GRID -->
               <div class="chamber-columns-selector-panel glass-panel" style="padding: 1.5rem;">
                 <div class="panel-header" style="margin-bottom: 1.5rem;">
@@ -707,6 +726,25 @@ window.BrigadaChambers = {
                   </div>
                 </div>
               </div>
+
+              <!-- THIRD COLUMN: UNALLOCATED PALLETS FOR DRAG & DROP -->
+              <div class="unallocated-pallets-panel glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
+                <div class="panel-header" style="margin-bottom: 1rem;">
+                  <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 2px;">📦 Lotes Pendentes</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary);">Arraste os lotes para as posições do rack</p>
+                </div>
+
+                ${sidebarTabs}
+
+                <div class="sidebar-search-wrapper" style="position:relative; display:flex; align-items:center; margin-bottom:1rem; background:var(--bg-tertiary); border-radius:var(--radius-md); border:1px solid var(--border-color); padding:0 12px;">
+                  <div style="color:var(--text-tertiary); margin-right:8px; display:flex; align-items:center;">${this.icons.Search}</div>
+                  <input type="text" id="sidebar-search-input" class="search-input" placeholder="Filtrar por nome ou PLU..." value="${this.sidebarSearch || ''}" style="flex:1; padding:8px 0; border:none; background:transparent; font-size:0.85rem;" />
+                </div>
+
+                <div id="unallocated-list-container" class="unallocated-list-container" style="flex:1; max-height: 480px; overflow-y:auto; padding-right: 4px;">
+                  <!-- Dynamically populated via updateSidebarList -->
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -723,6 +761,7 @@ window.BrigadaChambers = {
       resfriadaCard.addEventListener('click', () => {
         this.selectedChamber = 'Câmara Resfriada';
         this.selectedColumn = 1;
+        this.sidebarFilter = 'all';
         this.render(this.container);
       });
     }
@@ -732,6 +771,7 @@ window.BrigadaChambers = {
       congeladaCard.addEventListener('click', () => {
         this.selectedChamber = 'Câmara Congelada';
         this.selectedColumn = 1;
+        this.sidebarFilter = 'all';
         this.render(this.container);
       });
     }
@@ -813,6 +853,123 @@ window.BrigadaChambers = {
     if (tbody) {
       this.bindDirectoryRowEvents(tbody);
     }
+
+    // Sidebar search input
+    const sidebarSearchInput = this.container.querySelector('#sidebar-search-input');
+    if (sidebarSearchInput) {
+      sidebarSearchInput.addEventListener('input', (e) => {
+        this.sidebarSearch = e.target.value;
+        this.updateSidebarList();
+      });
+    }
+
+    // Drag over and drop handlers on slots
+    this.container.querySelectorAll('.pallet-slot').forEach(slot => {
+      slot.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      slot.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        slot.classList.add('drag-over');
+      });
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('drag-over');
+      });
+      slot.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        slot.classList.remove('drag-over');
+        const idStr = e.dataTransfer.getData('text/plain');
+        if (!idStr) return;
+        const productId = parseInt(idStr, 10);
+        
+        const level = parseInt(slot.dataset.level, 10);
+        const position = slot.dataset.pos;
+        
+        this.allocatingSlot = { level, position };
+        await this.allocateProduct(productId);
+      });
+    });
+
+    // Sidebar Category Tabs Click
+    this.container.querySelectorAll('#sidebar-cat-tabs .cat-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        this.container.querySelectorAll('#sidebar-cat-tabs .cat-tab').forEach(t => t.classList.remove('cat-tab--active'));
+        tab.classList.add('cat-tab--active');
+        this.sidebarFilter = tab.dataset.sideCat;
+        this.updateSidebarList();
+      });
+    });
+  },
+
+  updateSidebarList() {
+    const listContainer = this.container.querySelector('#unallocated-list-container');
+    if (!listContainer) return;
+    
+    const isResfriada = this.selectedChamber === 'Câmara Resfriada';
+    
+    const chamberProducts = this.getMeatProducts().filter(p => {
+      // Meats go to the chamber indicated by their location prefix
+      const prefix = isResfriada ? 'resfriado' : 'congelado';
+      return (p.location || '').startsWith(prefix);
+    });
+
+    const query = (this.sidebarSearch || '').toLowerCase().trim();
+    const activeFilter = this.sidebarFilter || 'all';
+    
+    const unallocated = chamberProducts.filter(p => {
+      const isUnallocated = !this.parseLocation(p.location);
+      if (!isUnallocated) return false;
+
+      // Filter by category tab
+      if (activeFilter !== 'all' && p.category !== activeFilter) return false;
+
+      if (query) {
+        return p.name.toLowerCase().includes(query) || p.plu.toLowerCase().includes(query);
+      }
+      return true;
+    });
+
+    if (unallocated.length === 0) {
+      listContainer.innerHTML = `
+        <div class="empty-sidebar-state" style="text-align:center; padding:2rem 1rem; color:var(--text-tertiary); border: 1px dashed var(--border-color); border-radius: 8px;">
+          <div style="font-size:1.5rem; margin-bottom:6px;">📦</div>
+          <span style="font-size:0.8rem;">Nenhum lote pendente.</span>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = unallocated.map(p => {
+      const status = window.BrigadaData.getProductStatus(p);
+      return `
+        <div class="unallocated-pallet-item draggable-pallet" draggable="true" data-id="${p.id}" style="cursor: grab; margin-bottom: 10px; padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s; user-select: none;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px; pointer-events: none;">
+            <span class="plu-badge" style="font-size: 0.75rem; font-family: monospace; background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; color: var(--text-primary); border: 1px solid var(--border-color);">${p.plu}</span>
+            <span class="badge ${status.class}" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">
+              ${status.icon} ${status.label}
+            </span>
+          </div>
+          <strong style="display: block; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 6px; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.name}">${p.name}</strong>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); pointer-events: none;">
+            <span>Qtd: <strong>${p.quantity}</strong> ${p.unit}</span>
+            <span>Val: <strong style="color: var(--text-primary);">${window.BrigadaData.formatDate(p.endDate)}</strong></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Rebind drag events
+    listContainer.querySelectorAll('.unallocated-pallet-item').forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', item.dataset.id);
+        item.style.opacity = '0.5';
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend', () => {
+        item.style.opacity = '1';
+        item.classList.remove('dragging');
+      });
+    });
   },
 
   async deallocateProduct(productId) {
@@ -879,35 +1036,41 @@ window.BrigadaChambers = {
                 <h3 class="prod-title" style="font-size:1.3rem; font-weight:700; margin-bottom: 1rem;">${this.viewingPallet.name}</h3>
                 
                 <div class="details-info-table" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem;">
-                  <div class="info-row" style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+                  <div class="info-row" style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:6px; align-items:center;">
                     <span class="info-label" style="color:var(--text-secondary);">PLU</span>
                     <span class="info-val monospace" style="font-family:monospace; font-weight:600;">${this.viewingPallet.plu}</span>
                   </div>
-                  <div class="info-row" style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+                  <div class="info-row" style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:6px; align-items:center;">
                     <span class="info-label" style="color:var(--text-secondary);">Quantidade do Lote</span>
-                    <span class="info-val highlight" style="color:var(--accent-2); font-weight:600;">${this.viewingPallet.quantity || 0} ${this.viewingPallet.unit || 'kg'}</span>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <input type="number" id="pallet-edit-qty" value="${this.viewingPallet.quantity || 0}" step="any" min="0" style="width: 80px; text-align: right; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-weight: 600;">
+                      <select id="pallet-edit-unit" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px;">
+                        <option value="kg" ${this.viewingPallet.unit === 'kg' ? 'selected' : ''}>kg</option>
+                        <option value="un" ${this.viewingPallet.unit === 'un' ? 'selected' : ''}>un</option>
+                      </select>
+                    </div>
                   </div>
-                  <div class="info-row" style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+                  <div class="info-row" style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:6px; align-items:center;">
                     <span class="info-label" style="color:var(--text-secondary);">Fornecedor</span>
-                    <span class="info-val" style="font-weight:500;">${this.viewingPallet.supplier || '—'}</span>
+                    <input type="text" id="pallet-edit-supplier" value="${this.viewingPallet.supplier || ''}" placeholder="Nome do fornecedor" style="width: 150px; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-weight: 500;">
                   </div>
-                  <div class="info-row border-highlight" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(16,185,129,0.3); padding-bottom:6px; color:#34d399;">
+                  <div class="info-row border-highlight" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(16,185,129,0.3); padding-bottom:6px; color:#34d399; align-items:center;">
                     <span class="info-label" style="color:#34d399;">Data de Validade</span>
-                    <span class="info-val date-val" style="display:flex; align-items:center; gap:4px; font-weight:600;">
-                      ${this.icons.Calendar}
-                      ${window.BrigadaData.formatDate(this.viewingPallet.endDate)}
-                    </span>
+                    <input type="date" id="pallet-edit-enddate" value="${this.viewingPallet.endDate || ''}" style="background: #0f172a; color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 4px 8px; border-radius: 4px; font-weight: 600;">
                   </div>
                 </div>
 
-                <div class="pallet-actions-bar" style="display:flex; gap: 12px;">
-                  <button class="btn btn-outline" id="btn-print-tag" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px;">
-                    ${this.icons.Printer}
-                    Imprimir Etiqueta
+                <div class="pallet-actions-bar" style="display:flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="btn btn-primary" id="btn-save-pallet-edits" style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding: 8px 12px;">
+                    💾 Salvar
                   </button>
-                  <button class="btn btn-danger" id="btn-deallocate-pallet" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <button class="btn btn-outline" id="btn-print-tag" style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding: 8px 12px;">
+                    ${this.icons.Printer}
+                    Imprimir
+                  </button>
+                  <button class="btn btn-danger" id="btn-deallocate-pallet" style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding: 8px 12px;">
                     ${this.icons.Trash2}
-                    Desalocar Palete
+                    Desalocar
                   </button>
                 </div>
               </div>
@@ -923,6 +1086,37 @@ window.BrigadaChambers = {
     document.getElementById('pallet-modal-close').addEventListener('click', () => {
       this.closeModal('pallet-view-modal');
       this.viewingPallet = null;
+    });
+
+    document.getElementById('btn-save-pallet-edits').addEventListener('click', async () => {
+      const quantity = parseFloat(document.getElementById('pallet-edit-qty').value) || 0;
+      const unit = document.getElementById('pallet-edit-unit').value;
+      const supplier = document.getElementById('pallet-edit-supplier').value.trim();
+      const endDate = document.getElementById('pallet-edit-enddate').value;
+
+      if (!endDate) {
+        alert('A data de validade é obrigatória.');
+        return;
+      }
+
+      try {
+        await window.BrigadaData.updateProduct(this.viewingPallet.id, {
+          quantity,
+          unit,
+          supplier: supplier || null,
+          endDate
+        });
+        alert('Alterações salvas com sucesso!');
+        this.closeModal('pallet-view-modal');
+        this.viewingPallet = null;
+        
+        // Refresh local cache and render
+        await window.BrigadaData.loadProducts();
+        this.render(this.container);
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao salvar as alterações do palete.');
+      }
     });
 
     document.getElementById('btn-print-tag').addEventListener('click', () => {
@@ -1438,12 +1632,23 @@ window.BrigadaChambers = {
       this.allocatingSlot.position
     );
 
-    window.BrigadaUI.showToast('Alocando palete...', 'info');
     try {
+      const existingProduct = this.getProductAt(this.selectedColumn, this.allocatingSlot.level, this.allocatingSlot.position);
+      if (existingProduct && existingProduct.id !== productId) {
+        if (!confirm(`A posição já está ocupada por "${existingProduct.name}". Deseja desalocá-lo e colocar o novo palete aqui?`)) {
+          this.allocatingSlot = null;
+          return;
+        }
+        // Desaloca o existente
+        const resetLoc = this.selectedChamber === 'Câmara Resfriada' ? 'resfriado' : 'congelado';
+        await window.BrigadaData.updateProduct(existingProduct.id, { location: resetLoc });
+      }
+
+      window.BrigadaUI.showToast('Alocando palete...', 'info');
       await window.BrigadaData.updateProduct(productId, { location: locString });
       window.BrigadaUI.showToast('Palete alocado com sucesso!', 'success');
       
-      // Close allocation modal
+      // Close allocation modal if open
       this.closeModal('allocation-modal');
       this.allocatingSlot = null;
 
@@ -1487,8 +1692,7 @@ window.BrigadaChambers = {
         const chamberLabel = parsed.chamber === 'Câmara Resfriada' ? 'Resfriada' : 'Congelada';
         const addressLabel = `C${parsed.column.toString().padStart(2, '0')}-N${parsed.level}-${parsed.position === 'esquerda' ? 'E' : 'D'}`;
         const catMap = { 
-          aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
-          laticinios: '🧀 Laticínios', frios: '🥓 Frios'
+          aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado'
         };
         
         return `
@@ -1524,6 +1728,7 @@ window.BrigadaChambers = {
       btn.addEventListener('click', () => {
         this.selectedChamber = btn.dataset.chamber;
         this.selectedColumn = parseInt(btn.dataset.col, 10);
+        this.sidebarFilter = 'all';
         this.render(this.container);
       });
     });

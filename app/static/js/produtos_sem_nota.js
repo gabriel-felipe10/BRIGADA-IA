@@ -8,8 +8,48 @@ window.BrigadaProdutosSemNota = {
   hasSigned: false,
   canvasInstance: null,
   ctxInstance: null,
+  currentDay: 'all',
+  currentMonth: 'all',
+  currentYear: 'all',
 
   render(container) {
+    // Opções de Dia
+    let dayOptions = '<option value="all">Dia (Todos)</option>';
+    for (let i = 1; i <= 31; i++) {
+      const d = String(i).padStart(2, '0');
+      const selected = this.currentDay === d ? 'selected' : '';
+      dayOptions += `<option value="${d}" ${selected}>${d}</option>`;
+    }
+
+    // Opções de Mês
+    const months = [
+      { val: '01', name: 'Janeiro' },
+      { val: '02', name: 'Fevereiro' },
+      { val: '03', name: 'Março' },
+      { val: '04', name: 'Abril' },
+      { val: '05', name: 'Maio' },
+      { val: '06', name: 'Junho' },
+      { val: '07', name: 'Julho' },
+      { val: '08', name: 'Agosto' },
+      { val: '09', name: 'Setembro' },
+      { val: '10', name: 'Outubro' },
+      { val: '11', name: 'Novembro' },
+      { val: '12', name: 'Dezembro' }
+    ];
+    let monthOptions = '<option value="all">Mês (Todos)</option>';
+    months.forEach(m => {
+      const selected = this.currentMonth === m.val ? 'selected' : '';
+      monthOptions += `<option value="${m.val}" ${selected}>${m.name}</option>`;
+    });
+
+    // Opções de Ano
+    const years = ['2025', '2026', '2027', '2028'];
+    let yearOptions = '<option value="all">Ano (Todos)</option>';
+    years.forEach(y => {
+      const selected = this.currentYear === y ? 'selected' : '';
+      yearOptions += `<option value="${y}" ${selected}>${y}</option>`;
+    });
+
     container.innerHTML = `
       <style>
         /* Estilos e responsividade aprimorados para Mobile */
@@ -126,13 +166,13 @@ window.BrigadaProdutosSemNota = {
           <h3 class="card-title" style="margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px;">
             📥 Registrar Entrada Sem Nota
           </h3>
-          <form id="sem-nota-form" style="display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+          <form id="sem-nota-form" style="display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start;">
             
-            <div class="form-group" style="position: relative;">
+            <div class="form-group" style="position: relative; margin-bottom: 1.2rem;">
               <label class="form-label" for="sn-plu">Código PLU *</label>
               <input type="text" id="sn-plu" list="sn-catalog-list" class="form-input" placeholder="Digite o PLU..." required autocomplete="off">
               <datalist id="sn-catalog-list"></datalist>
-              <span id="sn-product-name-preview" style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; min-height: 1.2rem;">—</span>
+              <span id="sn-product-name-preview" style="position: absolute; left: 0; bottom: -1.4rem; font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">—</span>
             </div>
 
             <!-- Grupo de Quantidade e Unidade Alinhados -->
@@ -189,6 +229,28 @@ window.BrigadaProdutosSemNota = {
             <span class="badge" id="sn-count-badge" style="background: rgba(255,255,255,0.06); padding: 0.3rem 0.6rem; border-radius: 20px;">0 registros</span>
           </div>
 
+          <!-- Barra de Filtros por Data de Validade -->
+          <div class="toolbar" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border);">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.2rem;">🔍</span>
+              <span style="font-weight: 500; font-size: 0.95rem; color: var(--text-secondary);">Filtrar Validade:</span>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+              <select id="sn-filter-day" class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 90px; height: 38px; background-color: var(--surface);">
+                ${dayOptions}
+              </select>
+              <select id="sn-filter-month" class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 130px; height: 38px; background-color: var(--surface);">
+                ${monthOptions}
+              </select>
+              <select id="sn-filter-year" class="select-control" style="padding: 0.4rem 2rem 0.4rem 1rem; min-width: 110px; height: 38px; background-color: var(--surface);">
+                ${yearOptions}
+              </select>
+              <button id="btn-clear-sn-filters" class="btn btn--ghost" style="padding: 0 1rem; height: 38px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; border-radius: 20px;">
+                <span>🧹</span> Limpar
+              </button>
+            </div>
+          </div>
+
           <div style="background: rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid var(--border); overflow: hidden;">
             <table class="table responsive-table" style="width: 100%; border-collapse: collapse; text-align: left;">
               <thead>
@@ -220,6 +282,35 @@ window.BrigadaProdutosSemNota = {
     // Inicializar data padrão no input para hoje
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('sn-arrival-date').value = today;
+
+    // Configurar filtros de validade (data de chegada)
+    const selectDay = document.getElementById('sn-filter-day');
+    const selectMonth = document.getElementById('sn-filter-month');
+    const selectYear = document.getElementById('sn-filter-year');
+    const btnClear = document.getElementById('btn-clear-sn-filters');
+
+    const handleFilterChange = () => {
+      this.currentDay = selectDay ? selectDay.value : 'all';
+      this.currentMonth = selectMonth ? selectMonth.value : 'all';
+      this.currentYear = selectYear ? selectYear.value : 'all';
+      this.renderTable();
+    };
+
+    if (selectDay) selectDay.addEventListener('change', handleFilterChange);
+    if (selectMonth) selectMonth.addEventListener('change', handleFilterChange);
+    if (selectYear) selectYear.addEventListener('change', handleFilterChange);
+
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        this.currentDay = 'all';
+        this.currentMonth = 'all';
+        this.currentYear = 'all';
+        if (selectDay) selectDay.value = 'all';
+        if (selectMonth) selectMonth.value = 'all';
+        if (selectYear) selectYear.value = 'all';
+        this.renderTable();
+      });
+    }
 
     this.setupCatalogAutocomplete();
     this.initSignatureDrawing();
@@ -400,7 +491,30 @@ window.BrigadaProdutosSemNota = {
   renderTable() {
     const tbody = document.getElementById('sem-nota-table-body');
     const countBadge = document.getElementById('sn-count-badge');
-    const list = window.BrigadaData.produtosSemNota || [];
+    let list = window.BrigadaData.produtosSemNota || [];
+
+    // Aplicar filtros por data de chegada
+    if (this.currentYear !== 'all') {
+      list = list.filter(item => {
+        if (!item.arrivalDate) return false;
+        const [y] = item.arrivalDate.split('-');
+        return y === this.currentYear;
+      });
+    }
+    if (this.currentMonth !== 'all') {
+      list = list.filter(item => {
+        if (!item.arrivalDate) return false;
+        const [, m] = item.arrivalDate.split('-');
+        return m === this.currentMonth;
+      });
+    }
+    if (this.currentDay !== 'all') {
+      list = list.filter(item => {
+        if (!item.arrivalDate) return false;
+        const [, , d] = item.arrivalDate.split('-');
+        return d === this.currentDay;
+      });
+    }
 
     countBadge.textContent = `${list.length} registro${list.length === 1 ? '' : 's'}`;
 

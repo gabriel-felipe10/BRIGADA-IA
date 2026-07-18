@@ -184,8 +184,6 @@ window.BrigadaCatalog = {
       else if (safeCat === 'bovino') icon = '🐮 Bovino';
       else if (safeCat === 'suino') icon = '🐷 Suíno';
       else if (safeCat === 'pescado') icon = '🐟 Pescado';
-      else if (safeCat === 'laticinios') icon = '🧀 Laticínios';
-      else if (safeCat === 'frios') icon = '🥓 Frios';
       else if (safeCat === 'padaria') icon = '🍞 Padaria';
       else if (safeCat === 'hortifruti') icon = '🥦 Hortifruti';
       else if (safeCat === 'mercearia') icon = '🛒 Mercearia';

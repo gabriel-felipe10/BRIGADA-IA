@@ -1966,7 +1966,7 @@ input[type="checkbox"]:focus-visible {
 
 .chamber-workspace-grid {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 320px 1fr 340px;
   gap: 24px;
   align-items: start;
 }
@@ -2179,6 +2179,43 @@ input[type="checkbox"]:focus-visible {
   border-color: rgba(99, 102, 241, 0.4);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.pallet-slot.drag-over {
+  border: 2px dashed var(--accent-primary) !important;
+  background: rgba(99, 102, 241, 0.12) !important;
+  transform: scale(1.02);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* Draggable items in sidebar */
+.unallocated-pallet-item {
+  cursor: grab;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.unallocated-pallet-item:hover {
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background: var(--bg-tertiary);
+}
+
+.unallocated-pallet-item:active {
+  cursor: grabbing;
+}
+
+.unallocated-pallet-item.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+  border-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.05);
 }
 
 .pallet-empty-content {
@@ -2527,7 +2564,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 /* Responsive workspace */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .chamber-workspace-grid {
     grid-template-columns: 1fr;
   }
@@ -3578,3 +3615,91 @@ input[type="checkbox"]:focus-visible {
   #print-area th, #print-area td { display: table-cell !important; }
 }
 
+/* Estilos compactos para o palete dentro das posições WMS da câmara */
+.pallet-slot .pallet-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  padding: 6px;
+  gap: 6px;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+.pallet-slot .pallet-position-badge {
+  width: 28px;
+  height: 28px;
+  font-size: 0.85rem;
+  align-self: center;
+}
+.pallet-slot .pallet-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.pallet-slot .pallet-product-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 22px; /* Espaço para o botão de deletar */
+}
+.pallet-slot .pallet-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 2px 0;
+}
+.pallet-slot .pallet-sku {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.pallet-slot .pallet-quantity {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.pallet-slot .pallet-tag-meta {
+  margin-top: 2px;
+}
+.pallet-slot .pallet-val-badge {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: none;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  display: inline-block;
+  white-space: nowrap;
+}
+.pallet-slot .pallet-action-btn.delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-radius: 4px;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.pallet-slot .pallet-action-btn.delete svg {
+  width: 12px;
+  height: 12px;
+}
+.pallet-slot .pallet-action-btn.delete:hover {
+  background: #ef4444;
+  color: white;
+}

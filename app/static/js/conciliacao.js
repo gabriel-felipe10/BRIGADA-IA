@@ -249,7 +249,6 @@ window.BrigadaConciliacao = {
 
       const sectorCategories = {
         'açougue': ['aves', 'suino', 'bovino', 'pescado'],
-        'pereciveis': ['laticinios', 'frios'],
         'padaria': ['padaria'],
         'hortifruti': ['hortifruti'],
         'mercearia': ['mercearia']
@@ -383,7 +382,6 @@ window.BrigadaConciliacao = {
 
     const sectorCategories = {
       'açougue': ['aves', 'suino', 'bovino', 'pescado'],
-      'pereciveis': ['laticinios', 'frios'],
       'padaria': ['padaria'],
       'hortifruti': ['hortifruti'],
       'mercearia': ['mercearia']
@@ -554,11 +552,6 @@ window.BrigadaConciliacao = {
         { value: 'Congelado', label: '🥶 Congelado' },
         { value: 'Antecâmara', label: '🚪 Antecâmara' }
       ],
-      'pereciveis': [
-        { value: 'Câmara Resfriada', label: '❄️ Câmara Resfriada' },
-        { value: 'Congelado', label: '🥶 Congelado' },
-        { value: 'Exposição', label: '🏬 Exposição' }
-      ],
       'padaria': [
         { value: 'Câmara Resfriada', label: '❄️ Câmara Resfriada' },
         { value: 'Congelado', label: '🥶 Congelado' },
@@ -601,10 +594,6 @@ window.BrigadaConciliacao = {
         { value: 'bovino', label: '🐮 Bovino' },
         { value: 'pescado', label: '🐟 Pescado' }
       ],
-      'pereciveis': [
-        { value: 'laticinios', label: '🧀 Laticínios' },
-        { value: 'frios', label: '🥓 Frios' }
-      ],
       'padaria': [
         { value: 'padaria', label: '🍞 Padaria' }
       ],
@@ -622,7 +611,6 @@ window.BrigadaConciliacao = {
     if (userSector === 'todos' || window.BrigadaAuth.isSuperAdmin()) {
       categoriesToShow = [
         ...sectorCategories['açougue'],
-        ...sectorCategories['pereciveis'],
         ...sectorCategories['padaria'],
         ...sectorCategories['hortifruti'],
         ...sectorCategories['mercearia']

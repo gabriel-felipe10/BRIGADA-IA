@@ -84,7 +84,6 @@ window.BrigadaUsers = {
                   <select id="user-field-sector" class="form-input" required>
                     <option value="todos">🌍 Todos os Setores</option>
                     <option value="açougue">🥩 Açougue</option>
-                    <option value="pereciveis">🍎 Perecíveis</option>
                     <option value="padaria">🍞 Padaria</option>
                     <option value="hortifruti">🥦 Hortifruti</option>
                     <option value="mercearia">🛒 Mercearia</option>
@@ -203,7 +202,7 @@ window.BrigadaUsers = {
             </div>
           </td>
           <td data-label="Perfil"><span class="badge ${roleClass[u.role]}">${roleLabel[u.role]}</span></td>
-          <td data-label="Setor"><span class="badge" style="background:rgba(99,102,241,0.1); color:#818cf8; border:1px solid rgba(99,102,241,0.2);">${u.sector === 'todos' ? '🌍 Todos' : u.sector === 'açougue' ? '🥩 Açougue' : u.sector === 'pereciveis' ? '🍎 Perecíveis' : u.sector === 'padaria' ? '🍞 Padaria' : u.sector === 'hortifruti' ? '🥦 Hortifruti' : '🛒 Mercearia'}</span></td>
+          <td data-label="Setor"><span class="badge" style="background:rgba(99,102,241,0.1); color:#818cf8; border:1px solid rgba(99,102,241,0.2);">${u.sector === 'todos' ? '🌍 Todos' : u.sector === 'açougue' ? '🥩 Açougue' : u.sector === 'padaria' ? '🍞 Padaria' : u.sector === 'hortifruti' ? '🥦 Hortifruti' : '🛒 Mercearia'}</span></td>
           <td data-label="Status"><span class="badge ${u.status === 'active' ? 'badge--ok' : 'badge--expired'}">${u.status === 'active' ? '✅ Ativo' : '⛔ Inativo'}</span></td>
           <td data-label="Criado Em">${window.BrigadaData.formatDate(u.createdAt)}</td>
           <td data-label="Último Login">${window.BrigadaData.formatDateTime(u.lastLogin)}</td>

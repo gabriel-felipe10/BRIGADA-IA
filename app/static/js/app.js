@@ -540,16 +540,10 @@ window.BrigadaRouter = {
             </a>
             ` : ''}
 
-            ${!window.BrigadaAuth.isPromotor() && (window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis')) ? `
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
               <span class="sidebar__link-icon">❄️</span>
               <span>Câmaras Frias</span>
-            </a>
-            ` : ''}
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
-            <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
-              <span class="sidebar__link-icon">🍎</span>
-              <span>Perecíveis</span>
             </a>
             ` : ''}
             ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('padaria') ? `
@@ -948,17 +942,11 @@ window.BrigadaRouter = {
       }
       window.BrigadaProductList.render(container);
     } else if (page === 'chambers') {
-      if (!window.BrigadaAuth.hasSectorAccess('açougue') && !window.BrigadaAuth.hasSectorAccess('pereciveis')) {
+      if (!window.BrigadaAuth.hasSectorAccess('açougue')) {
         this.navigate('dashboard');
         return;
       }
       window.BrigadaChambers.render(container);
-    } else if (page === 'pereciveis') {
-      if (!window.BrigadaAuth.hasSectorAccess('pereciveis')) {
-        this.navigate('dashboard');
-        return;
-      }
-      window.BrigadaPereciveis.render(container);
     } else if (page === 'padaria') {
       if (!window.BrigadaAuth.hasSectorAccess('padaria')) {
         this.navigate('dashboard');

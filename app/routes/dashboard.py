@@ -37,7 +37,6 @@ def index():
 @dashboard_bp.route("/admin")
 @dashboard_bp.route("/users")
 @dashboard_bp.route("/products")
-@dashboard_bp.route("/pereciveis")
 @dashboard_bp.route("/padaria")
 @dashboard_bp.route("/hortifruti")
 @dashboard_bp.route("/mercearia")
