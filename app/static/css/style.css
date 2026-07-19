@@ -2118,8 +2118,14 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   align-items: stretch;
   position: relative;
-  min-height: 110px;
+  min-height: 75px !important;
+  margin-bottom: -15px !important;
 }
+
+.rack-level-row:nth-child(1) { z-index: 4; }
+.rack-level-row:nth-child(2) { z-index: 3; }
+.rack-level-row:nth-child(3) { z-index: 2; }
+.rack-level-row:nth-child(4) { z-index: 1; }
 
 .rack-level-label {
   width: 80px;
@@ -2158,7 +2164,7 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   overflow: hidden;
   position: relative;
-  min-height: 100px;
+  min-height: 68px !important;
 }
 
 .pallet-slot.empty {
@@ -2227,12 +2233,19 @@ input[type="checkbox"]:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   transition: color var(--transition-fast);
+}
+
+.pallet-empty-content svg {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
 }
 
 .pallet-empty-content:hover {
@@ -2252,8 +2265,8 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 16px;
-  gap: 16px;
+  padding: 8px 12px;
+  gap: 12px;
 }
 
 .pallet-icon-wrapper {
@@ -2319,14 +2332,14 @@ input[type="checkbox"]:focus-visible {
 }
 
 .pallet-sku {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-family: monospace;
   color: var(--text-muted);
   font-weight: 600;
 }
 
 .pallet-quantity {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--accent-success);
   background: var(--accent-success-light);
@@ -2335,7 +2348,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .pallet-supplier {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2346,12 +2359,17 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   color: var(--text-muted);
   cursor: pointer;
+}
+
+.pallet-action-btn svg {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .pallet-action-btn:hover {
