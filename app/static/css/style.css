@@ -1873,6 +1873,8 @@ input[type="checkbox"]:focus-visible {
 }
 
 .chevron-icon {
+  width: 20px !important;
+  height: 20px !important;
   transition: transform var(--transition-fast);
 }
 
