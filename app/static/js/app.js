@@ -611,6 +611,12 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📄</span>
               <span>Sem Nota</span>
             </a>
+            ${window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.isGestao() || window.BrigadaAuth.currentUser?.role === 'lider' ? `
+            <a class="sidebar__link ${activePage === 'resumo-mensal' ? 'sidebar__link--active' : ''}" data-page="resumo-mensal" href="#">
+              <span class="sidebar__link-icon">📅</span>
+              <span>Resumo Mensal</span>
+            </a>
+            ` : ''}
             ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
             <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
               <span class="sidebar__link-icon">🥩</span>
@@ -1057,6 +1063,16 @@ window.BrigadaRouter = {
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       this.renderAdminPanel(container);
+    } else if (page === 'resumo-mensal') {
+      if (!(window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.isGestao() || window.BrigadaAuth.currentUser?.role === 'lider')) {
+        this.navigate('dashboard');
+        return;
+      }
+      if (window.BrigadaResumoMensal) {
+        window.BrigadaResumoMensal.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar resumo mensal</div>`;
+      }
     }
   },
 
