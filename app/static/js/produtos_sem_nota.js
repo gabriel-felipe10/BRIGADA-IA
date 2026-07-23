@@ -186,8 +186,6 @@ window.BrigadaProdutosSemNota = {
                 <select id="sn-unit" class="form-input" required style="cursor: pointer; background-color: var(--surface);">
                   <option value="kg">kg</option>
                   <option value="un">un</option>
-                  <option value="pct">pct</option>
-                  <option value="cx">cx</option>
                 </select>
               </div>
             </div>

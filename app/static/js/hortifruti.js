@@ -164,9 +164,8 @@ window.BrigadaHortifruti = {
                 <div class="form-group">
                   <label class="form-label">Unidade</label>
                   <select id="field-unit-hortifruti" class="form-input">
-                    <option value="un">un</option>
                     <option value="kg">kg</option>
-                    <option value="cx">cx</option>
+                    <option value="un">un</option>
                   </select>
                 </div>
               </div>

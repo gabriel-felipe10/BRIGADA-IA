@@ -151,7 +151,6 @@ window.BrigadaConciliacao = {
                   <select id="field-conciliacao-unit" class="form-input">
                     <option value="kg">kg</option>
                     <option value="un">un</option>
-                    <option value="cx">cx</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -160,6 +159,40 @@ window.BrigadaConciliacao = {
                     <option value="">Selecione...</option>
                     <!-- preenchido dinamicamente com base no setor do usuário -->
                   </select>
+                </div>
+              </div>
+
+              <!-- Nome Completo do Responsável -->
+              <div class="form-group">
+                <label class="form-label" for="field-conciliacao-responsible-name">Nome Completo do Responsável *</label>
+                <input type="text" id="field-conciliacao-responsible-name" class="form-input" placeholder="Digite o nome de quem realizou a contagem..." required>
+              </div>
+
+              <!-- Assinatura do Responsável -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <label class="form-label" style="font-weight: 600; margin-bottom: 0; color: var(--text-primary);">✍️ Assinatura do Responsável *</label>
+                  <button type="button" class="btn btn--sm btn--ghost" id="clear-conciliacao-sig-btn" style="padding: 2px 8px; font-size: 0.8rem; height: auto;">Limpar</button>
+                </div>
+                <div style="background: #ffffff; border-radius: 6px; border: 1px solid #cbd5e1; height: 120px; overflow: hidden; position: relative;">
+                  <canvas id="field-conciliacao-sig-canvas" width="460" height="120" style="width: 100%; height: 100%; cursor: crosshair; display: block; touch-action: none;"></canvas>
+                </div>
+              </div>
+
+              <!-- Nome Completo do Líder que Acompanhou -->
+              <div class="form-group">
+                <label class="form-label" for="field-conciliacao-leader-name">Nome Completo do Líder (Acompanhamento) *</label>
+                <input type="text" id="field-conciliacao-leader-name" class="form-input" placeholder="Digite o nome do líder que acompanhou a contagem..." required>
+              </div>
+
+              <!-- Assinatura do Líder -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <label class="form-label" style="font-weight: 600; margin-bottom: 0; color: var(--text-primary);">✍️ Assinatura do Líder *</label>
+                  <button type="button" class="btn btn--sm btn--ghost" id="clear-conciliacao-leader-sig-btn" style="padding: 2px 8px; font-size: 0.8rem; height: auto;">Limpar</button>
+                </div>
+                <div style="background: #ffffff; border-radius: 6px; border: 1px solid #cbd5e1; height: 120px; overflow: hidden; position: relative;">
+                  <canvas id="field-conciliacao-leader-sig-canvas" width="460" height="120" style="width: 100%; height: 100%; cursor: crosshair; display: block; touch-action: none;"></canvas>
                 </div>
               </div>
             </form>
@@ -261,21 +294,43 @@ window.BrigadaConciliacao = {
         allowedCategories = sectorCategories[userSector];
       }
 
-      let catalogItems = window.BrigadaData.catalog || [];
+      const rawCatalog = [
+        ...(window.BrigadaData.catalog || []),
+        ...(window.BrigadaData.products || []),
+        ...(window.PRODUCTS_DB || [])
+      ];
+
+      const seenPlus = new Set();
+      let catalogItems = [];
+      for (const item of rawCatalog) {
+        if (item && item.plu && !seenPlus.has(String(item.plu).trim())) {
+          seenPlus.add(String(item.plu).trim());
+          catalogItems.push(item);
+        }
+      }
 
       // Filtra pelo setor do usuário
       catalogItems = catalogItems.filter(c => {
+        if (allowedCategories.length === 0) return true;
         const cat = (c.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return allowedCategories.includes(cat);
+        return allowedCategories.some(ac => cat.includes(ac) || ac.includes(cat));
       });
 
       // Filtra pela categoria selecionada
       if (selectedCategory !== 'all') {
         catalogItems = catalogItems.filter(c => {
           const cat = (c.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const filterCat = selectedCategory.toLowerCase();
-          if (filterCat === 'suino') return cat.startsWith('suino') || cat.startsWith('suno');
-          return cat === filterCat;
+          const target = selectedCategory.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+          if (target === 'bovino') return cat.includes('bov') || cat.includes('carne');
+          if (target === 'suino') return cat.includes('suin') || cat.includes('suno') || cat.includes('porc');
+          if (target === 'pescado') return cat.includes('pesc') || cat.includes('peix');
+          if (target === 'aves') return cat.includes('av') || cat.includes('frang');
+          if (target === 'padaria') return cat.includes('padaria') || cat.includes('paes');
+          if (target === 'hortifruti') return cat.includes('horti') || cat.includes('frut');
+          if (target === 'mercearia') return cat.includes('mercearia');
+
+          return cat === target || cat.includes(target) || target.includes(cat);
         });
       }
 
@@ -311,7 +366,7 @@ window.BrigadaConciliacao = {
       }
 
       if (catalogItems.length === 0) {
-        resultsBox.innerHTML = '<div class="autocomplete-item" style="color:var(--text-tertiary); cursor:default;">Nenhum produto encontrado</div>';
+        resultsBox.innerHTML = '<div class="autocomplete-item" style="color:var(--text-tertiary); cursor:default;">Nenhum produto encontrado nesta categoria</div>';
       } else {
         resultsBox.innerHTML = catalogItems.map(c => `
           <div class="autocomplete-item" data-plu="${c.plu}" data-name="${c.name}" data-category="${c.category}">
@@ -356,14 +411,14 @@ window.BrigadaConciliacao = {
     categoryFilter?.addEventListener('change', () => {
       productSearchInput.value = '';
       hiddenProduct.value = '';
-      if (resultsBox) resultsBox.style.display = 'none';
+      updateResults();
     });
 
     // Se o filtro de conservação mudar, limpa a seleção e atualiza os resultados
     tempFilter?.addEventListener('change', () => {
       productSearchInput.value = '';
       hiddenProduct.value = '';
-      if (resultsBox) resultsBox.style.display = 'none';
+      updateResults();
     });
   },
 
@@ -394,12 +449,20 @@ window.BrigadaConciliacao = {
       allowedCategories = sectorCategories[userSector];
     }
 
-    // Filtra pelo setor do usuário baseado no PLU do catálogo
+    // Filtra pelo setor do usuário
+    const rawCatalog = [
+      ...(window.BrigadaData.catalog || []),
+      ...(window.PRODUCTS_DB || [])
+    ];
+
     products = products.filter(p => {
-      const catalogItem = window.BrigadaData.catalog.find(c => c.plu.trim() === p.plu.trim());
-      if (!catalogItem) return false;
+      if (userSector === 'todos' || window.BrigadaAuth.isSuperAdmin() || allowedCategories.length === 0) {
+        return true;
+      }
+      const catalogItem = rawCatalog.find(c => String(c.plu).trim() === String(p.plu).trim());
+      if (!catalogItem) return true; // Se o item é novo ou não está no catálogo base, exibe para não ocultar da tabela
       const cat = (catalogItem.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return allowedCategories.includes(cat);
+      return allowedCategories.some(ac => cat.includes(ac) || ac.includes(cat));
     });
 
     if (this.currentSearch) {
@@ -457,7 +520,7 @@ window.BrigadaConciliacao = {
             <th>Produto</th>
             <th>Estoque Físico</th>
             <th>Localização</th>
-            ${showActions ? '<th>Ações</th>' : ''}
+            <th style="text-align: center;">Ações</th>
           </tr>
         </thead>
         <tbody id="conciliacao-table-body">
@@ -475,6 +538,8 @@ window.BrigadaConciliacao = {
 
       const canEditThis = window.BrigadaAuth.canEditProduct(p);
       const canDeleteThis = window.BrigadaAuth.canDeleteProduct(p);
+      const storedSigs = this.getStoredSignatures(p);
+      const isSigned = storedSigs.hasRealSignature || (storedSigs.signature && storedSigs.leaderSignature);
 
       return `
         <tr data-id="${p.id}">
@@ -485,12 +550,11 @@ window.BrigadaConciliacao = {
           <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">${p.name}</td>
           <td data-label="Físico" style="font-weight: 600; color: var(--text-primary);">${physical.toFixed(2)} ${unit}</td>
           <td data-label="Localização">${p.location || '—'}</td>
-          ${showActions ? `
           <td data-label="Ações" class="actions-cell">
-            ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️</button>` : ''}
+            <button class="btn-icon btn-icon--print" data-action="print-item" data-id="${p.id}" title="Imprimir Comprovante">🖨️</button>
+            ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="${isSigned ? 'Visualizar Contagem Auditada (Inalterável)' : 'Assinar / Editar Contagem'}">${isSigned ? '🔒' : '✏️'}</button>` : ''}
             ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
           </td>
-          ` : ''}
         </tr>
       `;
     }).join('');
@@ -504,6 +568,16 @@ window.BrigadaConciliacao = {
     });
 
     // Bind table action buttons
+    tbody.querySelectorAll('[data-action="print-item"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const item = window.BrigadaData.products.find(p => p.id === id);
+        if (item) {
+          this.generateSignedPDF([item]);
+        }
+      });
+    });
+
     tbody.querySelectorAll('[data-action="edit"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = parseInt(e.currentTarget.dataset.id);
@@ -664,16 +738,267 @@ window.BrigadaConciliacao = {
         physicalInput.value = record.quantity;
         unitSelect.value = record.unit || 'kg';
         locationSelect.value = record.location || '';
+        
+        const respInput = container.querySelector('#field-conciliacao-responsible-name');
+        const leaderInput = container.querySelector('#field-conciliacao-leader-name');
+        const clearRespBtn = container.querySelector('#clear-conciliacao-sig-btn');
+        const clearLeaderBtn = container.querySelector('#clear-conciliacao-leader-sig-btn');
+        const saveBtn = container.querySelector('#btn-save-conciliacao');
+        const modalForm = container.querySelector('#conciliacao-form');
+
+        const oldNotice = container.querySelector('#locked-conciliacao-notice');
+        if (oldNotice) oldNotice.remove();
+
+        const storedSigs = this.getStoredSignatures(record);
+        const isAlreadySigned = storedSigs.hasRealSignature || (storedSigs.signature && storedSigs.leaderSignature);
+        this.isRecordLocked = isAlreadySigned;
+
+        if (isAlreadySigned) {
+          title.textContent = 'Visualizar Conciliação (Documento Inalterável 🔒)';
+
+          if (modalForm) {
+            const banner = document.createElement('div');
+            banner.id = 'locked-conciliacao-notice';
+            banner.style.cssText = 'background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; font-weight: 600;';
+            banner.innerHTML = '🔒 <strong>Documento Auditado e Inalterável:</strong> A assinatura foi realizada no cadastro e o documento não pode ser alterado.';
+            modalForm.prepend(banner);
+          }
+
+          if (physicalInput) physicalInput.disabled = true;
+          if (unitSelect) unitSelect.disabled = true;
+          if (locationSelect) locationSelect.disabled = true;
+          if (respInput) { respInput.value = storedSigs.responsibleName; respInput.disabled = true; }
+          if (leaderInput) { leaderInput.value = storedSigs.leaderName; leaderInput.disabled = true; }
+
+          if (clearRespBtn) clearRespBtn.style.display = 'none';
+          if (clearLeaderBtn) clearLeaderBtn.style.display = 'none';
+
+          if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '🔒 Documento Inalterável (Assinado)';
+            saveBtn.style.opacity = '0.5';
+            saveBtn.style.cursor = 'not-allowed';
+          }
+        } else {
+          title.textContent = 'Assinar Conciliação (Permitido 1x)';
+          this.isRecordLocked = false;
+          if (physicalInput) physicalInput.disabled = false;
+          if (unitSelect) unitSelect.disabled = false;
+          if (locationSelect) locationSelect.disabled = false;
+          if (respInput) { respInput.value = storedSigs.responsibleName || user?.name || ''; respInput.disabled = false; }
+          if (leaderInput) { leaderInput.value = storedSigs.leaderName || ''; leaderInput.disabled = false; }
+          if (clearRespBtn) clearRespBtn.style.display = 'inline-flex';
+          if (clearLeaderBtn) clearLeaderBtn.style.display = 'inline-flex';
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '💾 Salvar Conciliação';
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+          }
+        }
+
+        this.existingSignature = storedSigs.signature || null;
+        this.existingLeaderSignature = storedSigs.leaderSignature || null;
       }
     } else {
       title.textContent = 'Nova Conciliação';
+      this.isRecordLocked = false;
+
+      const oldNotice = container.querySelector('#locked-conciliacao-notice');
+      if (oldNotice) oldNotice.remove();
+
       if (categoryFilter) categoryFilter.disabled = false;
       if (tempFilter) tempFilter.disabled = false;
       if (searchInput) searchInput.disabled = false;
+      if (physicalInput) physicalInput.disabled = false;
+      if (unitSelect) unitSelect.disabled = false;
+      if (locationSelect) locationSelect.disabled = false;
+
+      const respInput = container.querySelector('#field-conciliacao-responsible-name');
+      const leaderInput = container.querySelector('#field-conciliacao-leader-name');
+      const clearRespBtn = container.querySelector('#clear-conciliacao-sig-btn');
+      const clearLeaderBtn = container.querySelector('#clear-conciliacao-leader-sig-btn');
+      const saveBtn = container.querySelector('#btn-save-conciliacao');
+
+      if (respInput) { respInput.value = user ? user.name : ''; respInput.disabled = false; }
+      if (leaderInput) { leaderInput.value = ''; leaderInput.disabled = false; }
+      if (clearRespBtn) clearRespBtn.style.display = 'inline-flex';
+      if (clearLeaderBtn) clearLeaderBtn.style.display = 'inline-flex';
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 Salvar Conciliação';
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
+      }
+
+      this.existingSignature = null;
+      this.existingLeaderSignature = null;
     }
 
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+
+    setTimeout(() => {
+      this.initFormSignatureDrawing(container);
+      if (!this.isRecordLocked) {
+        this.clearFormCanvas();
+      }
+    }, 150);
+  },
+
+  getStoredSignatures(item) {
+    if (!item) return { hasRealSignature: false };
+    let stored = {};
+    try {
+      const byId = localStorage.getItem('conciliacao_sig_' + item.id);
+      const byPlu = localStorage.getItem('conciliacao_sig_plu_' + item.plu);
+      if (byId) stored = JSON.parse(byId);
+      else if (byPlu) stored = JSON.parse(byPlu);
+    } catch(e) {}
+
+    const responsibleName = item.responsibleName || stored.responsibleName || 'Responsável pela Contagem';
+    const leaderName = item.leaderName || stored.leaderName || 'Líder / Supervisor';
+    
+    const signature = item.signature || stored.signature || null;
+    const leaderSignature = item.leaderSignature || stored.leaderSignature || null;
+    const hasRealSignature = !!(signature && leaderSignature);
+
+    return {
+      responsibleName,
+      signature,
+      leaderName,
+      leaderSignature,
+      hasRealSignature
+    };
+  },
+
+  saveStoredSignatures(item, data) {
+    if (!item) return;
+    try {
+      const json = JSON.stringify(data);
+      if (item.id) localStorage.setItem('conciliacao_sig_' + item.id, json);
+      if (item.plu) localStorage.setItem('conciliacao_sig_plu_' + item.plu, json);
+    } catch(e) {}
+  },
+
+  getDigitalSignatureSvg(name) {
+    if (!name) return '';
+    const cleanName = String(name).trim();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="70" viewBox="0 0 280 70">
+      <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="'Brush Script MT', 'Dancing Script', cursive, sans-serif" font-size="26" font-style="italic" fill="#0f172a">${cleanName}</text>
+      <path d="M 30 52 Q 140 64 250 50" stroke="#1e3a8a" stroke-width="2" fill="none" opacity="0.7"/>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  },
+
+  initFormSignatureDrawing(container) {
+    const setupCanvas = (canvasId, clearBtnId, type) => {
+      const canvas = container.querySelector(canvasId);
+      const clearBtn = container.querySelector(clearBtnId);
+      if (!canvas) return;
+
+      canvas.width = canvas.offsetWidth || 460;
+      canvas.height = 120;
+
+      const ctx = canvas.getContext('2d');
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (type === 'resp') {
+        this.formCanvasInstance = canvas;
+        this.formCtxInstance = ctx;
+        this.hasFormSigned = false;
+      } else {
+        this.leaderCanvasInstance = canvas;
+        this.leaderCtxInstance = ctx;
+        this.hasLeaderSigned = false;
+      }
+
+      if (this.isRecordLocked) {
+        canvas.style.pointerEvents = 'none';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const sigSrc = type === 'resp' ? this.existingSignature : this.existingLeaderSignature;
+        if (sigSrc) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          img.src = sigSrc;
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
+      }
+
+      canvas.style.pointerEvents = 'auto';
+
+      const getMousePos = (canvasEl, evt) => {
+        const rect = canvasEl.getBoundingClientRect();
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        return {
+          x: (clientX - rect.left) * (canvasEl.width / rect.width),
+          y: (clientY - rect.top) * (canvasEl.height / rect.height)
+        };
+      };
+
+      let drawing = false;
+      let lastPos = { x: 0, y: 0 };
+
+      const startDrawing = (e) => {
+        if (e.cancelable) e.preventDefault();
+        drawing = true;
+        lastPos = getMousePos(canvas, e);
+        ctx.beginPath();
+        ctx.moveTo(lastPos.x, lastPos.y);
+        if (type === 'resp') this.hasFormSigned = true;
+        else this.hasLeaderSigned = true;
+      };
+
+      const draw = (e) => {
+        if (!drawing) return;
+        if (e.cancelable) e.preventDefault();
+        const currentPos = getMousePos(canvas, e);
+        ctx.lineTo(currentPos.x, currentPos.y);
+        ctx.stroke();
+        lastPos = currentPos;
+      };
+
+      const stopDrawing = () => {
+        drawing = false;
+      };
+
+      canvas.onmousedown = startDrawing;
+      canvas.onmousemove = draw;
+      canvas.onmouseup = stopDrawing;
+      canvas.onmouseleave = stopDrawing;
+
+      canvas.ontouchstart = (e) => startDrawing(e);
+      canvas.ontouchmove = (e) => draw(e);
+      canvas.ontouchend = stopDrawing;
+      canvas.ontouchcancel = stopDrawing;
+
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (type === 'resp') this.hasFormSigned = false;
+          else this.hasLeaderSigned = false;
+        };
+      }
+    };
+
+    setupCanvas('#field-conciliacao-sig-canvas', '#clear-conciliacao-sig-btn', 'resp');
+    setupCanvas('#field-conciliacao-leader-sig-canvas', '#clear-conciliacao-leader-sig-btn', 'leader');
+  },
+
+  clearFormCanvas() {
+    if (this.formCanvasInstance && this.formCtxInstance) {
+      this.formCtxInstance.clearRect(0, 0, this.formCanvasInstance.width, this.formCanvasInstance.height);
+      this.hasFormSigned = false;
+    }
+    if (this.leaderCanvasInstance && this.leaderCtxInstance) {
+      this.leaderCtxInstance.clearRect(0, 0, this.leaderCanvasInstance.width, this.leaderCanvasInstance.height);
+      this.hasLeaderSigned = false;
+    }
   },
 
   closeModal(container) {
@@ -689,14 +1014,57 @@ window.BrigadaConciliacao = {
   },
 
   async saveConciliacao(container) {
+    if (this.isRecordLocked) {
+      window.BrigadaUI.showToast('Documento auditado e assinado no cadastro é inalterável.', 'error');
+      return;
+    }
+
     const selectProduct = container.querySelector('#field-conciliacao-product');
     const physicalVal = container.querySelector('#field-conciliacao-physical').value;
     const unit = container.querySelector('#field-conciliacao-unit').value;
     const location = container.querySelector('#field-conciliacao-location').value;
+    const responsibleNameInput = container.querySelector('#field-conciliacao-responsible-name');
+    const responsibleName = responsibleNameInput ? responsibleNameInput.value.trim() : '';
+    const leaderNameInput = container.querySelector('#field-conciliacao-leader-name');
+    const leaderName = leaderNameInput ? leaderNameInput.value.trim() : '';
     const plu = selectProduct.value;
 
     if (!plu || physicalVal === '' || !location) {
       window.BrigadaUI.showToast('Preencha todos os campos obrigatórios.', 'error');
+      return;
+    }
+
+    if (!responsibleName) {
+      window.BrigadaUI.showToast('Informe o nome do responsável pela contagem.', 'error');
+      return;
+    }
+
+    let signature = null;
+    if (this.hasFormSigned && this.formCanvasInstance) {
+      signature = this.formCanvasInstance.toDataURL('image/png');
+    } else if (this.editingId && this.existingSignature) {
+      signature = this.existingSignature;
+    }
+
+    if (!signature && !this.editingId) {
+      window.BrigadaUI.showToast('A assinatura do responsável pela contagem é obrigatória.', 'error');
+      return;
+    }
+
+    if (!leaderName) {
+      window.BrigadaUI.showToast('Informe o nome do líder que acompanhou a contagem.', 'error');
+      return;
+    }
+
+    let leaderSignature = null;
+    if (this.hasLeaderSigned && this.leaderCanvasInstance) {
+      leaderSignature = this.leaderCanvasInstance.toDataURL('image/png');
+    } else if (this.editingId && this.existingLeaderSignature) {
+      leaderSignature = this.existingLeaderSignature;
+    }
+
+    if (!leaderSignature && !this.editingId) {
+      window.BrigadaUI.showToast('A assinatura do líder é obrigatória.', 'error');
       return;
     }
 
@@ -716,12 +1084,17 @@ window.BrigadaConciliacao = {
       location,
       unit,
       quantity: physical,
-      supplier: 'Inventário Físico'
+      supplier: 'Inventário Físico',
+      responsibleName,
+      signature,
+      leaderName,
+      leaderSignature
     };
 
+    let resProd = null;
     try {
       if (this.editingId) {
-        await window.BrigadaData.updateProduct(this.editingId, payload);
+        resProd = await window.BrigadaData.updateProduct(this.editingId, payload);
         window.BrigadaUI.showToast('Conciliação atualizada com sucesso!', 'success');
       } else {
         // Verifica se já existe uma conciliação para esse PLU
@@ -731,9 +1104,18 @@ window.BrigadaConciliacao = {
           return;
         }
 
-        await window.BrigadaData.addProduct(payload);
+        resProd = await window.BrigadaData.addProduct(payload);
         window.BrigadaUI.showToast('Conciliação cadastrada com sucesso!', 'success');
       }
+
+      const recordToStore = resProd || { id: this.editingId, plu };
+      this.saveStoredSignatures(recordToStore, {
+        responsibleName,
+        signature,
+        leaderName,
+        leaderSignature
+      });
+
       this.closeModal(container);
       this.renderTable(container);
     } catch (err) {
@@ -963,84 +1345,166 @@ window.BrigadaConciliacao = {
     const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
     const items = window.BrigadaData.products.filter(p => selectedIds.includes(p.id));
 
-    this.openSignatureModal(items);
+    this.generateSignedPDF(items);
   },
 
-  generateSignedPDF(items, name1, sigImg1, name2, sigImg2) {
-    const today = new Date().toLocaleDateString('pt-BR', {
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-
+  generateSignedPDF(items) {
     let printContent = `
       <div class="print-container">
         <style>
-          .print-container { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 30px; color: #1e293b; background: #ffffff; }
-          .print-container .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; }
-          .print-container .title { margin: 0; font-size: 1.8rem; color: #1e3a8a; text-transform: uppercase; }
-          .print-container .meta { font-size: 0.85rem; color: #64748b; margin-top: 5px; }
-          .print-container table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          .print-container th, .print-container td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 0.9rem; color: #1e293b; }
-          .print-container th { background-color: #f1f5f9; color: #1e293b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
-          .print-container tr:nth-child(even) td { background-color: #f8fafc; }
-          .print-container .footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.85rem; color: #64748b; }
-          .print-container .signature-area { display: flex; gap: 40px; }
-          .print-container .signature-box { border-top: 1px dashed #94a3b8; width: 220px; text-align: center; padding-top: 5px; margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
-          .print-container .signature-image { max-height: 48px; max-width: 180px; margin-bottom: 4px; display: block; }
-          .print-container .signature-name { font-weight: 600; font-size: 0.85rem; color: #0f172a; }
-          .print-container .signature-title { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+          .print-card {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1e293b;
+            padding: 24px;
+            font-size: 12px;
+            background: #ffffff;
+            max-width: 420px;
+            margin: 0 auto 24px auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            page-break-inside: avoid;
+          }
+          .print-card .header {
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #6366f1;
+          }
+          .print-card .header h1 {
+            font-size: 18px;
+            color: #6366f1;
+            margin: 0 0 4px 0;
+          }
+          .print-card .header p {
+            color: #64748b;
+            font-size: 11px;
+            margin: 0;
+          }
+          .print-card .item-detail {
+            margin-bottom: 12px;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 8px;
+          }
+          .print-card .item-detail:last-child {
+            border-bottom: none;
+          }
+          .print-card .label {
+            font-weight: bold;
+            color: #64748b;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+          }
+          .print-card .value {
+            font-size: 14px;
+            color: #0f172a;
+            font-weight: 500;
+          }
+          .print-card .value-large {
+            font-size: 22px;
+            color: #6366f1;
+            font-weight: 800;
+          }
+          .print-card .signature-box {
+            text-align: center;
+            flex: 1;
+          }
+          .print-card .signature-img {
+            max-height: 55px;
+            max-width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            display: inline-block;
+            background: #fff;
+            padding: 2px;
+          }
+          .print-card .signature-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-top: 4px;
+          }
+          .print-card .footer {
+            margin-top: 18px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 9px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 10px;
+          }
+          @media print {
+            .print-card {
+              border: 1px solid #cbd5e1;
+              box-shadow: none;
+            }
+          }
         </style>
+        ${items.map(item => {
+          const sigs = this.getStoredSignatures(item);
+          const itemDate = item.startDate ? new Date(item.startDate).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
+          const respName = sigs.responsibleName;
+          const lName = sigs.leaderName;
 
-        <div class="header">
-          <h2 class="title">⚖️ Relatório de Conciliação de Estoque</h2>
-          <div class="meta">Gerado em: ${today} · BRIGADA-IA</div>
-        </div>
+          const sigImg = sigs.signature || this.getDigitalSignatureSvg(respName);
+          const lSigImg = sigs.leaderSignature || this.getDigitalSignatureSvg(lName);
 
-        <table>
-          <thead>
-            <tr>
-              <th>PLU</th>
-              <th>Nome do Produto</th>
-              <th>Estoque Físico</th>
-              <th>Localização</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map(p => {
-              const physical = p.quantity || 0;
-              const unit = p.unit || 'kg';
+          return `
+            <div class="print-card">
+              <div class="header">
+                <h1>⚖️ CONCILIAÇÃO DE ESTOQUE</h1>
+                <p>BRIGADA-IA · Comprovante de Contagem & Auditoria</p>
+              </div>
+              
+              <div class="item-detail">
+                <div class="label">Código PLU</div>
+                <div class="value-large">${item.plu}</div>
+              </div>
 
-              return `
-                <tr>
-                  <td><strong>${p.plu}</strong></td>
-                  <td>${p.name}</td>
-                  <td>${physical.toFixed(2)} ${unit}</td>
-                  <td>${p.location || '—'}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
+              <div class="item-detail">
+                <div class="label">Produto</div>
+                <div class="value">${item.name}</div>
+              </div>
 
-        <div class="footer">
-          <div>
-            <p style="margin: 0;">Total de itens conciliados: <strong>${items.length}</strong></p>
-          </div>
-          <div class="signature-area">
-            <div class="signature-box">
-              <img src="${sigImg1}" class="signature-image" alt="Assinatura Responsável">
-              <div class="signature-name">${name1}</div>
-              <div class="signature-title">Responsável Contagem</div>
+              <div class="item-detail" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <div>
+                  <div class="label">Estoque Físico Contado</div>
+                  <div class="value" style="font-size: 16px; font-weight: 800; color: #0f172a;">${(item.quantity || 0).toFixed(2)} ${item.unit || 'kg'}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div class="label">Localização</div>
+                  <div class="value" style="font-weight: 600;">${item.location || '—'}</div>
+                </div>
+              </div>
+
+              <div class="item-detail">
+                <div class="label">Data de Chegada/Contagem</div>
+                <div class="value" style="font-size: 12px; color: #475569;">${itemDate}</div>
+              </div>
+
+              <div class="signatures-row" style="display: flex; gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; justify-content: space-around;">
+                <div class="signature-box" style="text-align: center; flex: 1;">
+                  <div class="label" style="font-weight: bold; color: #64748b; font-size: 9px; text-transform: uppercase; margin-bottom: 4px;">Responsável Contagem</div>
+                  ${sigImg ? `<img src="${sigImg}" class="signature-img" style="max-height: 55px; max-width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; display: inline-block; background: #fff; padding: 2px;" alt="Assinatura Responsável">` : ''}
+                  <div class="signature-name" style="font-size: 11px; font-weight: 600; color: #0f172a; margin-top: 4px;">${respName}</div>
+                </div>
+                <div class="signature-box" style="text-align: center; flex: 1;">
+                  <div class="label" style="font-weight: bold; color: #64748b; font-size: 9px; text-transform: uppercase; margin-bottom: 4px;">Assinatura Líder</div>
+                  ${lSigImg ? `<img src="${lSigImg}" class="signature-img" style="max-height: 55px; max-width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; display: inline-block; background: #fff; padding: 2px;" alt="Assinatura Líder">` : ''}
+                  <div class="signature-name" style="font-size: 11px; font-weight: 600; color: #0f172a; margin-top: 4px;">${lName}</div>
+                </div>
+              </div>
+
+              <div class="footer">
+                BRIGADA-IA v1.0.0 · Comprovante Oficial de Conciliação
+              </div>
             </div>
-            <div class="signature-box">
-              <img src="${sigImg2}" class="signature-image" alt="Assinatura Liderança">
-              <div class="signature-name">${name2}</div>
-              <div class="signature-title">Assinatura Liderança</div>
-            </div>
-          </div>
-        </div>
+          `;
+        }).join('')}
       </div>
     `;
 
     window.BrigadaUI.printContent(printContent);
+    window.BrigadaUI.showToast('Visualização de impressão aberta!', 'success');
   }
 };

@@ -166,7 +166,6 @@ window.BrigadaPadaria = {
                   <select id="field-unit-padaria" class="form-input">
                     <option value="kg">kg</option>
                     <option value="un">un</option>
-                    <option value="cx">cx</option>
                   </select>
                 </div>
               </div>

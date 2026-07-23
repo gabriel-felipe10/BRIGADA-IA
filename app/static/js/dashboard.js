@@ -467,7 +467,6 @@ window.BrigadaDashboard = {
                   <select id="field-unit" class="form-input">
                     <option value="kg">kg</option>
                     <option value="un">un</option>
-                    <option value="cx">cx</option>
                   </select>
                 </div>
               </div>

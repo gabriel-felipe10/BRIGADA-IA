@@ -166,7 +166,6 @@ window.BrigadaMercearia = {
                   <select id="field-unit-mercearia" class="form-input">
                     <option value="kg">kg</option>
                     <option value="un">un</option>
-                    <option value="cx">cx</option>
                   </select>
                 </div>
               </div>
