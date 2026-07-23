@@ -5,6 +5,7 @@
 window.BrigadaResumoMensal = {
   currentYear: new Date().getFullYear().toString(),
   currentMonth: (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  currentSector: 'all',
 
   render(container) {
     this.initFilters();
@@ -14,12 +15,15 @@ window.BrigadaResumoMensal = {
   },
 
   initFilters() {
-    // Garante que o ano e o mês padrão estejam definidos caso estejam vazios ou inválidos
+    // Garante que o ano, mês e setor padrão estejam definidos
     if (!this.currentYear || this.currentYear === 'all') {
       this.currentYear = new Date().getFullYear().toString();
     }
     if (!this.currentMonth || this.currentMonth === 'all') {
       this.currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    }
+    if (!this.currentSector) {
+      this.currentSector = 'all';
     }
   },
 
@@ -47,6 +51,14 @@ window.BrigadaResumoMensal = {
           <p class="panel-subtitle">Análise de eficiência de tratamento de validade e oportunidades de melhoria</p>
         </div>
         <div class="glass-actions-card" style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
+          <!-- Filtro de Setor -->
+          <select id="resumo-sector-select" class="select-control" style="min-width: 170px;">
+            <option value="all" ${this.currentSector === 'all' ? 'selected' : ''}>🏢 Todos os Setores</option>
+            <option value="acougue" ${this.currentSector === 'acougue' ? 'selected' : ''}>🥩 Açougue</option>
+            <option value="padaria" ${this.currentSector === 'padaria' ? 'selected' : ''}>🍞 Padaria</option>
+            <option value="hortifruti" ${this.currentSector === 'hortifruti' ? 'selected' : ''}>🥦 Hortifruti</option>
+            <option value="mercearia" ${this.currentSector === 'mercearia' ? 'selected' : ''}>🛒 Mercearia / Perecíveis</option>
+          </select>
           <!-- Filtro de Ano -->
           <select id="resumo-year-select" class="select-control" style="min-width: 100px;">
             ${years.map(y => `<option value="${y}" ${this.currentYear === y ? 'selected' : ''}>${y}</option>`).join('')}
@@ -55,6 +67,11 @@ window.BrigadaResumoMensal = {
           <select id="resumo-month-select" class="select-control" style="min-width: 140px;">
             ${months.map(m => `<option value="${m.val}" ${this.currentMonth === m.val ? 'selected' : ''}>${m.name}</option>`).join('')}
           </select>
+          <!-- Botão Imprimir -->
+          <button id="btn-print-resumo" class="btn btn--primary" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Imprimir Relatório Resumo Mensal">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span id="btn-print-label">Imprimir</span>
+          </button>
         </div>
       </div>
 
@@ -90,6 +107,8 @@ window.BrigadaResumoMensal = {
   bindEvents(container) {
     const yearSelect = container.querySelector('#resumo-year-select');
     const monthSelect = container.querySelector('#resumo-month-select');
+    const sectorSelect = container.querySelector('#resumo-sector-select');
+    const printBtn = container.querySelector('#btn-print-resumo');
 
     yearSelect?.addEventListener('change', (e) => {
       this.currentYear = e.target.value;
@@ -99,6 +118,15 @@ window.BrigadaResumoMensal = {
     monthSelect?.addEventListener('change', (e) => {
       this.currentMonth = e.target.value;
       this.calculateAndRenderMetrics(container);
+    });
+
+    sectorSelect?.addEventListener('change', (e) => {
+      this.currentSector = e.target.value;
+      this.calculateAndRenderMetrics(container);
+    });
+
+    printBtn?.addEventListener('click', () => {
+      this.printResumo();
     });
   },
 
@@ -235,30 +263,60 @@ window.BrigadaResumoMensal = {
     const totalKg = monthlyProducts.filter(p => p.unit === 'kg').reduce((acc, p) => acc + (p.quantity || 0), 0);
     const totalUn = monthlyProducts.filter(p => p.unit !== 'kg').reduce((acc, p) => acc + (p.quantity || 0), 0);
 
+    // Atualiza o botão de impressão principal com a informação do setor ativo
+    const btnLabel = container.querySelector('#btn-print-label');
+    if (btnLabel) {
+      const sectorNames = {
+        all: 'Imprimir',
+        acougue: 'Imprimir (Açougue)',
+        padaria: 'Imprimir (Padaria)',
+        hortifruti: 'Imprimir (Hortifruti)',
+        mercearia: 'Imprimir (Mercearia)'
+      };
+      btnLabel.textContent = sectorNames[this.currentSector] || 'Imprimir';
+    }
+
+    // Filtrar os setores exibidos na tela de acordo com a seleção atual
+    const displaySectors = this.currentSector === 'all'
+      ? sectorStats
+      : sectorStats.filter(sec => sec.id === this.currentSector);
+
     const overviewContainer = container.querySelector('#resumo-cards-overview');
     if (overviewContainer) {
+      // Se um setor específico for selecionado, calcula métricas desse setor para os cards do topo
+      const activeSectorStats = this.currentSector === 'all' ? null : sectorStats.find(s => s.id === this.currentSector);
+      
+      const cardsTotalItems = activeSectorStats ? activeSectorStats.total : totalItems;
+      const cardsTotalKg = activeSectorStats ? activeSectorStats.totalSecKg : totalKg;
+      const cardsTotalUn = activeSectorStats ? activeSectorStats.totalSecUn : totalUn;
+      const cardsTaxaSucesso = activeSectorStats ? activeSectorStats.successRate : taxaGeralSucesso;
+      const cardsSalvoKg = activeSectorStats ? activeSectorStats.tratadosKg : totalKgTratados;
+      const cardsSalvoUn = activeSectorStats ? activeSectorStats.tratadosUn : totalUnTratados;
+      const cardsQuebras = activeSectorStats ? activeSectorStats.quebras : totalQuebras;
+      const cardsTrocas = activeSectorStats ? activeSectorStats.trocas : totalTrocas;
+
       overviewContainer.innerHTML = `
         <div class="metric-card">
           <div class="metric-card__icon">📊</div>
           <div class="metric-card__body">
             <p class="metric-card__label">Total Registros (Mês)</p>
-            <p class="metric-card__value" style="font-size:1.5rem; line-height:1.2;">${totalItems} itens</p>
-            <p class="text-secondary" style="font-size:0.75rem; margin-top:0.25rem;">${totalKg.toFixed(1)} kg / ${totalUn} un</p>
+            <p class="metric-card__value" style="font-size:1.5rem; line-height:1.2;">${cardsTotalItems} itens</p>
+            <p class="text-secondary" style="font-size:0.75rem; margin-top:0.25rem;">${cardsTotalKg.toFixed(1)} kg / ${cardsTotalUn} un</p>
           </div>
         </div>
         <div class="metric-card metric-card--success">
           <div class="metric-card__icon">✔️</div>
           <div class="metric-card__body">
             <p class="metric-card__label">Taxa Global de Sucesso</p>
-            <p class="metric-card__value">${taxaGeralSucesso}%</p>
-            <p class="text-secondary" style="font-size:0.75rem; margin-top:0.25rem;">Salvo: ${totalKgTratados.toFixed(1)} kg / ${totalUnTratados} un</p>
+            <p class="metric-card__value">${cardsTaxaSucesso}%</p>
+            <p class="text-secondary" style="font-size:0.75rem; margin-top:0.25rem;">Salvo: ${cardsSalvoKg.toFixed(1)} kg / ${cardsSalvoUn} un</p>
           </div>
         </div>
         <div class="metric-card metric-card--danger">
           <div class="metric-card__icon">🗑️</div>
           <div class="metric-card__body">
             <p class="metric-card__label">Total Quebras (Perda)</p>
-            <p class="metric-card__value">${totalQuebras}</p>
+            <p class="metric-card__value">${cardsQuebras}</p>
             <p class="text-secondary" style="font-size:0.75rem; margin-top:0.25rem;">Descartados / Perda seca</p>
           </div>
         </div>
@@ -266,7 +324,7 @@ window.BrigadaResumoMensal = {
           <div class="metric-card__icon">🔄</div>
           <div class="metric-card__body">
             <p class="metric-card__label">Total Trocas</p>
-            <p class="metric-card__value">${totalTrocas}</p>
+            <p class="metric-card__value">${cardsTrocas}</p>
             <p class="text-secondary" style="font-size:0.75rem; margin-top:0.25rem;">Devoluções de fornecedores</p>
           </div>
         </div>
@@ -276,7 +334,7 @@ window.BrigadaResumoMensal = {
     // Atualiza a lista de relatórios por setor
     const listContainer = container.querySelector('#resumo-sectors-list');
     if (listContainer) {
-      if (totalItems === 0) {
+      if (totalItems === 0 || displaySectors.length === 0) {
         listContainer.innerHTML = `
           <div class="glass-panel" style="padding: 3rem; text-align: center;">
             <p class="text-secondary" style="font-size: 1.1rem;">Nenhum produto cadastrado com validade para o período de ${this.currentMonth}/${this.currentYear}.</p>
@@ -285,7 +343,7 @@ window.BrigadaResumoMensal = {
         return;
       }
 
-      listContainer.innerHTML = sectorStats.map(sec => {
+      listContainer.innerHTML = displaySectors.map(sec => {
         let statusClass = 'success';
         if (sec.successRate < 50) statusClass = 'danger';
         else if (sec.successRate < 80) statusClass = 'warning';
@@ -366,7 +424,7 @@ window.BrigadaResumoMensal = {
           : `<p class="text-secondary" style="font-size: 0.85rem; font-style: italic; margin-top: 0.5rem;">Nenhum item registrado no período.</p>`;
 
         const badgesEficaciaHTML = `
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
             <span class="badge badge--${statusClass === 'success' ? 'ok' : statusClass}" style="font-size: 0.85rem; padding: 4px 10px; font-weight: 600;" title="Eficácia por quantidade de itens">
               Itens: ${sec.successRate}%
             </span>
@@ -381,9 +439,15 @@ window.BrigadaResumoMensal = {
         return `
           <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem;">
             <!-- Cabeçalho do Setor -->
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem; flex-wrap:wrap; gap:0.5rem;">
               <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin:0;">${sec.name}</h3>
-              ${badgesEficaciaHTML}
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                ${badgesEficaciaHTML}
+                <button class="btn btn--sm btn--ghost btn-print-sector" data-sector="${sec.id}" style="padding: 4px 10px; font-size: 0.8rem; display:inline-flex; align-items:center; gap:4px; border: 1px solid var(--glass-border); cursor:pointer;" title="Imprimir apenas o relatório de ${sec.name}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                  Imprimir Setor
+                </button>
+              </div>
             </div>
 
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
@@ -446,6 +510,353 @@ window.BrigadaResumoMensal = {
           </div>
         `;
       }).join('');
+
+      // Adiciona o evento aos botões individuais de impressão por setor
+      listContainer.querySelectorAll('.btn-print-sector').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const secId = e.currentTarget.getAttribute('data-sector');
+          this.printResumo(secId);
+        });
+      });
+    }
+  },
+
+  printResumo(specificSectorId) {
+    const targetSector = specificSectorId || this.currentSector || 'all';
+
+    const products = window.BrigadaData.products || [];
+    const monthlyProducts = products.filter(p => {
+      if (!p.endDate) return false;
+      const [y, m] = p.endDate.split('-');
+      return y === this.currentYear && m === this.currentMonth;
+    });
+
+    const monthsNames = {
+      '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+      '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+      '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+    };
+    const monthName = monthsNames[this.currentMonth] || this.currentMonth;
+
+    const allSectors = [
+      { id: 'acougue', name: '🥩 Açougue', filter: (p) => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category) },
+      { id: 'padaria', name: '🍞 Padaria', filter: (p) => p.category === 'padaria' },
+      { id: 'hortifruti', name: '🥦 Hortifruti', filter: (p) => p.category === 'hortifruti' },
+      { id: 'mercearia', name: '🛒 Mercearia / Perecíveis', filter: (p) => ['mercearia', 'laticinios', 'frios'].includes(p.category) || (!['aves', 'suino', 'bovino', 'pescado', 'padaria', 'hortifruti'].includes(p.category)) }
+    ];
+
+    const sectorsToProcess = targetSector === 'all'
+      ? allSectors
+      : allSectors.filter(s => s.id === targetSector);
+
+    const reportProducts = targetSector === 'all'
+      ? monthlyProducts
+      : monthlyProducts.filter(p => sectorsToProcess.some(s => s.filter(p)));
+
+    let totalItems = reportProducts.length;
+    let totalTratados = 0;
+    let totalQuebras = 0;
+    let totalTrocas = 0;
+    let totalSemAcao = 0;
+    let totalKgTratados = 0;
+    let totalUnTratados = 0;
+
+    const totalKg = reportProducts.filter(p => p.unit === 'kg').reduce((acc, p) => acc + (p.quantity || 0), 0);
+    const totalUn = reportProducts.filter(p => p.unit !== 'kg').reduce((acc, p) => acc + (p.quantity || 0), 0);
+
+    const sectorStats = sectorsToProcess.map(sec => {
+      const secProducts = monthlyProducts.filter(sec.filter);
+      let tratados = 0, quebras = 0, trocas = 0, semAcao = 0;
+      let tratadosKg = 0, tratadosUn = 0, totalSecKg = 0, totalSecUn = 0;
+      const ofensoresMap = {};
+
+      secProducts.forEach(p => {
+        const qty = p.quantity || 0;
+        const isKg = p.unit === 'kg';
+        if (isKg) totalSecKg += qty; else totalSecUn += qty;
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isNotExpired = p.endDate >= todayStr;
+
+        if (p.expiredAction === 'tratado' || (!p.expiredAction && isNotExpired)) {
+          tratados += qty;
+          totalTratados += qty;
+          if (isKg) { tratadosKg += qty; totalKgTratados += qty; }
+          else { tratadosUn += qty; totalUnTratados += qty; }
+        } else if (p.expiredAction === 'quebra') {
+          quebras += qty;
+          totalQuebras += qty;
+          ofensoresMap[p.name] = (ofensoresMap[p.name] || 0) + qty;
+        } else if (p.expiredAction === 'troca') {
+          trocas += qty;
+          totalTrocas += qty;
+          ofensoresMap[p.name] = (ofensoresMap[p.name] || 0) + qty;
+        } else {
+          semAcao += qty;
+          totalSemAcao += qty;
+          ofensoresMap[p.name] = (ofensoresMap[p.name] || 0) + qty;
+        }
+      });
+
+      const totalSec = tratados + quebras + trocas + semAcao;
+      const successRate = totalSec > 0 ? Math.round((tratados / totalSec) * 100) : 100;
+      const successRateKg = totalSecKg > 0 ? Math.round((tratadosKg / totalSecKg) * 100) : 100;
+
+      const topOfensores = Object.entries(ofensoresMap)
+        .map(([name, qty]) => ({ name, qty }))
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 3);
+
+      return {
+        ...sec,
+        secProducts,
+        total: totalSec,
+        tratados, quebras, trocas, semAcao,
+        successRate, successRateKg,
+        tratadosKg, tratadosUn, totalSecKg, totalSecUn,
+        topOfensores
+      };
+    });
+
+    const totalGeralTratados = totalTratados + totalQuebras + totalTrocas + totalSemAcao;
+    const taxaGeralSucesso = totalGeralTratados > 0 ? Math.round((totalTratados / totalGeralTratados) * 100) : 100;
+    const dateStr = new Date().toLocaleString('pt-BR');
+
+    const reportTitle = targetSector !== 'all' && sectorsToProcess.length === 1
+      ? `BRIGADA-IA — Resumo Mensal (${sectorsToProcess[0].name})`
+      : `BRIGADA-IA — Resumo Mensal por Setor`;
+
+    const printHTML = `
+      <div class="print-resumo-container">
+        <style>
+          @media print {
+            @page { size: A4 portrait; margin: 10mm; }
+          }
+          .print-resumo-container {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #0f172a;
+            padding: 10px;
+            background: #ffffff;
+            line-height: 1.35;
+          }
+          .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2.5px solid #0284c7;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+          }
+          .print-title { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0; }
+          .print-subtitle { font-size: 0.85rem; color: #64748b; margin: 3px 0 0 0; }
+          .print-badge-period {
+            background: #f0f9ff;
+            color: #0369a1;
+            font-size: 0.95rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+            text-align: right;
+          }
+          .print-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+          }
+          .print-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            background: #f8fafc;
+          }
+          .print-card-title { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 2px; }
+          .print-card-val { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+          .print-card-sub { font-size: 0.72rem; color: #475569; margin-top: 1px; }
+
+          .print-sector-block {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            page-break-inside: avoid;
+            background: #ffffff;
+          }
+          .print-sector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+          }
+          .print-sector-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0; }
+          .print-rates { display: flex; gap: 6px; font-size: 0.78rem; font-weight: 700; }
+          .rate-tag { background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 4px; border: 1px solid #bbf7d0; }
+
+          .print-sector-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 8px;
+          }
+          .print-subhead { font-size: 0.82rem; font-weight: 700; color: #334155; margin: 0 0 4px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px; }
+          .print-stat-line { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 2px 0; border-bottom: 1px dashed #f1f5f9; }
+
+          .print-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.78rem; }
+          .print-table th { background: #f1f5f9; color: #334155; padding: 5px 6px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 700; }
+          .print-table td { padding: 4px 6px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+
+          .print-signatures {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            page-break-inside: avoid;
+          }
+          .signature-box { border-top: 1.5px dashed #94a3b8; text-align: center; padding-top: 6px; font-size: 0.8rem; color: #475569; }
+        </style>
+
+        <div class="print-header">
+          <div>
+            <h1 class="print-title">${reportTitle}</h1>
+            <p class="print-subtitle">Relatório Consolidado de Eficiência de Validade e Prevenção de Perdas</p>
+            <p style="font-size:0.72rem; color:#64748b; margin:2px 0 0 0;">Gerado em: ${dateStr}</p>
+          </div>
+          <div class="print-badge-period">
+            📅 ${monthName} / ${this.currentYear}
+          </div>
+        </div>
+
+        <!-- Indicadores Globais -->
+        <div class="print-overview-grid">
+          <div class="print-card">
+            <div class="print-card-title">Total Registros</div>
+            <div class="print-card-val">${totalItems} itens</div>
+            <div class="print-card-sub">${totalKg.toFixed(1)} kg / ${totalUn} un</div>
+          </div>
+          <div class="print-card" style="border-left: 4px solid #16a34a;">
+            <div class="print-card-title">Taxa de Sucesso</div>
+            <div class="print-card-val" style="color: #16a34a;">${taxaGeralSucesso}%</div>
+            <div class="print-card-sub">Salvo: ${totalKgTratados.toFixed(1)} kg / ${totalUnTratados} un</div>
+          </div>
+          <div class="print-card" style="border-left: 4px solid #dc2626;">
+            <div class="print-card-title">Perda Seca (Quebras)</div>
+            <div class="print-card-val" style="color: #dc2626;">${totalQuebras}</div>
+            <div class="print-card-sub">Descartados</div>
+          </div>
+          <div class="print-card" style="border-left: 4px solid #2563eb;">
+            <div class="print-card-title">Devoluções (Trocas)</div>
+            <div class="print-card-val" style="color: #2563eb;">${totalTrocas}</div>
+            <div class="print-card-sub">Fornecedor</div>
+          </div>
+        </div>
+
+        <!-- Detalhamento por Setor -->
+        ${sectorStats.map(sec => `
+          <div class="print-sector-block">
+            <div class="print-sector-header">
+              <h3 class="print-sector-title">${sec.name}</h3>
+              <div class="print-rates">
+                <span class="rate-tag">Eficácia Itens: ${sec.successRate}%</span>
+                ${sec.totalSecKg > 0 ? `<span class="rate-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Eficácia Kg: ${sec.successRateKg}%</span>` : ''}
+              </div>
+            </div>
+
+            <div class="print-sector-body">
+              <div>
+                <h4 class="print-subhead">📊 Distribuição dos Atendimentos</h4>
+                <div class="print-stat-line">
+                  <span>Tratados com Sucesso:</span>
+                  <strong style="color:#16a34a;">
+                    ${sec.tratadosKg > 0 ? sec.tratadosKg.toFixed(1) + ' kg' : ''} 
+                    ${sec.tratadosKg > 0 && sec.tratadosUn > 0 ? ' e ' : ''} 
+                    ${sec.tratadosUn > 0 ? sec.tratadosUn + ' un' : ''}
+                    ${sec.tratadosKg === 0 && sec.tratadosUn === 0 ? '0' : ''}
+                  </strong>
+                </div>
+                <div class="print-stat-line">
+                  <span>Quebras (Descarte):</span>
+                  <strong style="color:#dc2626;">${sec.quebras} un/kg</strong>
+                </div>
+                <div class="print-stat-line">
+                  <span>Trocas (Devoluções):</span>
+                  <strong style="color:#2563eb;">${sec.trocas} un/kg</strong>
+                </div>
+                <div class="print-stat-line">
+                  <span>Vencidos Sem Ação:</span>
+                  <strong style="color:#d97706;">${sec.semAcao} un/kg</strong>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="print-subhead">🚨 Principais Ofensores de Perda</h4>
+                ${sec.topOfensores.length > 0 ? sec.topOfensores.map((o, idx) => `
+                  <div class="print-stat-line">
+                    <span>${idx + 1}. ${o.name}</span>
+                    <strong style="color:#dc2626;">${o.qty} perdidos</strong>
+                  </div>
+                `).join('') : '<p style="font-size:0.75rem; color:#64748b; font-style:italic; margin:3px 0;">Nenhum ofensor registrado no mês.</p>'}
+              </div>
+            </div>
+
+            <!-- Tabela Detalhada -->
+            ${sec.secProducts.length > 0 ? `
+              <h4 class="print-subhead" style="margin-top:6px;">📋 Produtos do Setor no Período</h4>
+              <table class="print-table">
+                <thead>
+                  <tr>
+                    <th style="width: 70px;">PLU</th>
+                    <th>Produto</th>
+                    <th style="width: 90px; text-align: right;">Quantidade</th>
+                    <th style="width: 120px; text-align: center;">Status / Destino</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sec.secProducts.map(p => {
+                    let statusTxt = 'OK / Tratado';
+                    if (p.expiredAction === 'quebra') statusTxt = 'Quebra (Descarte)';
+                    else if (p.expiredAction === 'troca') statusTxt = 'Troca (Fornecedor)';
+                    else {
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      if (p.endDate < todayStr) statusTxt = 'Vencido s/ Ação';
+                      else statusTxt = 'A Vencer (OK)';
+                    }
+                    return `
+                      <tr>
+                        <td style="font-family: monospace;">${p.plu}</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td style="text-align: right;">${p.quantity || 0} ${p.unit || 'un'}</td>
+                        <td style="text-align: center;">${statusTxt}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            ` : ''}
+          </div>
+        `).join('')}
+
+        <!-- Assinaturas -->
+        <div class="print-signatures">
+          <div class="signature-box">
+            ________________________________________________<br>
+            <strong>Responsável pela Contagem / Setor</strong>
+          </div>
+          <div class="signature-box">
+            ________________________________________________<br>
+            <strong>Liderança / Gerência da Loja</strong>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (window.BrigadaUI && window.BrigadaUI.printContent) {
+      window.BrigadaUI.printContent(printHTML);
+    } else {
+      window.print();
     }
   }
 };

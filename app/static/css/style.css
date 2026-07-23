@@ -3608,14 +3608,16 @@ input[type="checkbox"]:focus-visible {
   body {
     background: #ffffff !important;
     color: #000000 !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
   }
-  
-  /* Hide all siblings of print-area */
-  body > :not(#print-area) {
+
+  /* Ocultar elementos de UI interativos quando imprimindo diretamente */
+  .sidebar, .glass-actions-card, .btn, .modal-overlay, #scanner-modal-overlay, #toast-container, .theme-toggle, .toolbar input, .search-box {
     display: none !important;
   }
-  
-  #print-area {
+
+  /* Se print-area tiver conteúdo, oculta tudo exceto o print-area */
+  #print-area:not(:empty) {
     display: block !important;
     position: absolute;
     left: 0;
@@ -3623,16 +3625,24 @@ input[type="checkbox"]:focus-visible {
     width: 100%;
     margin: 0;
     padding: 0;
-    background: #ffffff;
-    color: #000000;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body:has(#print-area:not(:empty)) > :not(#print-area) {
+    display: none !important;
+  }
+  
+  #print-area:empty {
+    display: none !important;
   }
 
   /* Assure table components display correctly when printing */
-  #print-area table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
-  #print-area thead { display: table-header-group !important; }
-  #print-area tbody { display: table-row-group !important; }
-  #print-area tr { display: table-row !important; }
-  #print-area th, #print-area td { display: table-cell !important; }
+  table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
+  thead { display: table-header-group !important; }
+  tbody { display: table-row-group !important; }
+  tr { display: table-row !important; page-break-inside: avoid !important; }
+  th, td { display: table-cell !important; color: #000000 !important; }
 }
 
 /* Estilos compactos para o palete dentro das posições WMS da câmara */
