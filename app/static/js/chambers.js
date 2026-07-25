@@ -990,18 +990,60 @@ window.BrigadaChambers = {
     }
   },
 
-  // Get unallocated products for manual list
+  // Get unallocated products for manual list with smart filtering
   getAvailableProductsForAllocation() {
     const catalog = window.BrigadaData.catalog || [];
-    const query = this.searchAvailable.toLowerCase().trim();
-    
-    return catalog.filter(p => {
-      // Filter by search query
-      if (query) {
-        return (p.name || '').toLowerCase().includes(query) || (p.plu || '').toLowerCase().includes(query);
+    const rawQuery = (this.searchAvailable || '').trim();
+    const normalize = str => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const queryNormalized = normalize(rawQuery);
+    const tokens = queryNormalized.split(/\s+/).filter(t => t.length > 0);
+    const categoryFilter = normalize(this.selectedCategoryFilter || 'todos');
+
+    const filtered = catalog.filter(p => {
+      const pName = normalize(p.name);
+      const pPlu = normalize(String(p.plu || ''));
+      const pCategory = normalize(p.category);
+      const pBarcode = normalize(p.barcode || '');
+
+      // Check category filter if active
+      if (categoryFilter && categoryFilter !== 'todos') {
+        if (!pCategory.includes(categoryFilter)) return false;
+      }
+
+      // Check tokens (all tokens must match anywhere in name, plu, category, or barcode)
+      if (tokens.length > 0) {
+        const fullText = `${pName} ${pPlu} ${pCategory} ${pBarcode}`;
+        return tokens.every(token => fullText.includes(token));
       }
       return true;
     });
+
+    // Smart relevance sorting
+    if (tokens.length > 0) {
+      const mainToken = tokens[0];
+      filtered.sort((a, b) => {
+        const aName = normalize(a.name);
+        const bName = normalize(b.name);
+        const aPlu = normalize(String(a.plu || ''));
+        const bPlu = normalize(String(b.plu || ''));
+
+        // Exact PLU match
+        if (aPlu === mainToken && bPlu !== mainToken) return -1;
+        if (bPlu === mainToken && aPlu !== mainToken) return 1;
+
+        // PLU starts with
+        if (aPlu.startsWith(mainToken) && !bPlu.startsWith(mainToken)) return -1;
+        if (!aPlu.startsWith(mainToken) && bPlu.startsWith(mainToken)) return 1;
+
+        // Name starts with
+        if (aName.startsWith(mainToken) && !bName.startsWith(mainToken)) return -1;
+        if (!aName.startsWith(mainToken) && bName.startsWith(mainToken)) return 1;
+
+        return 0;
+      });
+    }
+
+    return filtered;
   },
 
   // Modal handlers
@@ -1137,6 +1179,46 @@ window.BrigadaChambers = {
     });
   },
 
+  renderRegisterForm(catalogProduct) {
+    return `
+      <div class="allocation-register-form" style="display:flex; flex-direction:column; gap:12px; padding:0.5rem 0;">
+        <div style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 12px; border-radius:6px; font-size:0.9rem; margin-bottom:0.5rem;">
+          <strong style="color:var(--text-secondary);">Produto:</strong> <span style="color:var(--text-primary); font-weight:600;">${catalogProduct.name}</span>
+          <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">PLU: ${catalogProduct.plu}</div>
+        </div>
+        
+        <div class="form-group" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 0.75rem;">
+          <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Data de Validade *</label>
+          <input type="date" id="alloc-field-enddate" class="form-input" required style="width:100%; color-scheme:dark;" />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px; margin-bottom: 0.75rem;">
+          <div class="form-group" style="display:flex; flex-direction:column; gap:4px;">
+            <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Quantidade</label>
+            <input type="number" id="alloc-field-quantity" class="form-input" placeholder="ex: 1500" value="1500" min="0" step="any" style="width:100%;" />
+          </div>
+          <div class="form-group" style="display:flex; flex-direction:column; gap:4px;">
+            <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Unidade</label>
+            <select id="alloc-field-unit" class="form-input" style="width:100%; cursor:pointer;">
+              <option value="kg">kg</option>
+              <option value="un">un</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 1rem;">
+          <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Fornecedor</label>
+          <input type="text" id="alloc-field-supplier" class="form-input" placeholder="Nome do fornecedor (opcional)" style="width:100%;" />
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:0.5rem;">
+          <button class="btn btn-outline" id="btn-alloc-register-back" style="flex:1;">Voltar</button>
+          <button class="btn btn-primary" id="btn-alloc-register-submit" style="flex:1;">Confirmar Cadastro</button>
+        </div>
+      </div>
+    `;
+  },
+
   openAllocationModal() {
     this.closeModal('allocation-modal');
     
@@ -1146,53 +1228,33 @@ window.BrigadaChambers = {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay modal-overlay--visible';
     overlay.id = 'allocation-modal';
-    
-    const renderRegisterForm = (catalogProduct) => {
-      return `
-        <div class="allocation-register-form" style="display:flex; flex-direction:column; gap:12px; padding:0.5rem 0;">
-          <div style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 12px; border-radius:6px; font-size:0.9rem; margin-bottom:0.5rem;">
-            <strong style="color:var(--text-secondary);">Produto:</strong> <span style="color:var(--text-primary); font-weight:600;">${catalogProduct.name}</span>
-            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">PLU: ${catalogProduct.plu}</div>
-          </div>
-          
-          <div class="form-group" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 0.75rem;">
-            <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Data de Validade *</label>
-            <input type="date" id="alloc-field-enddate" class="form-input" required style="width:100%; color-scheme:dark;" />
-          </div>
-
-          <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px; margin-bottom: 0.75rem;">
-            <div class="form-group" style="display:flex; flex-direction:column; gap:4px;">
-              <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Quantidade</label>
-              <input type="number" id="alloc-field-quantity" class="form-input" placeholder="ex: 1500" value="1500" min="0" step="any" style="width:100%;" />
-            </div>
-            <div class="form-group" style="display:flex; flex-direction:column; gap:4px;">
-              <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Unidade</label>
-              <select id="alloc-field-unit" class="form-input" style="width:100%; cursor:pointer;">
-                <option value="kg">kg</option>
-                <option value="un">un</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 1rem;">
-            <label class="form-label" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-secondary);">Fornecedor</label>
-            <input type="text" id="alloc-field-supplier" class="form-input" placeholder="Nome do fornecedor (opcional)" style="width:100%;" />
-          </div>
-
-          <div style="display:flex; gap:12px; margin-top:0.5rem;">
-            <button class="btn btn-outline" id="btn-alloc-register-back" style="flex:1;">Voltar</button>
-            <button class="btn btn-primary" id="btn-alloc-register-submit" style="flex:1;">Confirmar Cadastro</button>
-          </div>
-        </div>
-      `;
-    };
 
     const renderManualTab = () => {
       const available = this.getAvailableProductsForAllocation();
+      
+      // Extract unique categories from catalog for quick filter chips
+      const rawCategories = Array.from(new Set((window.BrigadaData.catalog || []).map(c => c.category).filter(Boolean)));
+      const categoryChipsHTML = rawCategories.length > 0 ? `
+        <div class="allocator-category-chips" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px; scrollbar-width:thin;">
+          <button type="button" class="category-chip ${(!this.selectedCategoryFilter || this.selectedCategoryFilter === 'todos') ? 'active' : ''}" data-category="todos" style="padding:4px 10px; font-size:0.75rem; border-radius:12px; border:1px solid ${(!this.selectedCategoryFilter || this.selectedCategoryFilter === 'todos') ? '#38bdf8' : 'var(--border-color)'}; background:${(!this.selectedCategoryFilter || this.selectedCategoryFilter === 'todos') ? 'rgba(56,189,248,0.15)' : 'var(--bg-tertiary)'}; color:${(!this.selectedCategoryFilter || this.selectedCategoryFilter === 'todos') ? '#38bdf8' : 'var(--text-secondary)'}; cursor:pointer; white-space:nowrap; font-weight:500;">
+            Todos
+          </button>
+          ${rawCategories.map(cat => {
+            const isActive = this.selectedCategoryFilter === cat;
+            const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+            return `
+              <button type="button" class="category-chip ${isActive ? 'active' : ''}" data-category="${cat}" style="padding:4px 10px; font-size:0.75rem; border-radius:12px; border:1px solid ${isActive ? '#38bdf8' : 'var(--border-color)'}; background:${isActive ? 'rgba(56,189,248,0.15)' : 'var(--bg-tertiary)'}; color:${isActive ? '#38bdf8' : 'var(--text-secondary)'}; cursor:pointer; white-space:nowrap; font-weight:500;">
+                ${label}
+              </button>
+            `;
+          }).join('')}
+        </div>
+      ` : '';
+
       const prodsListHTML = available.length === 0 ? `
         <div class="empty-allocator-state" style="text-align:center; padding:2rem; color:var(--text-tertiary);">
           <div style="font-size:2rem; margin-bottom:8px;">⚠️</div>
-          <span>Nenhum produto disponível no catálogo.</span>
+          <span>Nenhum produto encontrado com o filtro inteligente.</span>
         </div>
       ` : available.map(p => `
         <div class="available-product-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-tertiary); border-radius:6px; margin-bottom:8px; border:1px solid var(--border-color);">
@@ -1203,23 +1265,31 @@ window.BrigadaChambers = {
               <span class="prod-category" style="text-transform:capitalize;">Categoria: ${p.category}</span>
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" data-action="allocate-select-catalog" data-id="${p.id}">
+          <button class="btn btn-primary btn-sm" data-action="allocate-select-catalog" data-id="${p.id || ''}" data-plu="${p.plu}">
             Selecionar
           </button>
         </div>
       `).join('');
 
       return `
-        <div class="allocator-search-wrapper" style="position:relative; display:flex; align-items:center; margin-bottom:1.5rem; background:var(--bg-tertiary); border-radius:var(--radius-md); border:1px solid var(--border-color); padding:0 12px;">
+        <div class="allocator-search-wrapper" style="position:relative; display:flex; align-items:center; margin-bottom:0.75rem; background:var(--bg-tertiary); border-radius:var(--radius-md); border:1px solid var(--border-color); padding:0 12px;">
           <div style="color:var(--text-tertiary); margin-right:8px;">${this.icons.Search}</div>
-          <input type="text" id="allocator-search-input" class="allocator-search-input" placeholder="${this.isListening ? 'Ouvindo... fale agora' : 'Buscar por nome, PLU ou código de balança...'}" value="${this.searchAvailable}" style="flex:1; padding:10px 0; border:none; background:transparent; font-size:0.9rem;" autofocus />
+          <input type="text" id="allocator-search-input" class="allocator-search-input" placeholder="${this.isListening ? 'Ouvindo... fale agora' : 'Filtro inteligente: nome, PLU, marca, categoria...'}" value="${this.searchAvailable || ''}" style="flex:1; padding:10px 0; border:none; background:transparent; font-size:0.9rem;" autofocus />
+          ${this.searchAvailable ? `
+            <button type="button" id="allocator-clear-btn" style="background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:0.85rem; padding:4px 8px; margin-right:4px;" title="Limpar busca">✕</button>
+          ` : ''}
           <button type="button" id="allocator-voice-btn" class="search-mic-btn ${this.isListening ? 'listening' : ''}" style="color:${this.isListening ? '#ef4444' : 'var(--text-secondary)'}; padding:8px; cursor:pointer;">
             ${this.icons.Mic}
           </button>
         </div>
 
-        <h4 class="list-title" style="font-size:0.95rem; font-weight:600; margin-bottom:4px;">Produtos no Catálogo (${available.length})</h4>
-        <p class="list-desc" style="font-size:0.75rem; color:var(--text-tertiary); margin-bottom:1rem;">Selecione um produto do catálogo base para registrar e alocar neste slot.</p>
+        ${categoryChipsHTML}
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <h4 class="list-title" style="font-size:0.95rem; font-weight:600;">Produtos no Catálogo (${available.length})</h4>
+          <span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:2px 8px; border-radius:10px; font-weight:500;">⚡ Filtro Inteligente</span>
+        </div>
+        <p class="list-desc" style="font-size:0.75rem; color:var(--text-tertiary); margin-bottom:0.75rem;">Selecione um produto do catálogo base para registrar e alocar neste slot.</p>
 
         <div class="available-products-list" style="max-height: 280px; overflow-y:auto; padding-right:4px;">
           ${prodsListHTML}
@@ -1448,48 +1518,82 @@ window.BrigadaChambers = {
       };
 
       const handleCatalogSelection = (btn) => {
-        const prodId = parseInt(btn.dataset.id, 10);
-        const catalogProduct = (window.BrigadaData.catalog || []).find(c => c.id === prodId);
+        const rawId = btn.dataset.id;
+        const prodId = rawId ? parseInt(rawId, 10) : null;
+        const plu = btn.dataset.plu;
+        const catalogProduct = (window.BrigadaData.catalog || []).find(c => 
+          (!isNaN(prodId) && prodId !== null && c.id === prodId) || 
+          (plu && String(c.plu) === String(plu))
+        );
         if (catalogProduct) {
-          contentWrapper.innerHTML = renderRegisterForm(catalogProduct);
+          contentWrapper.innerHTML = this.renderRegisterForm(catalogProduct);
           bindRegisterFormEvents(catalogProduct);
+        } else {
+          window.BrigadaUI.showToast('Erro ao selecionar produto do catálogo.', 'error');
+        }
+      };
+
+      const refreshProductsList = () => {
+        const available = this.getAvailableProductsForAllocation();
+        const listWrapper = modalEl.querySelector('.available-products-list');
+        const titleCountEl = modalEl.querySelector('.list-title');
+        
+        if (titleCountEl) {
+          titleCountEl.textContent = `Produtos no Catálogo (${available.length})`;
+        }
+        
+        if (listWrapper) {
+          listWrapper.innerHTML = available.length === 0 ? `
+            <div class="empty-allocator-state" style="text-align:center; padding:2rem; color:var(--text-tertiary);">
+              <div style="font-size:2rem; margin-bottom:8px;">⚠️</div>
+              <span>Nenhum produto encontrado com o filtro inteligente.</span>
+            </div>
+          ` : available.map(p => `
+            <div class="available-product-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-tertiary); border-radius:6px; margin-bottom:8px; border:1px solid var(--border-color);">
+              <div class="prod-main-details" style="display:flex; flex-direction:column; gap:2px;">
+                <span class="prod-name" style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">${p.name}</span>
+                <div class="prod-meta" style="display:flex; gap:8px; font-size:0.75rem; color:var(--text-secondary);">
+                  <span class="prod-sku">PLU: ${p.plu}</span>
+                  <span class="prod-category" style="text-transform:capitalize;">Categoria: ${p.category}</span>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm" data-action="allocate-select-catalog" data-id="${p.id || ''}" data-plu="${p.plu}">
+                Selecionar
+              </button>
+            </div>
+          `).join('');
+
+          listWrapper.querySelectorAll('[data-action="allocate-select-catalog"]').forEach(btn => {
+            btn.addEventListener('click', () => handleCatalogSelection(btn));
+          });
         }
       };
 
       if (searchInput) {
         searchInput.addEventListener('input', (e) => {
           this.searchAvailable = e.target.value;
-          // Refresh only the list without rebuilding all events
-          const available = this.getAvailableProductsForAllocation();
-          const listWrapper = modalEl.querySelector('.available-products-list');
-          if (listWrapper) {
-            listWrapper.innerHTML = available.length === 0 ? `
-              <div class="empty-allocator-state" style="text-align:center; padding:2rem; color:var(--text-tertiary);">
-                <div style="font-size:2rem; margin-bottom:8px;">⚠️</div>
-                <span>Nenhum produto disponível no catálogo.</span>
-              </div>
-            ` : available.map(p => `
-              <div class="available-product-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-tertiary); border-radius:6px; margin-bottom:8px; border:1px solid var(--border-color);">
-                <div class="prod-main-details" style="display:flex; flex-direction:column; gap:2px;">
-                  <span class="prod-name" style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">${p.name}</span>
-                  <div class="prod-meta" style="display:flex; gap:8px; font-size:0.75rem; color:var(--text-secondary);">
-                    <span class="prod-sku">PLU: ${p.plu}</span>
-                    <span class="prod-category" style="text-transform:capitalize;">Categoria: ${p.category}</span>
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-sm" data-action="allocate-select-catalog" data-id="${p.id}">
-                  Selecionar
-                </button>
-              </div>
-            `).join('');
-
-            // Rebind manual selection on keypress/input refresh
-            listWrapper.querySelectorAll('[data-action="allocate-select-catalog"]').forEach(btn => {
-              btn.addEventListener('click', () => handleCatalogSelection(btn));
-            });
-          }
+          refreshProductsList();
         });
       }
+
+      // Clear search button
+      const clearBtn = modalEl.querySelector('#allocator-clear-btn');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          this.searchAvailable = '';
+          contentWrapper.innerHTML = renderManualTab();
+          this.bindAllocationModalEvents(modalEl, renderManualTab, renderScannerTab);
+        });
+      }
+
+      // Category filter chips
+      modalEl.querySelectorAll('.category-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          this.selectedCategoryFilter = chip.dataset.category;
+          contentWrapper.innerHTML = renderManualTab();
+          this.bindAllocationModalEvents(modalEl, renderManualTab, renderScannerTab);
+        });
+      });
 
       // Voice recognition search
       if (voiceBtn) {
