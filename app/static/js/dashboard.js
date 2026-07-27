@@ -524,6 +524,21 @@ window.BrigadaDashboard = {
             </div>
             <button class="status-panel__close" id="status-panel-close">✕</button>
           </div>
+          <div class="status-panel__filters" id="status-panel-cat-tabs" style="padding: 0.75rem 1.25rem; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--glass-border); display: flex; gap: 0.5rem; overflow-x: auto; align-items: center; white-space: nowrap;">
+            <button class="cat-tab cat-tab--sm cat-tab--active" data-panel-cat="all">Todos</button>
+            ${window.BrigadaAuth.hasSectorAccess('açougue') ? `
+            <button class="cat-tab cat-tab--sm" data-panel-cat="aves">🐔 Aves</button>
+            <button class="cat-tab cat-tab--sm" data-panel-cat="suino">🐷 Suíno</button>
+            <button class="cat-tab cat-tab--sm" data-panel-cat="bovino">🐮 Bovino</button>
+            <button class="cat-tab cat-tab--sm" data-panel-cat="pescado">🐟 Pescado</button>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('padaria') ? `
+            <button class="cat-tab cat-tab--sm" data-panel-cat="padaria">🍞 Padaria</button>
+            ` : ''}
+            ${window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
+            <button class="cat-tab cat-tab--sm" data-panel-cat="hortifruti">🥦 Hortifruti</button>
+            ` : ''}
+          </div>
           <div class="status-panel__body" id="status-panel-body"></div>
         </div>
       </div>
@@ -580,8 +595,9 @@ window.BrigadaDashboard = {
 
     // Metric cards click to filter — opens custom status panel
     const setStatusFilter = (status, clickedCard) => {
+      const isPanelOpen = container.querySelector('#status-panel-overlay')?.classList.contains('status-panel-overlay--visible');
       // Toggle: clicking same card again closes the panel
-      if (this.currentStatusFilter === status && status !== 'all') {
+      if (this.currentStatusFilter === status && isPanelOpen) {
         this.closeStatusPanel(container);
         return;
       }
@@ -608,10 +624,8 @@ window.BrigadaDashboard = {
       }
       this.renderDashProducts(container, this.currentFilter);
 
-      // Open the custom status panel instead of scrolling
-      if (status !== 'all') {
-        this.openStatusPanel(container, status);
-      }
+      // Open the custom status panel (including for 'all')
+      this.openStatusPanel(container, status);
     };
 
     container.querySelector('#stat-total')?.addEventListener('click', (e) => setStatusFilter('all', e.currentTarget));
@@ -768,7 +782,7 @@ window.BrigadaDashboard = {
 
     const products = this.getFilteredProducts()
       .map(p => ({ ...p, status: window.BrigadaData.getProductStatus(p) }))
-      .filter(p => p.status.days <= 3)
+      .filter(p => p.status.days <= 3 && !p.expiredAction)
       .sort((a, b) => a.status.days - b.status.days)
       .slice(0, 10);
 
@@ -952,6 +966,19 @@ window.BrigadaDashboard = {
         if (e.target === overlay) this.closeStatusPanel(container);
       });
     }
+
+    // Category tabs inside status panel
+    container.querySelectorAll('#status-panel-cat-tabs .cat-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        container.querySelectorAll('#status-panel-cat-tabs .cat-tab').forEach(t => t.classList.remove('cat-tab--active'));
+        tab.classList.add('cat-tab--active');
+        this.currentPanelCategoryFilter = tab.dataset.panelCat;
+        if (this.currentStatusFilter) {
+          this.renderStatusPanelProducts(container, this.currentStatusFilter);
+        }
+      });
+    });
+
     // Close on Escape key
     this._statusPanelEscHandler = (e) => {
       if (e.key === 'Escape') this.closeStatusPanel(container);
@@ -963,7 +990,18 @@ window.BrigadaDashboard = {
     const overlay = container.querySelector('#status-panel-overlay');
     if (!overlay) return;
 
+    // Reset panel category filter to 'all' or active global filter
+    this.currentPanelCategoryFilter = this.currentFilter || 'all';
+    container.querySelectorAll('#status-panel-cat-tabs .cat-tab').forEach(tab => {
+      if (tab.dataset.panelCat === this.currentPanelCategoryFilter) {
+        tab.classList.add('cat-tab--active');
+      } else {
+        tab.classList.remove('cat-tab--active');
+      }
+    });
+
     const labels = {
+      all: '📦 Todos os Produtos',
       expired: '🔴 Produtos Vencidos',
       today: '🟠 Vencendo Hoje',
       soon: '⚠️ Atenção (1-3 dias)',
@@ -992,6 +1030,7 @@ window.BrigadaDashboard = {
 
     // Reset filter
     this.currentStatusFilter = 'all';
+    this.currentPanelCategoryFilter = 'all';
     container.querySelectorAll('.metric-card').forEach(c => c.classList.remove('metric-card--active'));
     const subtitleEl = container.querySelector('#dash-table-subtitle');
     if (subtitleEl) subtitleEl.textContent = 'Visualizando: Todos os produtos';
@@ -1004,7 +1043,12 @@ window.BrigadaDashboard = {
     if (!bodyEl) return;
 
     let products = this.getFilteredProducts();
-    if (this.currentFilter && this.currentFilter !== 'all') {
+    
+    // Filter by panel category filter if selected
+    const panelCat = this.currentPanelCategoryFilter || 'all';
+    if (panelCat !== 'all') {
+      products = products.filter(p => p.category === panelCat);
+    } else if (this.currentFilter && this.currentFilter !== 'all') {
       products = products.filter(p => p.category === this.currentFilter);
     }
 

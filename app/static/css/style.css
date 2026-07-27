@@ -636,6 +636,16 @@ body::before {
   transform: rotate(90deg);
 }
 
+.status-panel__filters {
+  display: flex; gap: var(--sp-xs);
+  padding: 0.6rem var(--sp-lg);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--glass-border);
+  overflow-x: auto; flex-shrink: 0;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
 .status-panel__body {
   flex: 1; overflow-y: auto;
   padding: var(--sp-md) var(--sp-lg);
