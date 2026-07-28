@@ -1053,6 +1053,7 @@ window.BrigadaData = {
     if (!loc) return '—';
     if (loc === 'resfriado') return '❄️ Resfriado';
     if (loc === 'congelado') return '🥶 Congelado';
+    if (loc === 'piso_loja') return '🏪 Piso de Loja';
     
     // Testa se é coordenada de câmara fria
     const match = loc.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);

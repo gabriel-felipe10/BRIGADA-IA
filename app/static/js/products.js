@@ -144,6 +144,7 @@ window.BrigadaProducts = {
                     <option value="">Selecione...</option>
                     <option value="resfriado">❄️ Resfriado</option>
                     <option value="congelado">🥶 Congelado</option>
+                    <option value="piso_loja">🏪 Piso de Loja</option>
                   </select>
                 </div>
               </div>
@@ -849,7 +850,12 @@ window.BrigadaProducts = {
       const category = catMap[rawCat] || 'aves';
 
       const rawLoc = colLocation !== -1 ? (cols[colLocation] || '').toLowerCase() : '';
-      const location = rawLoc.includes('congelado') ? 'congelado' : 'resfriado';
+      let location = 'resfriado';
+      if (rawLoc.includes('congelado')) {
+        location = 'congelado';
+      } else if (rawLoc.includes('piso') || rawLoc.includes('loja')) {
+        location = 'piso_loja';
+      }
 
       const payload = {
         plu,

@@ -418,6 +418,7 @@ window.BrigadaDashboard = {
                     <option value="">Selecione...</option>
                     <option value="resfriado">❄️ Resfriado</option>
                     <option value="congelado">🥶 Congelado</option>
+                    <option value="piso_loja">🏪 Piso de Loja</option>
                   </select>
                 </div>
               </div>
