@@ -197,6 +197,29 @@ window.BrigadaProducts = {
                   </select>
                 </div>
               </div>
+              <div class="form-row" id="annotation-info-banner" style="display: none; margin-top: 1rem; width: 100%;">
+                <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 8px 12px; width: 100%; display: flex; justify-content: space-between; font-size: 0.85rem; color: #f8fafc;">
+                  <div><strong>Quantidade Anterior:</strong> <span id="info-original-quantity">0</span></div>
+                  <div><strong>Data da Alteração:</strong> <span id="info-change-date">--/--/----</span></div>
+                </div>
+              </div>
+              <div class="form-row" id="group-annotation" style="display: none; margin-top: 1rem; flex-direction: column; gap: 0.8rem;">
+                <div class="form-group" style="width: 100%;">
+                  <label class="form-label" style="color: #f8fafc; font-weight: 600;">O que aconteceu com o restante do produto? *</label>
+                  <div class="annotation-buttons-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%;">
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="quebra" style="flex: 1; min-width: 80px;">Quebra</button>
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="troca" style="flex: 1; min-width: 80px;">Troca</button>
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="rebaixa" style="flex: 1; min-width: 80px;">Rebaixa</button>
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="vendido" style="flex: 1; min-width: 80px;">Vendido</button>
+                    <button type="button" class="btn btn--outline annotation-btn btn--danger-outline" data-value="excluir" style="flex: 1.2; min-width: 110px;">Excluir o item</button>
+                  </div>
+                  <input type="hidden" id="field-annotation" value="">
+                </div>
+                <div class="form-group" id="subgroup-annotation-text" style="display: none; width: 100%;">
+                  <label class="form-label" style="color: #cbd5e1; font-size: 0.85rem; font-weight: 500;">Explicação/Detalhes *</label>
+                  <input type="text" id="field-annotation-text" class="form-input" maxlength="100" placeholder="Descreva os detalhes (Máx. 100 caracteres)...">
+                </div>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -285,6 +308,7 @@ window.BrigadaProducts = {
     const showActions = products.some(p => window.BrigadaAuth.canEditProduct(p) || window.BrigadaAuth.canDeleteProduct(p));
     const rows = products.map(p => {
       const status = window.BrigadaData.getProductStatus(p);
+      const baseStatus = window.BrigadaData.getProductStatus(p, true);
       const qty = p.quantity !== undefined ? p.quantity : 0;
       const unit = p.unit || 'kg';
       const canEditThis = window.BrigadaAuth.canEditProduct(p);
@@ -298,12 +322,6 @@ window.BrigadaProducts = {
           <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
           <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
           <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
-          <td data-label="Status">
-            <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
-              <span class="badge ${status.class}">${status.icon} ${status.label}</span>
-              ${p.isAwaitingReduction ? `<span class="badge" style="background:${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'}; color:${p.rebaixaStatus === 'ok' ? '#34d399' : '#fbbf24'}; border:1px solid ${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}; font-size:0.65rem;">${p.rebaixaStatus === 'ok' ? '🟢 Rebaixa OK' : '🟡 Aguardando'}</span>` : ''}
-            </div>
-          </td>
           <td data-label="Fornecedor">
             <div>${p.supplier || '—'}</div>
             ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
@@ -311,19 +329,27 @@ window.BrigadaProducts = {
           <td data-label="Localização">
             ${window.BrigadaData.formatLocationFriendly(p)}
           </td>
-          ${showActions ? `
-          <td data-label="Ações" class="actions-cell">
-            ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}<span class="btn-label">${p.rebaixaStatus === 'ok' ? 'Voltar' : 'Rebaixa'}</span></button>` : ''}
-            ${status.days <= 3 && canEditThis ? `
-              ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
-              ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
-              ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
-              ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
-            ` : ''}
-            ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
-            ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
-          </td>` : ''}
-        </tr>`;
+        </tr>
+        ${showActions ? `
+        <tr class="actions-row">
+          <td colspan="9" style="padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.01);">
+            <div class="actions-cell" style="display: flex; gap: 16px; align-items: center; justify-content: flex-start;">
+              <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-right: 8px;">Ações:</span>
+              <span class="badge ${baseStatus.class}" style="font-size: 0.7rem; padding: 4px 10px;">${baseStatus.icon} ${baseStatus.label}</span>
+              ${p.expiredAction && status ? `<span class="badge ${status.class}" style="font-size: 0.7rem; padding: 4px 10px;">${status.icon} ${status.label}</span>` : ''}
+              ${p.isAwaitingReduction ? `<span class="badge" style="background:${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'}; color:${p.rebaixaStatus === 'ok' ? '#34d399' : '#fbbf24'}; border:1px solid ${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}; font-size:0.7rem; padding: 4px 10px;">${p.rebaixaStatus === 'ok' ? '🟢 Rebaixa OK' : '🟡 Aguardando'}</span>` : ''}
+              ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}<span class="btn-label">${p.rebaixaStatus === 'ok' ? 'Voltar' : 'Rebaixa'}</span></button>` : ''}
+              ${status.days <= 3 && canEditThis ? `
+                ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
+                ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
+                ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
+              ` : ''}
+              ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
+              ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
+            </div>
+          </td>
+        </tr>` : ''}`;
     }).join('');
 
     wrapper.innerHTML = `
@@ -341,10 +367,8 @@ window.BrigadaProducts = {
               <th>Categoria</th>
               <th>Data Inicial</th>
               <th>Data Final</th>
-              <th>Status</th>
               <th>Fornecedor</th>
               <th>Localização</th>
-              ${showActions ? '<th>Ações</th>' : ''}
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -477,13 +501,81 @@ window.BrigadaProducts = {
       barcode: '#field-barcode',
       unit: '#field-unit'
     });
+
+    // Listener para o campo de quantidade exibir/ocultar anotação
+    const qtyInput = container.querySelector('#field-quantity');
+    const annotationGroup = container.querySelector('#group-annotation');
+    const annotationInput = container.querySelector('#field-annotation');
+    const subGroup = container.querySelector('#subgroup-annotation-text');
+    const subInput = container.querySelector('#field-annotation-text');
+    
+    qtyInput?.addEventListener('input', () => {
+      if (this.editingId) {
+        const newVal = parseFloat(qtyInput.value) || 0;
+        const infoBanner = container.querySelector('#annotation-info-banner');
+        if (newVal < this.originalQuantity) {
+          annotationGroup.style.display = 'flex';
+          annotationInput.required = true;
+          if (infoBanner) {
+            container.querySelector('#info-original-quantity').textContent = this.originalQuantity + ' ' + (container.querySelector('#field-unit').value || '');
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            container.querySelector('#info-change-date').textContent = dd + '/' + mm + '/' + yyyy;
+            infoBanner.style.display = 'flex';
+          }
+        } else {
+          annotationGroup.style.display = 'none';
+          annotationInput.required = false;
+          annotationInput.value = '';
+          subGroup.style.display = 'none';
+          subInput.required = false;
+          subInput.value = '';
+          if (infoBanner) infoBanner.style.display = 'none';
+        }
+      }
+    });
+
+    const annotationBtns = container.querySelectorAll('.annotation-btn');
+    annotationBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        annotationBtns.forEach(b => {
+          if (b.dataset.value === 'excluir') {
+            b.classList.remove('btn--danger');
+            b.classList.add('btn--outline', 'btn--danger-outline');
+          } else {
+            b.classList.remove('btn--primary');
+            b.classList.add('btn--outline');
+          }
+        });
+        if (btn.dataset.value === 'excluir') {
+          btn.classList.remove('btn--outline', 'btn--danger-outline');
+          btn.classList.add('btn--danger');
+        } else {
+          btn.classList.remove('btn--outline');
+          btn.classList.add('btn--primary');
+        }
+        annotationInput.value = btn.dataset.value;
+        subGroup.style.display = 'block';
+        subInput.required = true;
+      });
+    });
   },
 
   openAddModal(container) {
     if (!window.BrigadaAuth.canAddProduct()) return;
     this.editingId = null;
+    this.originalQuantity = 0;
     container.querySelector('#modal-title').textContent = 'Novo Produto';
-    container.querySelector('#product-form').reset();
+    
+    const form = container.querySelector('#product-form');
+    form.reset();
+    form.querySelectorAll('.form-input, select').forEach(el => {
+      el.disabled = false;
+      el.readOnly = false;
+    });
+
     container.querySelector('#field-id').value = '';
     container.querySelector('#field-plu').value = '';
     container.querySelector('#field-barcode').value = '';
@@ -491,6 +583,35 @@ window.BrigadaProducts = {
     container.querySelector('#field-quantity').value = '';
     container.querySelector('#field-column').value = '';
     container.querySelector('#field-column-number').value = '';
+    
+    // Reset annotation
+    container.querySelector('#group-annotation').style.display = 'none';
+    container.querySelector('#field-annotation').required = false;
+    const infoBanner = container.querySelector('#annotation-info-banner');
+    if (infoBanner) infoBanner.style.display = 'none';
+    container.querySelectorAll('.annotation-btn').forEach(b => {
+      if (b.dataset.value === 'excluir') {
+        b.classList.remove('btn--danger');
+        b.classList.add('btn--outline', 'btn--danger-outline');
+      } else {
+        b.classList.remove('btn--primary');
+        b.classList.add('btn--outline');
+      }
+    });
+    container.querySelector('#field-annotation').value = '';
+    container.querySelector('#subgroup-annotation-text').style.display = 'none';
+    container.querySelector('#field-annotation-text').required = false;
+    container.querySelectorAll('.annotation-btn').forEach(b => {
+      if (b.dataset.value === 'excluir') {
+        b.classList.remove('btn--danger');
+        b.classList.add('btn--outline', 'btn--danger-outline');
+      } else {
+        b.classList.remove('btn--primary');
+        b.classList.add('btn--outline');
+      }
+    });
+    container.querySelector('#field-annotation-text').value = '';
+
     this.showModal(container);
   },
 
@@ -498,6 +619,7 @@ window.BrigadaProducts = {
     const product = window.BrigadaData.products.find(p => p.id === id);
     if (!product || !window.BrigadaAuth.canEditProduct(product)) return;
     this.editingId = id;
+    this.originalQuantity = product.quantity !== undefined ? product.quantity : 0;
     container.querySelector('#modal-title').textContent = 'Editar Produto';
     container.querySelector('#field-id').value = product.id;
     container.querySelector('#field-plu').value = product.plu;
@@ -512,6 +634,45 @@ window.BrigadaProducts = {
     container.querySelector('#field-column-number').value = product.columnNumber || '';
     container.querySelector('#field-unit').value = product.unit || 'kg';
     container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
+    
+    // Reset annotation
+    container.querySelector('#group-annotation').style.display = 'none';
+    container.querySelector('#field-annotation').required = false;
+    const infoBanner = container.querySelector('#annotation-info-banner');
+    if (infoBanner) infoBanner.style.display = 'none';
+    container.querySelectorAll('.annotation-btn').forEach(b => {
+      if (b.dataset.value === 'excluir') {
+        b.classList.remove('btn--danger');
+        b.classList.add('btn--outline', 'btn--danger-outline');
+      } else {
+        b.classList.remove('btn--primary');
+        b.classList.add('btn--outline');
+      }
+    });
+    container.querySelector('#field-annotation').value = '';
+    container.querySelector('#subgroup-annotation-text').style.display = 'none';
+    container.querySelector('#field-annotation-text').required = false;
+    container.querySelectorAll('.annotation-btn').forEach(b => {
+      if (b.dataset.value === 'excluir') {
+        b.classList.remove('btn--danger');
+        b.classList.add('btn--outline', 'btn--danger-outline');
+      } else {
+        b.classList.remove('btn--primary');
+        b.classList.add('btn--outline');
+      }
+    });
+    container.querySelector('#field-annotation-text').value = '';
+
+    // Disable all fields except quantity, annotation and sub-annotation details
+    const form = container.querySelector('#product-form');
+    form.querySelectorAll('.form-input, select, textarea').forEach(el => {
+      if (el.id !== 'field-quantity' && el.id !== 'field-annotation' && el.id !== 'field-annotation-text') {
+        el.disabled = true;
+      } else {
+        el.disabled = false;
+      }
+    });
+
     this.showModal(container);
   },
 
@@ -572,6 +733,22 @@ window.BrigadaProducts = {
     const colNumVal = container.querySelector('#field-column-number').value;
     const columnNumber = colNumVal !== '' ? parseInt(colNumVal) : null;
 
+    const selectVal = container.querySelector('#field-annotation').value;
+    const textVal = container.querySelector('#field-annotation-text').value.trim();
+
+    if (this.editingId && quantity < this.originalQuantity) {
+      if (!selectVal) {
+        window.BrigadaUI.showToast('Por favor, selecione o motivo da redução da quantidade.', 'error');
+        return;
+      }
+      if (!textVal) {
+        window.BrigadaUI.showToast('Por favor, digite os detalhes do motivo da redução.', 'error');
+        return;
+      }
+    }
+
+    const annotation = selectVal ? `${selectVal} - ${textVal}` : '';
+
     if (!plu || !name || !category || !endDate || !location) {
       window.BrigadaUI.showToast('Preencha todos os campos obrigatórios (incluindo Localização).', 'error');
       return;
@@ -591,7 +768,23 @@ window.BrigadaProducts = {
       return;
     }
 
-    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber };
+    const product = window.BrigadaData.products.find(p => p.id === this.editingId);
+    const creator = (this.editingId && product && product.createdBy) ? product.createdBy : 'Jefferson';
+    const editor = window.BrigadaAuth.currentUser?.name || window.BrigadaAuth.currentUser?.email || 'Sistema';
+
+    if (selectVal === 'excluir') {
+      try {
+        await window.BrigadaData.deleteProduct(this.editingId, { annotation, creator, editor });
+        window.BrigadaUI.showToast('Produto excluído com sucesso!', 'success');
+        this.closeModal(container);
+        this.renderTable(container);
+      } catch (err) {
+        window.BrigadaUI.showToast(err.message || 'Erro ao excluir o produto.', 'error');
+      }
+      return;
+    }
+
+    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber, annotation, creator, editor };
 
     try {
       if (this.editingId) {

@@ -108,6 +108,12 @@
         <datalist id="sig-users-list">
           <!-- Opções preenchidas dinamicamente pelo JS -->
         </datalist>
+
+        <!-- Option to print logs -->
+        <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 10px; padding: 0.5rem 1rem; background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px;">
+          <input type="checkbox" id="include-logs-checkbox" checked style="cursor: pointer; width: 18px; height: 18px; border-radius: 4px; accent-color: var(--accent);">
+          <label for="include-logs-checkbox" style="cursor: pointer; color: #f8fafc; font-size: 0.9rem; font-weight: 500; user-select: none;">Imprimir com o histórico de alterações (Logs)</label>
+        </div>
       </div>
       <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
         <button class="btn btn--ghost" id="btn-cancel-signature">Cancelar</button>

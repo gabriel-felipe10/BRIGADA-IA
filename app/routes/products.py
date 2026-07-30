@@ -124,6 +124,23 @@ def update_product(product_id):
         data = request.get_json(force=True)
         logger.debug("Atualizando produto | id={} data={}", product_id, data)
         
+        # Obter produto atual para auditoria
+        curr = supabase.table("produtos").select("plu, name, quantity, unit").eq("id", product_id).execute()
+        if not curr.data:
+            return jsonify({"error": "Produto não encontrado"}), 404
+        old_qty = float(curr.data[0].get("quantity") or 0.0)
+        plu_val = curr.data[0].get("plu")
+        name_val = curr.data[0].get("name")
+        unit_val = curr.data[0].get("unit") or "kg"
+
+        # Validar se a quantidade está sendo reduzida e se há anotação justificando
+        if "quantity" in data:
+            new_qty = float(data["quantity"]) if data.get("quantity") is not None else 0.0
+            if new_qty < old_qty:
+                annotation = data.get("annotation", "").strip()
+                if not annotation:
+                    return jsonify({"error": "Uma justificativa/anotação é necessária para reduzir a quantidade do produto."}), 400
+
         # Se alterou o PLU ou a data de validade, verifica se não vai duplicar outro produto (mesmo PLU e mesma validade)
         if "plu" in data or "endDate" in data:
             plu = data.get("plu", "").strip()
@@ -131,12 +148,12 @@ def update_product(product_id):
             
             # Se um deles não foi fornecido no payload, buscamos do registro atual
             if not plu or not end_date:
-                curr = supabase.table("produtos").select("plu, end_date").eq("id", product_id).execute()
-                if curr.data:
+                curr_dates = supabase.table("produtos").select("plu, end_date").eq("id", product_id).execute()
+                if curr_dates.data:
                     if not plu:
-                        plu = curr.data[0].get("plu", "").strip()
+                        plu = curr_dates.data[0].get("plu", "").strip()
                     if not end_date:
-                        end_date = curr.data[0].get("end_date")
+                        end_date = curr_dates.data[0].get("end_date")
             
             if plu and end_date:
                 existing = supabase.table("produtos").select("id, name").eq("plu", plu).eq("end_date", end_date).neq("id", product_id).execute()
@@ -193,6 +210,72 @@ def update_product(product_id):
             "expiredAction": p.get("expired_action")
         }
         
+        # Registrar auditoria da edição no SQLite
+        if "quantity" in data:
+            import uuid
+            from datetime import datetime
+            from app.services.log_service import save_log
+            
+            new_qty = updated["quantity"]
+            annotation_val = data.get("annotation", "").strip() if new_qty < old_qty else ""
+            
+            # Pegar criador e editor do payload, com fallbacks adequados
+            creator_val = data.get("creator", "").strip()
+            editor_val = data.get("editor", "").strip()
+            
+            if not creator_val:
+                # Tentar extrair do supplier do Supabase se disponível
+                supplier_field = data.get("supplier", "")
+                if "[Criado por: " in supplier_field:
+                    try:
+                        creator_val = supplier_field.split("[Criado por: ")[1].split("]")[0]
+                    except Exception:
+                        pass
+            
+            if not creator_val:
+                creator_val = "Jefferson"  # Fallback padrão
+            if not editor_val:
+                editor_val = "Sistema"
+            
+            # Limpar domínios de email para exibição mais limpa
+            if "@" in creator_val:
+                creator_val = creator_val.split("@")[0]
+            if "@" in editor_val:
+                editor_val = editor_val.split("@")[0]
+            
+            creator_val = creator_val.capitalize()
+            editor_val = editor_val.capitalize()
+            
+            details_str = f"Produto PLU {plu_val} ({name_val}) cadastrado por {creator_val} e editado por {editor_val}. Quantidade alterada de {old_qty} para {new_qty} {unit_val}."
+            if annotation_val:
+                details_str += f" Motivo/Anotação: {annotation_val}."
+            
+            payload_log = {
+                "product_id": product_id,
+                "plu": plu_val,
+                "name": name_val,
+                "old_quantity": old_qty,
+                "new_quantity": new_qty,
+                "unit": unit_val,
+                "annotation": annotation_val,
+                "creator": creator_val,
+                "editor": editor_val
+            }
+            
+            try:
+                save_log(
+                    request_id=str(uuid.uuid4()),
+                    timestamp=datetime.now().isoformat(),
+                    payload_type="product_edit",
+                    status="success",
+                    payload=payload_log,
+                    result={"status": "success"},
+                    details=details_str,
+                    duration_ms=0.0
+                )
+            except Exception as log_err:
+                logger.error("Erro ao salvar log de auditoria no SQLite: {}", log_err)
+
         logger.info("Produto atualizado no Supabase | id={}", updated["id"])
         return jsonify(updated)
     except Exception as e:
@@ -202,14 +285,90 @@ def update_product(product_id):
 
 @products_bp.route("/<int:product_id>", methods=["DELETE"])
 def delete_product(product_id):
-    """Exclui um produto do Supabase."""
+    """Exclui um produto do Supabase e registra o log."""
     try:
         logger.debug("Removendo produto | id={}", product_id)
+        
+        # Obter dados do produto original antes de excluir para o log
+        original = None
+        try:
+            get_resp = supabase.table("produtos").select("*").eq("id", product_id).execute()
+            if get_resp.data:
+                original = get_resp.data[0]
+        except Exception as get_err:
+            logger.error("Erro ao buscar produto original para exclusão: {}", get_err)
+
         response = supabase.table("produtos").delete().eq("id", product_id).execute()
         
         if not response.data:
             return jsonify({"error": "Produto não encontrado ou erro ao excluir"}), 404
             
+        # Registrar log de exclusão no SQLite
+        if original:
+            import uuid
+            from datetime import datetime
+            from app.services.log_service import save_log
+            
+            data = request.get_json(silent=True) or {}
+            annotation_val = data.get("annotation", "").strip() or "Excluir o item"
+            creator_val = data.get("creator", "").strip()
+            editor_val = data.get("editor", "").strip()
+            
+            if not creator_val:
+                supplier_field = original.get("supplier", "")
+                if "[Criado por: " in supplier_field:
+                    try:
+                        creator_val = supplier_field.split("[Criado por: ")[1].split("]")[0]
+                    except Exception:
+                        pass
+            
+            if not creator_val:
+                creator_val = "Jefferson"
+            if not editor_val:
+                editor_val = "Sistema"
+                
+            if "@" in creator_val:
+                creator_val = creator_val.split("@")[0]
+            if "@" in editor_val:
+                editor_val = editor_val.split("@")[0]
+                
+            creator_val = creator_val.capitalize()
+            editor_val = editor_val.capitalize()
+            
+            plu_val = original.get("plu", "")
+            name_val = original.get("name", "")
+            qty_val = original.get("quantity", 0)
+            unit_val = original.get("unit", "")
+            
+            details_str = f"Produto PLU {plu_val} ({name_val}) cadastrado por {creator_val} foi EXCLUÍDO por {editor_val}. Motivo/Anotação: {annotation_val}."
+            
+            payload_log = {
+                "product_id": product_id,
+                "plu": plu_val,
+                "name": name_val,
+                "old_quantity": qty_val,
+                "new_quantity": 0,
+                "unit": unit_val,
+                "annotation": annotation_val,
+                "creator": creator_val,
+                "editor": editor_val,
+                "action": "delete"
+            }
+            
+            try:
+                save_log(
+                    request_id=str(uuid.uuid4()),
+                    timestamp=datetime.now().isoformat(),
+                    payload_type="product_edit",
+                    status="success",
+                    payload=payload_log,
+                    result={"status": "success"},
+                    details=details_str,
+                    duration_ms=0.0
+                )
+            except Exception as log_err:
+                logger.error("Erro ao salvar log de exclusão no SQLite: {}", log_err)
+
         logger.info("Produto removido do Supabase | id={}", product_id)
         return jsonify({"success": True})
     except Exception as e:

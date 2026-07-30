@@ -783,9 +783,9 @@ window.BrigadaConciliacao = {
         } else {
           title.textContent = 'Assinar Conciliação (Permitido 1x)';
           this.isRecordLocked = false;
-          if (physicalInput) physicalInput.disabled = false;
-          if (unitSelect) unitSelect.disabled = false;
-          if (locationSelect) locationSelect.disabled = false;
+          if (physicalInput) physicalInput.disabled = true;
+          if (unitSelect) unitSelect.disabled = true;
+          if (locationSelect) locationSelect.disabled = true;
           if (respInput) { respInput.value = storedSigs.responsibleName || user?.name || ''; respInput.disabled = false; }
           if (leaderInput) { leaderInput.value = storedSigs.leaderName || ''; leaderInput.disabled = false; }
           if (clearRespBtn) clearRespBtn.style.display = 'inline-flex';
@@ -1346,10 +1346,24 @@ window.BrigadaConciliacao = {
     const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
     const items = window.BrigadaData.products.filter(p => selectedIds.includes(p.id));
 
-    this.generateSignedPDF(items);
+    this.openSignatureModal(items);
   },
 
-  generateSignedPDF(items) {
+  async generateSignedPDF(items, n1, s1, n2, s2) {
+    const includeLogs = document.getElementById('include-logs-checkbox')?.checked;
+    let allLogs = [];
+    if (includeLogs) {
+      try {
+        const res = await fetch('/api/logs?per_page=100');
+        if (res.ok) {
+          const data = await res.json();
+          allLogs = data.logs || [];
+        }
+      } catch (e) {
+        console.error('Erro ao carregar logs para o PDF:', e);
+      }
+    }
+
     let printContent = `
       <div class="print-container">
         <style>
@@ -1373,66 +1387,46 @@ window.BrigadaConciliacao = {
             border-bottom: 2px solid #6366f1;
           }
           .print-card .header h1 {
-            font-size: 18px;
-            color: #6366f1;
-            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0;
+            color: #0f172a;
+            letter-spacing: -0.025em;
           }
           .print-card .header p {
+            font-size: 10px;
             color: #64748b;
-            font-size: 11px;
-            margin: 0;
+            margin: 4px 0 0 0;
           }
           .print-card .item-detail {
             margin-bottom: 12px;
-            border-bottom: 1px dashed #e2e8f0;
-            padding-bottom: 8px;
-          }
-          .print-card .item-detail:last-child {
-            border-bottom: none;
           }
           .print-card .label {
-            font-weight: bold;
+            font-size: 9px;
             color: #64748b;
-            font-size: 10px;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
             margin-bottom: 2px;
           }
           .print-card .value {
-            font-size: 14px;
-            color: #0f172a;
+            font-size: 13px;
             font-weight: 500;
+            color: #1e293b;
           }
           .print-card .value-large {
-            font-size: 22px;
-            color: #6366f1;
+            font-size: 20px;
             font-weight: 800;
-          }
-          .print-card .signature-box {
-            text-align: center;
-            flex: 1;
-          }
-          .print-card .signature-img {
-            max-height: 55px;
-            max-width: 100%;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            display: inline-block;
-            background: #fff;
-            padding: 2px;
-          }
-          .print-card .signature-name {
-            font-size: 11px;
-            font-weight: 600;
-            color: #0f172a;
-            margin-top: 4px;
+            color: #6366f1;
           }
           .print-card .footer {
-            margin-top: 18px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
             text-align: center;
+            font-size: 8px;
             color: #94a3b8;
-            font-size: 9px;
-            border-top: 1px solid #f1f5f9;
-            padding-top: 10px;
+            letter-spacing: 0.05em;
           }
           @media print {
             .print-card {
@@ -1444,11 +1438,23 @@ window.BrigadaConciliacao = {
         ${items.map(item => {
           const sigs = this.getStoredSignatures(item);
           const itemDate = item.startDate ? new Date(item.startDate).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
-          const respName = sigs.responsibleName;
-          const lName = sigs.leaderName;
+          const respName = n1 || sigs.responsibleName;
+          const lName = n2 || sigs.leaderName;
 
-          const sigImg = sigs.signature || this.getDigitalSignatureSvg(respName);
-          const lSigImg = sigs.leaderSignature || this.getDigitalSignatureSvg(lName);
+          const sigImg = s1 || sigs.signature || this.getDigitalSignatureSvg(respName);
+          const lSigImg = s2 || sigs.leaderSignature || this.getDigitalSignatureSvg(lName);
+
+          const productLogs = allLogs.filter(log => {
+            if (log.type === 'product_edit') {
+              try {
+                const pld = typeof log.payload === 'string' ? JSON.parse(log.payload) : log.payload;
+                return pld.product_id === item.id || String(pld.plu).trim() === String(item.plu).trim();
+              } catch(e) {
+                return false;
+              }
+            }
+            return false;
+          });
 
           return `
             <div class="print-card">
@@ -1482,6 +1488,24 @@ window.BrigadaConciliacao = {
                 <div class="label">Data de Chegada/Contagem</div>
                 <div class="value" style="font-size: 12px; color: #475569;">${itemDate}</div>
               </div>
+
+              ${includeLogs && productLogs.length > 0 ? `
+                <div class="item-detail" style="margin-top: 12px; border-top: 1px dashed #cbd5e1; padding-top: 8px; text-align: left;">
+                  <div class="label" style="font-weight: bold; color: #475569; font-size: 9px; text-transform: uppercase; margin-bottom: 4px;">Histórico de Alterações</div>
+                  <div style="font-size: 10px; color: #334155;">
+                    ${productLogs.map(log => {
+                      let dateStr = log.timestamp;
+                      try {
+                        const d = new Date(log.timestamp);
+                        if (!isNaN(d.getTime())) {
+                          dateStr = d.toLocaleDateString('pt-BR');
+                        }
+                      } catch(e) {}
+                      return `<div style="margin-bottom: 4px; line-height: 1.3;">• <strong>${dateStr}</strong>: ${log.details}</div>`;
+                    }).join('')}
+                  </div>
+                </div>
+              ` : ''}
 
               <div class="signatures-row" style="display: flex; gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; justify-content: space-around;">
                 <div class="signature-box" style="text-align: center; flex: 1;">

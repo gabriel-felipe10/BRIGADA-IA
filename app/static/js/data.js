@@ -813,9 +813,13 @@ window.BrigadaData = {
   },
 
   // Remove produto no backend
-  async deleteProduct(id) {
+  async deleteProduct(id, payload = {}) {
     try {
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
       if (!res.ok) throw new Error(await res.text());
       const idx = this.products.findIndex(x => x.id === id);
       if (idx !== -1) this.products.splice(idx, 1);
@@ -894,20 +898,25 @@ window.BrigadaData = {
   },
 
   // Calcula status de validade de um produto
-  getProductStatus(product) {
+  getProductStatus(product, ignoreAction = false) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const end = new Date(product.endDate + 'T00:00:00');
     const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
 
-    if (product.expiredAction === 'quebra') {
-      return { label: diffDays < 0 ? 'Vencido (Quebra)' : 'Quebra', class: 'badge--expired', icon: '🗑️', days: diffDays };
-    }
-    if (product.expiredAction === 'troca') {
-      return { label: diffDays < 0 ? 'Vencido (Troca)' : 'Troca', class: 'badge--expired', icon: '🔄', days: diffDays };
-    }
-    if (product.expiredAction === 'tratado') {
-      return { label: 'Tratado com Sucesso', class: 'badge--ok', icon: '✔️', days: diffDays };
+    if (!ignoreAction) {
+      if (product.expiredAction === 'quebra') {
+        return { label: diffDays < 0 ? 'Vencido (Quebra)' : 'Quebra', class: 'badge--expired', icon: '🗑️', days: diffDays };
+      }
+      if (product.expiredAction === 'troca') {
+        return { label: diffDays < 0 ? 'Vencido (Troca)' : 'Troca', class: 'badge--expired', icon: '🔄', days: diffDays };
+      }
+      if (product.expiredAction === 'vendido') {
+        return { label: 'Vendido', class: 'badge--ok', icon: '💰', days: diffDays };
+      }
+      if (product.expiredAction === 'tratado') {
+        return { label: 'Tratado com Sucesso', class: 'badge--ok', icon: '✔️', days: diffDays };
+      }
     }
 
     if (diffDays < 0) {

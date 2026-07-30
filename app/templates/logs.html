@@ -7,56 +7,178 @@
         <h2 class="section__title">📋 Logs de Auditoria</h2>
     </div>
 
-    <!-- Filters -->
-    <div class="filter-bar" id="log-filters">
-        <select id="filter-status" onchange="loadLogs()">
-            <option value="">Todos os Status</option>
-            <option value="success">✅ Sucesso</option>
-            <option value="error">❌ Erro</option>
-        </select>
-        <select id="filter-type" onchange="loadLogs()">
-            <option value="">Todos os Tipos</option>
-            <option value="csv">📊 CSV</option>
-            <option value="json">📋 JSON</option>
-            <option value="business_rule">⚙️ Regra de Negócio</option>
-        </select>
-    </div>
+    <!-- Filters & Table inside Glass Panel -->
+    <div class="glass-panel" style="padding: 1.5rem; margin-top: 1rem;">
+        <div class="toolbar" id="log-filters" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; justify-content: flex-start;">
+            <select id="filter-status" class="select-control" style="max-width: 200px;" onchange="loadLogs()">
+                <option value="">Todos os Status</option>
+                <option value="success">✅ Sucesso</option>
+                <option value="error">❌ Erro</option>
+            </select>
+            <select id="filter-type" class="select-control" style="max-width: 220px;" onchange="resetAndLoadLogs()">
+                <option value="">Todos os Tipos</option>
+                <option value="csv">📊 CSV</option>
+                <option value="json">📋 JSON</option>
+                <option value="business_rule">⚙️ Regra de Negócio</option>
+                <option value="product_edit">📝 Edição de Produto</option>
+            </select>
+        </div>
 
-    <!-- Table -->
-    <div class="logs-table-wrapper">
-        <table class="logs-table" id="logs-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Data/Hora</th>
-                    <th>Tipo</th>
-                    <th>Status</th>
-                    <th>Duração</th>
-                    <th>Detalhes</th>
-                </tr>
-            </thead>
-            <tbody id="logs-tbody">
-                <tr>
-                    <td colspan="6" class="empty-state">
-                        <div class="empty-state__icon">📭</div>
-                        <p class="empty-state__text">Carregando logs...</p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <!-- Table -->
+        <div class="table-wrapper table-scroll">
+            <table class="data-table" id="logs-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th style="width: 180px;">Data/Hora</th>
+                        <th style="width: 140px;">Tipo</th>
+                        <th style="width: 120px;">Status</th>
+                        <th style="width: 100px;">Duração</th>
+                        <th>Detalhes</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-tbody">
+                    <tr>
+                        <td colspan="6" class="empty-state" style="text-align: center; padding: 3rem;">
+                            <div class="empty-state__icon" style="font-size: 2rem;">📭</div>
+                            <p class="empty-state__text" style="color: var(--text-tertiary); margin-top: 0.5rem;">Carregando logs...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Pagination -->
-    <div class="pagination" id="logs-pagination">
-        <button class="pagination__btn" id="btn-prev" onclick="changePage(-1)" disabled>← Anterior</button>
-        <span class="pagination__info" id="page-info">Página 1</span>
-        <button class="pagination__btn" id="btn-next" onclick="changePage(1)">Próxima →</button>
+        <!-- Pagination -->
+        <div class="pagination" id="logs-pagination" style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem; justify-content: flex-end;">
+            <button class="btn btn--outline btn--sm" id="btn-prev" onclick="changePage(-1)" disabled>← Anterior</button>
+            <span class="pagination__info" id="page-info" style="color: var(--text-secondary); font-size: 0.85rem;">Página 1</span>
+            <button class="btn btn--outline btn--sm" id="btn-next" onclick="changePage(1)">Próxima →</button>
+        </div>
     </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    let currentPage = 1;
+    const perPage = 20;
+
+    async function loadLogs() {
+        const status = document.getElementById('filter-status').value;
+        const type = document.getElementById('filter-type').value;
+        const tbody = document.getElementById('logs-tbody');
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state" style="text-align: center; padding: 3rem;">
+                    <div class="empty-state__icon" style="font-size: 2rem; animation: pulse 1.5s infinite;">⏳</div>
+                    <p class="empty-state__text" style="color: var(--text-tertiary); margin-top: 0.5rem;">Carregando logs...</p>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const res = await fetch(`/api/logs?page=${currentPage}&per_page=${perPage}&status=${status}&type=${type}`);
+            if (!res.ok) throw new Error('Falha ao buscar logs');
+            const data = await res.json();
+            
+            if (!data.logs || data.logs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state" style="text-align: center; padding: 3rem;">
+                            <div class="empty-state__icon" style="font-size: 2rem;">📭</div>
+                            <p class="empty-state__text" style="color: var(--text-tertiary); margin-top: 0.5rem;">Nenhum log encontrado para os filtros selecionados.</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('btn-prev').disabled = true;
+                document.getElementById('btn-next').disabled = true;
+                document.getElementById('page-info').textContent = `Página ${currentPage}`;
+                return;
+            }
+
+            tbody.innerHTML = data.logs.map(log => {
+                let badgeClass = log.status === 'success' ? 'badge--ok' : 'badge--expired';
+                let statusText = log.status === 'success' ? 'Sucesso' : 'Erro';
+                let typeEmoji = 'Regra';
+                let typeClass = 'badge--user-role';
+                
+                if (log.type === 'csv') {
+                    typeEmoji = 'CSV';
+                    typeClass = 'badge--gestao-role';
+                } else if (log.type === 'json') {
+                    typeEmoji = 'JSON';
+                    typeClass = 'badge--lider-role';
+                } else if (log.type === 'product_edit') {
+                    typeEmoji = 'Edição';
+                    typeClass = 'badge--superadmin';
+                } else if (log.type === 'business_rule') {
+                    typeEmoji = 'Regra';
+                    typeClass = 'badge--user-role';
+                }
+                
+                let detailsText = log.details;
+                if (detailsText === null || detailsText === undefined) {
+                    detailsText = '';
+                } else if (typeof detailsText !== 'string') {
+                    detailsText = JSON.stringify(detailsText);
+                }
+                try {
+                    if (detailsText.startsWith('{') || detailsText.startsWith('[')) {
+                        detailsText = JSON.stringify(JSON.parse(detailsText), null, 2);
+                    }
+                } catch(e) {}
+
+                let dateStr = log.timestamp;
+                try {
+                    const d = new Date(log.timestamp);
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toLocaleString('pt-BR');
+                    }
+                } catch(e) {}
+
+                return `
+                    <tr>
+                        <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-tertiary);">${log.id}</td>
+                        <td>${dateStr}</td>
+                        <td><span class="badge ${typeClass}">${typeEmoji}</span></td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td>${log.duration_ms ? log.duration_ms.toFixed(1) + ' ms' : '-'}</td>
+                        <td style="max-width: 450px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${detailsText.replace(/"/g, '&quot;')}">
+                            ${detailsText}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const pag = data.pagination;
+            document.getElementById('page-info').textContent = `Página ${pag.page} de ${pag.pages || 1}`;
+            document.getElementById('btn-prev').disabled = pag.page <= 1;
+            document.getElementById('btn-next').disabled = pag.page >= pag.pages;
+
+        } catch (error) {
+            console.error(error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-state__icon">⚠️</div>
+                        <p class="empty-state__text" style="color: var(--status-error);">Erro ao carregar logs do servidor.</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function resetAndLoadLogs() {
+        currentPage = 1;
+        loadLogs();
+    }
+
+    function changePage(direction) {
+        currentPage += direction;
+        loadLogs();
+    }
+
     // Auto-load logs when page opens
     document.addEventListener('DOMContentLoaded', () => loadLogs());
 </script>

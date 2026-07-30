@@ -170,6 +170,28 @@ window.BrigadaMercearia = {
                   </select>
                 </div>
               </div>
+              <div class="form-row" id="annotation-info-banner-mercearia" style="display: none; margin-top: 1rem; width: 100%;">
+                <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 8px 12px; width: 100%; display: flex; justify-content: space-between; font-size: 0.85rem; color: #f8fafc;">
+                  <div><strong>Quantidade Anterior:</strong> <span id="info-original-quantity-mercearia">0</span></div>
+                  <div><strong>Data da Alteração:</strong> <span id="info-change-date-mercearia">--/--/----</span></div>
+                </div>
+              </div>
+              <div class="form-row" id="group-annotation-mercearia" style="display: none; margin-top: 1rem;">
+                <div class="form-group" style="width: 100%;">
+                  <label class="form-label" style="color: #f8fafc; font-weight: 600;">O que aconteceu com o restante do produto? *</label>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <div class="annotation-buttons-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%;">
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="quebra" style="flex: 1; min-width: 80px;">Quebra</button>
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="troca" style="flex: 1; min-width: 80px;">Troca</button>
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="rebaixa" style="flex: 1; min-width: 80px;">Rebaixa</button>
+                    <button type="button" class="btn btn--outline annotation-btn" data-value="vendido" style="flex: 1; min-width: 80px;">Vendido</button>
+                    <button type="button" class="btn btn--outline annotation-btn btn--danger-outline" data-value="excluir" style="flex: 1.2; min-width: 110px;">Excluir o item</button>
+                  </div>
+                  <input type="hidden" id="field-annotation-mercearia" value="">
+                    <input type="text" id="field-annotation-text-mercearia" class="form-input" style="flex: 2; display: none;" placeholder="Detalhes (obrigatório)" maxlength="100">
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -251,6 +273,7 @@ window.BrigadaMercearia = {
     const showActions = products.some(p => window.BrigadaAuth.canEditProduct(p) || window.BrigadaAuth.canDeleteProduct(p));
     const rows = products.map(p => {
       const status = window.BrigadaData.getProductStatus(p);
+      const baseStatus = window.BrigadaData.getProductStatus(p, true);
       const qty = p.quantity !== undefined ? p.quantity : 0;
       const unit = p.unit || 'un';
       const canEditThis = window.BrigadaAuth.canEditProduct(p);
@@ -264,7 +287,6 @@ window.BrigadaMercearia = {
           <td data-label="Categoria"><span class="cat-pill cat-pill--mercearia">🛒 Mercearia</span></td>
           <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
           <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
-          <td data-label="Status"><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
           <td data-label="Fornecedor">
             <div>${p.supplier || '—'}</div>
             ${p.createdBy ? `<div style="font-size:0.7rem; color:#a78bfa; margin-top:2px; font-weight: 500;" title="${p.createdBy}">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
@@ -272,18 +294,25 @@ window.BrigadaMercearia = {
           <td data-label="Localização">
             ${window.BrigadaData.formatLocationFriendly(p)}
           </td>
-          ${showActions ? `
-          <td data-label="Ações" class="actions-cell">
-            ${status.days <= 3 && canEditThis ? `
-              ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
-              ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
-              ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
-              ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
-            ` : ''}
-            ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
-            ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
-          </td>` : ''}
-        </tr>`;
+        </tr>
+        ${showActions ? `
+        <tr class="actions-row">
+          <td colspan="9" style="padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.01);">
+            <div class="actions-cell" style="display: flex; gap: 16px; align-items: center; justify-content: flex-start;">
+              <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-right: 8px;">Ações:</span>
+              <span class="badge ${baseStatus.class}" style="font-size: 0.7rem; padding: 4px 10px;">${baseStatus.icon} ${baseStatus.label}</span>
+              ${p.expiredAction && status ? `<span class="badge ${status.class}" style="font-size: 0.7rem; padding: 4px 10px;">${status.icon} ${status.label}</span>` : ''}
+              ${status.days <= 3 && canEditThis ? `
+                ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
+                ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
+                ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
+              ` : ''}
+              ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
+              ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
+            </div>
+          </td>
+        </tr>` : ''}`;
     }).join('');
 
     wrapper.innerHTML = `
@@ -301,10 +330,8 @@ window.BrigadaMercearia = {
               <th>Categoria</th>
               <th>Data Fab.</th>
               <th>Vencimento</th>
-              <th>Status</th>
               <th>Fornecedor</th>
               <th>Localização</th>
-              ${showActions ? '<th>Ações</th>' : ''}
             </tr>
           </thead>
           <tbody>
@@ -396,6 +423,69 @@ window.BrigadaMercearia = {
       barcode: '#field-barcode-mercearia',
       unit: '#field-unit-mercearia'
     });
+
+    // Listener para o campo de quantidade exibir/ocultar anotação
+    const qtyInput = container.querySelector('#field-quantity-mercearia');
+    const annotationGroup = container.querySelector('#group-annotation-mercearia');
+    const annotationInput = container.querySelector('#field-annotation-mercearia');
+    const annotationTextInput = container.querySelector('#field-annotation-text-mercearia');
+    
+    qtyInput?.addEventListener('input', () => {
+      if (this.editingId) {
+        const newVal = parseFloat(qtyInput.value) || 0;
+        const infoBanner = container.querySelector('#annotation-info-banner-mercearia');
+        if (newVal < this.originalQuantity) {
+          annotationGroup.style.display = 'block';
+          annotationInput.required = true;
+          if (infoBanner) {
+            container.querySelector('#info-original-quantity-mercearia').textContent = this.originalQuantity + ' ' + (container.querySelector('#field-unit-mercearia').value || '');
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            container.querySelector('#info-change-date-mercearia').textContent = dd + '/' + mm + '/' + yyyy;
+            infoBanner.style.display = 'flex';
+          }
+        } else {
+          annotationGroup.style.display = 'none';
+          annotationInput.required = false;
+          annotationInput.value = '';
+          if (annotationTextInput) {
+            annotationTextInput.style.display = 'none';
+            annotationTextInput.required = false;
+            annotationTextInput.value = '';
+          }
+          if (infoBanner) infoBanner.style.display = 'none';
+        }
+      }
+    });
+
+    const annotationBtns = container.querySelectorAll('.annotation-btn');
+    annotationBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        annotationBtns.forEach(b => {
+          if (b.dataset.value === 'excluir') {
+            b.classList.remove('btn--danger');
+            b.classList.add('btn--outline', 'btn--danger-outline');
+          } else {
+            b.classList.remove('btn--primary');
+            b.classList.add('btn--outline');
+          }
+        });
+        if (btn.dataset.value === 'excluir') {
+          btn.classList.remove('btn--outline', 'btn--danger-outline');
+          btn.classList.add('btn--danger');
+        } else {
+          btn.classList.remove('btn--outline');
+          btn.classList.add('btn--primary');
+        }
+        if(annotationInput) annotationInput.value = btn.dataset.value;
+        if(annotationTextInput) {
+          annotationTextInput.style.display = 'block';
+          annotationTextInput.required = true;
+        }
+      });
+    });
   },
 
   openModal(container, id = null) {
@@ -409,9 +499,32 @@ window.BrigadaMercearia = {
     container.querySelector('#field-column-mercearia').value = '';
     container.querySelector('#field-column-number-mercearia').value = '';
 
+    // Reset annotation
+    container.querySelector('#group-annotation-mercearia').style.display = 'none';
+    container.querySelector('#field-annotation-mercearia').required = false;
+    const infoBanner = container.querySelector('#annotation-info-banner-mercearia');
+    if (infoBanner) infoBanner.style.display = 'none';
+    container.querySelectorAll('.annotation-btn').forEach(b => {
+      if (b.dataset.value === 'excluir') {
+        b.classList.remove('btn--danger');
+        b.classList.add('btn--outline', 'btn--danger-outline');
+      } else {
+        b.classList.remove('btn--primary');
+        b.classList.add('btn--outline');
+      }
+    });
+    container.querySelector('#field-annotation-mercearia').value = '';
+    const annText = container.querySelector('#field-annotation-text-mercearia');
+    if (annText) {
+      annText.style.display = 'none';
+      annText.required = false;
+      annText.value = '';
+    }
+
     if (id) {
       const p = window.BrigadaData.products.find(x => x.id === id);
       if (!p || !window.BrigadaAuth.canEditProduct(p)) return;
+      this.originalQuantity = p.quantity !== undefined ? p.quantity : 0;
       title.textContent = 'Editar Produto de Mercearia';
       if (p) {
         container.querySelector('#field-plu-mercearia').value = p.plu;
@@ -426,9 +539,25 @@ window.BrigadaMercearia = {
         container.querySelector('#field-quantity-mercearia').value = p.quantity !== undefined ? p.quantity : '';
         container.querySelector('#field-unit-mercearia').value = p.unit || 'un';
       }
+
+      // Disable all fields except quantity and annotation
+      form.querySelectorAll('.form-input, select, textarea').forEach(el => {
+        if (el.id !== 'field-quantity-mercearia' && el.id !== 'field-annotation-mercearia' && el.id !== 'field-annotation-text-mercearia') {
+          el.disabled = true;
+        } else {
+          el.disabled = false;
+        }
+      });
     } else {
+      this.originalQuantity = 0;
       title.textContent = 'Novo Produto de Mercearia';
       container.querySelector('#field-startDate-mercearia').value = new Date().toISOString().split('T')[0];
+
+      // Enable all fields
+      form.querySelectorAll('.form-input, select').forEach(el => {
+        el.disabled = false;
+        el.readOnly = false;
+      });
     }
 
     modal.style.display = 'flex';
@@ -450,6 +579,34 @@ window.BrigadaMercearia = {
     if (!form.reportValidity()) return;
 
     const id = this.editingId;
+    const quantity = container.querySelector('#field-quantity-mercearia').value !== '' ? parseFloat(container.querySelector('#field-quantity-mercearia').value) : 0;
+    const selectVal = container.querySelector('#field-annotation-mercearia').value;
+    const textVal = container.querySelector('#field-annotation-text-mercearia')?.value.trim() || '';
+
+    if (id && quantity < this.originalQuantity) {
+      if (!selectVal || !textVal) {
+        window.BrigadaUI.showToast('Por favor, selecione um motivo e informe os detalhes da redução da quantidade.', 'error');
+        return;
+      }
+    }
+    const annotation = (selectVal && textVal) ? `${selectVal} - ${textVal}` : '';
+
+    const product = window.BrigadaData.products.find(x => x.id === id);
+    const creator = (id && product && product.createdBy) ? product.createdBy : 'Jefferson';
+    const editor = window.BrigadaAuth.currentUser?.name || window.BrigadaAuth.currentUser?.email || 'Sistema';
+
+    if (selectVal === 'excluir') {
+      try {
+        await window.BrigadaData.deleteProduct(id, { annotation, creator, editor });
+        window.BrigadaUI.showToast('Produto excluído com sucesso!', 'success');
+        this.closeModal(container);
+        this.renderTable(container);
+      } catch (err) {
+        window.BrigadaUI.showToast(err.message || 'Erro ao excluir o produto.', 'error');
+      }
+      return;
+    }
+
     const payload = {
       plu: container.querySelector('#field-plu-mercearia').value.trim(),
       category: container.querySelector('#field-category-mercearia').value,
@@ -458,10 +615,13 @@ window.BrigadaMercearia = {
       endDate: container.querySelector('#field-endDate-mercearia').value,
       supplier: container.querySelector('#field-supplier-mercearia').value.trim() || null,
       location: container.querySelector('#field-location-mercearia').value,
-      quantity: container.querySelector('#field-quantity-mercearia').value !== '' ? parseFloat(container.querySelector('#field-quantity-mercearia').value) : 0,
+      quantity: quantity,
       unit: container.querySelector('#field-unit-mercearia').value || 'un',
       column: container.querySelector('#field-column-mercearia').value.trim() || null,
-      columnNumber: container.querySelector('#field-column-number-mercearia').value !== '' ? parseInt(container.querySelector('#field-column-number-mercearia').value) : null
+      columnNumber: container.querySelector('#field-column-number-mercearia').value !== '' ? parseInt(container.querySelector('#field-column-number-mercearia').value) : null,
+      annotation: annotation,
+      creator: creator,
+      editor: editor
     };
 
     try {
