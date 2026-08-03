@@ -98,7 +98,7 @@ window.BrigadaPadaria = {
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">Data Inicial</label>
+                  <label class="form-label">Data de Cadastro</label>
                   <input type="date" id="field-startDate-padaria" class="form-input">
                 </div>
                 <div class="form-group">
@@ -292,7 +292,7 @@ window.BrigadaPadaria = {
           <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">${p.name}</td>
           <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
           <td data-label="Categoria"><span class="cat-pill cat-pill--padaria">🍞 Padaria</span></td>
-          <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
+          <td data-label="Data de Cadastro">${window.BrigadaData.formatDate(p.startDate)}</td>
           <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
           <td data-label="Fornecedor">
             <div>${p.supplier || '—'}</div>

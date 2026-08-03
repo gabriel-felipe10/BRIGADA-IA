@@ -30,7 +30,11 @@ def get_products():
                 "columnNumber": p.get("column_number"),
                 "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
                 "rebaixaStatus": p.get("rebaixa_status", "aguardando"),
-                "expiredAction": p.get("expired_action")
+                "expiredAction": p.get("expired_action"),
+                "signature": p.get("signature"),
+                "leaderSignature": p.get("leader_signature"),
+                "responsibleName": p.get("responsible_name"),
+                "leaderName": p.get("leader_name")
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -75,7 +79,11 @@ def create_product():
             "column": data.get("column"),
             "column_number": data.get("columnNumber"),
             "is_awaiting_reduction": bool(data.get("isAwaitingReduction", False)),
-            "expired_action": data.get("expiredAction")
+            "expired_action": data.get("expiredAction"),
+            "signature": data.get("signature"),
+            "leader_signature": data.get("leaderSignature"),
+            "responsible_name": data.get("responsibleName"),
+            "leader_name": data.get("leaderName")
         }
         
         try:
@@ -86,6 +94,10 @@ def create_product():
             db_data.pop("column_number", None)
             db_data.pop("is_awaiting_reduction", None)
             db_data.pop("expired_action", None)
+            db_data.pop("signature", None)
+            db_data.pop("leader_signature", None)
+            db_data.pop("responsible_name", None)
+            db_data.pop("leader_name", None)
             response = supabase.table("produtos").insert(db_data).execute()
             
         if not response.data:
@@ -107,7 +119,11 @@ def create_product():
             "column": p.get("column"),
             "columnNumber": p.get("column_number"),
             "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
-            "expiredAction": p.get("expired_action")
+            "expiredAction": p.get("expired_action"),
+            "signature": p.get("signature"),
+            "leaderSignature": p.get("leader_signature"),
+            "responsibleName": p.get("responsible_name"),
+            "leaderName": p.get("leader_name")
         }
         
         logger.info("Produto criado no Supabase | id={} plu={}", created["id"], created["plu"])
@@ -177,6 +193,10 @@ def update_product(product_id):
         if "columnNumber" in data: db_data["column_number"] = data["columnNumber"]
         if "isAwaitingReduction" in data: db_data["is_awaiting_reduction"] = bool(data["isAwaitingReduction"])
         if "expiredAction" in data: db_data["expired_action"] = data["expiredAction"]
+        if "signature" in data: db_data["signature"] = data["signature"]
+        if "leaderSignature" in data: db_data["leader_signature"] = data["leaderSignature"]
+        if "responsibleName" in data: db_data["responsible_name"] = data["responsibleName"]
+        if "leaderName" in data: db_data["leader_name"] = data["leaderName"]
         
         try:
             response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
@@ -186,6 +206,10 @@ def update_product(product_id):
             db_data.pop("column_number", None)
             db_data.pop("is_awaiting_reduction", None)
             db_data.pop("expired_action", None)
+            db_data.pop("signature", None)
+            db_data.pop("leader_signature", None)
+            db_data.pop("responsible_name", None)
+            db_data.pop("leader_name", None)
             response = supabase.table("produtos").update(db_data).eq("id", product_id).execute()
             
         if not response.data:
@@ -207,7 +231,11 @@ def update_product(product_id):
             "column": p.get("column"),
             "columnNumber": p.get("column_number"),
             "isAwaitingReduction": bool(p.get("is_awaiting_reduction", False)),
-            "expiredAction": p.get("expired_action")
+            "expiredAction": p.get("expired_action"),
+            "signature": p.get("signature"),
+            "leaderSignature": p.get("leader_signature"),
+            "responsibleName": p.get("responsible_name"),
+            "leaderName": p.get("leader_name")
         }
         
         # Registrar auditoria da edição no SQLite

@@ -540,7 +540,7 @@ window.BrigadaConciliacao = {
       const canEditThis = window.BrigadaAuth.canEditProduct(p);
       const canDeleteThis = window.BrigadaAuth.canDeleteProduct(p);
       const storedSigs = this.getStoredSignatures(p);
-      const isSigned = storedSigs.hasRealSignature || (storedSigs.signature && storedSigs.leaderSignature);
+      const isSigned = storedSigs.hasRealSignature || !!storedSigs.signature || !!storedSigs.leaderSignature;
 
       return `
         <tr data-id="${p.id}">
@@ -553,7 +553,8 @@ window.BrigadaConciliacao = {
           <td data-label="Localização">${p.location || '—'}</td>
           <td data-label="Ações" class="actions-cell">
             <button class="btn-icon btn-icon--print" data-action="print-item" data-id="${p.id}" title="Imprimir Comprovante">🖨️</button>
-            ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="${isSigned ? 'Visualizar Contagem Auditada (Inalterável)' : 'Assinar / Editar Contagem'}">${isSigned ? '🔒' : '✏️'}</button>` : ''}
+            ${isSigned ? `<span class="btn-icon" style="opacity:0.5; cursor:default;" title="Documento Assinado (Inalterável)">🔒</span>` : ''}
+            ${!isSigned && canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Assinar Contagem">✏️</button>` : ''}
             ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
           </td>
         </tr>
@@ -786,10 +787,21 @@ window.BrigadaConciliacao = {
           if (physicalInput) physicalInput.disabled = true;
           if (unitSelect) unitSelect.disabled = true;
           if (locationSelect) locationSelect.disabled = true;
-          if (respInput) { respInput.value = storedSigs.responsibleName || user?.name || ''; respInput.disabled = false; }
-          if (leaderInput) { leaderInput.value = storedSigs.leaderName || ''; leaderInput.disabled = false; }
-          if (clearRespBtn) clearRespBtn.style.display = 'inline-flex';
-          if (clearLeaderBtn) clearLeaderBtn.style.display = 'inline-flex';
+
+          // Se já tem assinatura do responsável, bloqueia edição
+          const hasRespSig = !!storedSigs.signature;
+          const hasLeaderSig = !!storedSigs.leaderSignature;
+
+          if (respInput) { 
+            respInput.value = storedSigs.responsibleName || user?.name || ''; 
+            respInput.disabled = hasRespSig; 
+          }
+          if (leaderInput) { 
+            leaderInput.value = storedSigs.leaderName || ''; 
+            leaderInput.disabled = hasLeaderSig; 
+          }
+          if (clearRespBtn) clearRespBtn.style.display = hasRespSig ? 'none' : 'inline-flex';
+          if (clearLeaderBtn) clearLeaderBtn.style.display = hasLeaderSig ? 'none' : 'inline-flex';
           if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.innerHTML = '💾 Salvar Conciliação';
@@ -926,6 +938,20 @@ window.BrigadaConciliacao = {
           img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           img.src = sigSrc;
         }
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
+      }
+
+      // Bloquear canvas individual se essa assinatura já existe
+      const existingSig = type === 'resp' ? this.existingSignature : this.existingLeaderSignature;
+      if (existingSig) {
+        canvas.style.pointerEvents = 'none';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        img.src = existingSig;
+        if (type === 'resp') this.hasFormSigned = true;
+        else this.hasLeaderSigned = true;
         if (clearBtn) clearBtn.style.display = 'none';
         return;
       }

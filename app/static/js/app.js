@@ -243,6 +243,8 @@ window.BrigadaUI = {
     };
     const status = window.BrigadaData.getProductStatus(product);
 
+    const isConciliacao = product.category === 'conciliacao';
+
     content.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 0.5rem;">
         <strong style="color: var(--text-secondary); font-size: 0.85rem;">PRODUTO</strong>
@@ -266,13 +268,14 @@ window.BrigadaUI = {
           <div style="color: var(--text-primary);">${product.quantity !== undefined ? product.quantity : 0} ${product.unit || 'kg'}</div>
         </div>
         <div>
-          <strong style="color: var(--text-secondary); font-size: 0.85rem;">DATA INICIAL</strong>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">${isConciliacao ? 'DATA DA CONTAGEM' : 'DATA DE CADASTRO'}</strong>
           <div style="color: var(--text-primary);">${window.BrigadaData.formatDate(product.startDate)}</div>
         </div>
         <div>
-          <strong style="color: var(--text-secondary); font-size: 0.85rem;">VALIDADE</strong>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">${isConciliacao ? 'DATA DE VALIDADE' : 'VALIDADE'}</strong>
           <div style="color: var(--text-primary);">${window.BrigadaData.formatDate(product.endDate)}</div>
         </div>
+        ${!isConciliacao ? `
         <div>
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">STATUS</strong>
           <div style="margin-top: 0.25rem;"><span class="badge ${status.class}">${status.icon} ${status.label}</span></div>
@@ -281,6 +284,7 @@ window.BrigadaUI = {
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">FORNECEDOR</strong>
           <div style="color: var(--text-primary);">${product.supplier || '—'}</div>
         </div>
+        ` : ''}
         <div style="grid-column: span 2;">
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">LOCALIZAÇÃO</strong>
           <div style="color: var(--text-primary);">${window.BrigadaData.formatLocationFriendly(product)}</div>
@@ -624,10 +628,16 @@ window.BrigadaRouter = {
             </a>
             ` : ''}
 
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
+            ${!window.BrigadaAuth.isPromotor() && (window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis')) ? `
             <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
               <span class="sidebar__link-icon">❄️</span>
               <span>Câmaras Frias</span>
+            </a>
+            ` : ''}
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
+              <span class="sidebar__link-icon">🍎</span>
+              <span>Perecíveis</span>
             </a>
             ` : ''}
             ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('padaria') ? `
@@ -1026,11 +1036,17 @@ window.BrigadaRouter = {
       }
       window.BrigadaProductList.render(container);
     } else if (page === 'chambers') {
-      if (!window.BrigadaAuth.hasSectorAccess('açougue')) {
+      if (!window.BrigadaAuth.hasSectorAccess('açougue') && !window.BrigadaAuth.hasSectorAccess('pereciveis')) {
         this.navigate('dashboard');
         return;
       }
       window.BrigadaChambers.render(container);
+    } else if (page === 'pereciveis') {
+      if (!window.BrigadaAuth.hasSectorAccess('pereciveis')) {
+        this.navigate('dashboard');
+        return;
+      }
+      window.BrigadaPereciveis.render(container);
     } else if (page === 'padaria') {
       if (!window.BrigadaAuth.hasSectorAccess('padaria')) {
         this.navigate('dashboard');

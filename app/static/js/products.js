@@ -125,7 +125,7 @@ window.BrigadaProducts = {
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">Data Inicial</label>
+                  <label class="form-label">Data de Cadastro</label>
                   <input type="date" id="field-startDate" class="form-input">
                 </div>
                 <div class="form-group">
@@ -320,7 +320,7 @@ window.BrigadaProducts = {
           <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">${p.name}</td>
           <td data-label="Qtd"><strong style="color:var(--primary); font-size: 0.95rem;">${qty}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${unit}</span></td>
           <td data-label="Categoria"><span class="cat-pill cat-pill--${p.category}">${catMap[p.category]}</span></td>
-          <td data-label="Data Inicial">${window.BrigadaData.formatDate(p.startDate)}</td>
+          <td data-label="Data de Cadastro">${window.BrigadaData.formatDate(p.startDate)}</td>
           <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
           <td data-label="Fornecedor">
             <div>${p.supplier || '—'}</div>
@@ -365,7 +365,7 @@ window.BrigadaProducts = {
               <th>Produto</th>
               <th>Qtd</th>
               <th>Categoria</th>
-              <th>Data Inicial</th>
+              <th>Data de Cadastro</th>
               <th>Data Final</th>
               <th>Fornecedor</th>
               <th>Localização</th>
@@ -755,7 +755,7 @@ window.BrigadaProducts = {
     }
 
     if (startDate && endDate < startDate) {
-      window.BrigadaUI.showToast('A data final não pode ser anterior à data inicial.', 'error');
+      window.BrigadaUI.showToast('A data final não pode ser anterior à data de cadastro.', 'error');
       return;
     }
 
@@ -844,7 +844,7 @@ window.BrigadaProducts = {
     }
 
     const catMap = { aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado' };
-    const header = ['PLU', 'Produto', 'Quantidade', 'Unidade', 'Categoria', 'Data Inicial', 'Validade', 'Status', 'Fornecedor', 'Localização'];
+    const header = ['PLU', 'Produto', 'Quantidade', 'Unidade', 'Categoria', 'Data de Cadastro', 'Validade', 'Status', 'Fornecedor', 'Localização'];
 
     const rows = products.map(p => {
       const s = window.BrigadaData.getProductStatus(p);
