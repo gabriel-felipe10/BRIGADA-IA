@@ -22,7 +22,15 @@ window.BrigadaResumoMensal = {
     if (!this.currentMonth || this.currentMonth === 'all') {
       this.currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
     }
-    if (!this.currentSector) {
+    
+    const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin() || userSector === 'todos';
+    
+    if (!isSuperAdmin && userSector !== 'todos') {
+      this.currentSector = userSector === 'pereciveis' ? 'pereciveis' : 'acougue';
+    } else if (!this.currentSector || this.currentSector === 'all' || this.currentSector === 'acougue' || this.currentSector === 'pereciveis') {
+      // mantém valor válido
+    } else {
       this.currentSector = 'all';
     }
   },
@@ -44,6 +52,22 @@ window.BrigadaResumoMensal = {
       { val: '12', name: 'Dezembro' }
     ];
 
+    const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin() || userSector === 'todos';
+
+    let sectorOptionsHTML = '';
+    if (!isSuperAdmin && userSector !== 'todos') {
+      const label = userSector === 'pereciveis' ? '🧊 Perecíveis' : '🥩 Açougue';
+      const val = userSector === 'pereciveis' ? 'pereciveis' : 'acougue';
+      sectorOptionsHTML = `<option value="${val}">${label}</option>`;
+    } else {
+      sectorOptionsHTML = `
+        <option value="all" ${this.currentSector === 'all' ? 'selected' : ''}>🏢 Todos os Setores</option>
+        <option value="acougue" ${this.currentSector === 'acougue' ? 'selected' : ''}>🥩 Açougue</option>
+        <option value="pereciveis" ${this.currentSector === 'pereciveis' ? 'selected' : ''}>🧊 Perecíveis</option>
+      `;
+    }
+
     return `
       <div class="panel-header">
         <div class="panel-header__left">
@@ -52,12 +76,8 @@ window.BrigadaResumoMensal = {
         </div>
         <div class="glass-actions-card" style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center;">
           <!-- Filtro de Setor -->
-          <select id="resumo-sector-select" class="select-control" style="min-width: 170px;">
-            <option value="all" ${this.currentSector === 'all' ? 'selected' : ''}>🏢 Todos os Setores</option>
-            <option value="acougue" ${this.currentSector === 'acougue' ? 'selected' : ''}>🥩 Açougue</option>
-            <option value="padaria" ${this.currentSector === 'padaria' ? 'selected' : ''}>🍞 Padaria</option>
-            <option value="hortifruti" ${this.currentSector === 'hortifruti' ? 'selected' : ''}>🥦 Hortifruti</option>
-            <option value="mercearia" ${this.currentSector === 'mercearia' ? 'selected' : ''}>🛒 Mercearia / Perecíveis</option>
+          <select id="resumo-sector-select" class="select-control" style="min-width: 170px;" ${!isSuperAdmin && userSector !== 'todos' ? 'disabled' : ''}>
+            ${sectorOptionsHTML}
           </select>
           <!-- Filtro de Ano -->
           <select id="resumo-year-select" class="select-control" style="min-width: 100px;">
@@ -132,15 +152,25 @@ window.BrigadaResumoMensal = {
 
   calculateAndRenderMetrics(container) {
     const products = window.BrigadaData.products || [];
+    const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin() || userSector === 'todos';
     
     // Filtrar produtos que vencem/venceram no mês e ano selecionados
-    const monthlyProducts = products.filter(p => {
+    let monthlyProducts = products.filter(p => {
       if (!p.endDate) return false;
       const [y, m] = p.endDate.split('-');
       return y === this.currentYear && m === this.currentMonth;
     });
 
-    // Mapeamento de setores
+    // Se o usuário não for Admin, restringe rigorosamente os produtos totais ao seu próprio setor
+    if (!isSuperAdmin && userSector !== 'todos') {
+      const allowedCats = userSector === 'pereciveis'
+        ? ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis']
+        : ['aves', 'suino', 'bovino', 'pescado'];
+      monthlyProducts = monthlyProducts.filter(p => allowedCats.includes(p.category));
+    }
+
+    // Mapeamento dos 2 setores oficiais da loja
     const sectors = [
       {
         id: 'acougue',
@@ -148,19 +178,9 @@ window.BrigadaResumoMensal = {
         filter: (p) => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category)
       },
       {
-        id: 'padaria',
-        name: '🍞 Padaria',
-        filter: (p) => p.category === 'padaria'
-      },
-      {
-        id: 'hortifruti',
-        name: '🥦 Hortifruti',
-        filter: (p) => p.category === 'hortifruti'
-      },
-      {
-        id: 'mercearia',
-        name: '🛒 Mercearia / Perecíveis',
-        filter: (p) => ['mercearia', 'laticinios', 'frios'].includes(p.category) || (!['aves', 'suino', 'bovino', 'pescado', 'padaria', 'hortifruti'].includes(p.category))
+        id: 'pereciveis',
+        name: '🧊 Perecíveis',
+        filter: (p) => ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category)
       }
     ];
 
@@ -256,7 +276,10 @@ window.BrigadaResumoMensal = {
       };
     });
 
-    // Atualiza os cards gerais de overview
+    // Filtra os setores estatísticos
+    const activeSectorStats = this.currentSector === 'all' ? null : sectorStats.find(s => s.id === this.currentSector);
+
+    // Totais globais
     const totalGeralTratados = totalTratados + totalQuebras + totalTrocas + totalSemAcao;
     const taxaGeralSucesso = totalGeralTratados > 0 ? Math.round((totalTratados / totalGeralTratados) * 100) : 100;
 
@@ -269,9 +292,7 @@ window.BrigadaResumoMensal = {
       const sectorNames = {
         all: 'Imprimir',
         acougue: 'Imprimir (Açougue)',
-        padaria: 'Imprimir (Padaria)',
-        hortifruti: 'Imprimir (Hortifruti)',
-        mercearia: 'Imprimir (Mercearia)'
+        pereciveis: 'Imprimir (Perecíveis)'
       };
       btnLabel.textContent = sectorNames[this.currentSector] || 'Imprimir';
     }
@@ -283,12 +304,9 @@ window.BrigadaResumoMensal = {
 
     const overviewContainer = container.querySelector('#resumo-cards-overview');
     if (overviewContainer) {
-      // Se um setor específico for selecionado, calcula métricas desse setor para os cards do topo
-      const activeSectorStats = this.currentSector === 'all' ? null : sectorStats.find(s => s.id === this.currentSector);
-      
       const cardsTotalItems = activeSectorStats ? activeSectorStats.total : totalItems;
-      const cardsTotalKg = activeSectorStats ? activeSectorStats.totalSecKg : totalKg;
-      const cardsTotalUn = activeSectorStats ? activeSectorStats.totalSecUn : totalUn;
+      const cardsTotalKg = activeSectorStats ? activeSectorStats.totalKg : totalKg;
+      const cardsTotalUn = activeSectorStats ? activeSectorStats.totalUn : totalUn;
       const cardsTaxaSucesso = activeSectorStats ? activeSectorStats.successRate : taxaGeralSucesso;
       const cardsSalvoKg = activeSectorStats ? activeSectorStats.tratadosKg : totalKgTratados;
       const cardsSalvoUn = activeSectorStats ? activeSectorStats.tratadosUn : totalUnTratados;
@@ -492,7 +510,7 @@ window.BrigadaResumoMensal = {
               <!-- Ofensores de Perda (O que pode melhorar) -->
               <div style="display:flex; flex-direction:column; gap:0.8rem;">
                 <h4 style="font-size:0.95rem; font-weight:600; color: var(--text-secondary); margin:0;">Principais Ofensores de Perda</h4>
-                <div style="background: rgba(128,128,128,0.04); border-radius: 8px; padding: 0.75rem; border: 1px solid var(--glass-border);">
+                <div style="background: rgba(128, 128, 128, 0.04); border-radius: 8px; padding: 0.75rem; border: 1px solid var(--glass-border);">
                   ${ofensoresHTML}
                 </div>
               </div>
@@ -524,13 +542,23 @@ window.BrigadaResumoMensal = {
 
   printResumo(specificSectorId) {
     const targetSector = specificSectorId || this.currentSector || 'all';
-
     const products = window.BrigadaData.products || [];
-    const monthlyProducts = products.filter(p => {
+    const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin() || userSector === 'todos';
+
+    let monthlyProducts = products.filter(p => {
       if (!p.endDate) return false;
       const [y, m] = p.endDate.split('-');
       return y === this.currentYear && m === this.currentMonth;
     });
+
+    // Se o usuário não for Admin, restringe rigorosamente os produtos do PDF ao seu próprio setor
+    if (!isSuperAdmin && userSector !== 'todos') {
+      const allowedCats = userSector === 'pereciveis'
+        ? ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis']
+        : ['aves', 'suino', 'bovino', 'pescado'];
+      monthlyProducts = monthlyProducts.filter(p => allowedCats.includes(p.category));
+    }
 
     const monthsNames = {
       '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
@@ -541,9 +569,7 @@ window.BrigadaResumoMensal = {
 
     const allSectors = [
       { id: 'acougue', name: '🥩 Açougue', filter: (p) => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category) },
-      { id: 'padaria', name: '🍞 Padaria', filter: (p) => p.category === 'padaria' },
-      { id: 'hortifruti', name: '🥦 Hortifruti', filter: (p) => p.category === 'hortifruti' },
-      { id: 'mercearia', name: '🛒 Mercearia / Perecíveis', filter: (p) => ['mercearia', 'laticinios', 'frios'].includes(p.category) || (!['aves', 'suino', 'bovino', 'pescado', 'padaria', 'hortifruti'].includes(p.category)) }
+      { id: 'pereciveis', name: '🧊 Perecíveis', filter: (p) => ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category) }
     ];
 
     const sectorsToProcess = targetSector === 'all'
