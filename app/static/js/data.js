@@ -1229,16 +1229,34 @@ window.BrigadaData = {
     try {
       const res = await fetch('/api/produtos-sem-nota');
       if (!res.ok) throw new Error('Falha ao buscar produtos sem nota');
-      this.produtosSemNota = await res.json();
+      const apiItems = await res.json();
+      const cached = localStorage.getItem('brigada_produtos_sem_nota');
+      const localData = cached ? JSON.parse(cached) : (this.iogurtesDb || []);
+      const seenIds = new Set(apiItems.map(i => String(i.id || i.plu)));
+      const merged = [...apiItems];
+      localData.forEach(item => {
+        const key = String(item.id || item.plu);
+        if (!seenIds.has(key)) {
+          seenIds.add(key);
+          merged.push(item);
+        }
+      });
+      this.produtosSemNota = merged;
       return this.produtosSemNota;
     } catch (err) {
       console.error('Erro na API ao carregar produtos sem nota (usando fallback local):', err);
       const cached = localStorage.getItem('brigada_produtos_sem_nota');
-      this.produtosSemNota = cached ? JSON.parse(cached) : [    // ── IOGURTES & BEBIDAS LÁCTEAS (CADASTRADOS VIA ANÁLISE DE ESTOQUE) ──
-  {
-    id: 5000,
-    plu: '271',
-    name: 'BEB LACT BAT GUT BETANIA SCH 900G AMEIXA',
+      this.produtosSemNota = cached ? JSON.parse(cached) : (this.iogurtesDb || []);
+      return this.produtosSemNota;
+    }
+  },
+
+  // ── BASE DE DADOS LOCAL DE IOGURTES & BEBIDAS LÁCTEAS ──────────────────────────────
+  iogurtesDb: [
+    {
+      id: 5000,
+      plu: '271',
+      name: 'BEB LACT BAT GUT BETANIA SCH 900G AMEIXA',
     category: 'iogurtes',
     startDate: daysAgo(5),
     endDate: daysFromNow(15),
@@ -5185,12 +5203,7 @@ window.BrigadaData = {
     supplier: 'Yakult',
     location: 'Gôndola Laticínios',
     quantity: 20,
-    barcode: '7891156076178'
-  },
-];
-      return this.produtosSemNota;
-    }
-  },
+  }],
 
   async addProdutoSemNota(plu, quantity, arrivalDate, signature = null, responsibleName = null) {
     const creatorEmail = window.BrigadaAuth.currentUser?.email || 'sistema';
