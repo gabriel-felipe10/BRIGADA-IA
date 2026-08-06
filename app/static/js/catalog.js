@@ -37,24 +37,6 @@ window.BrigadaCatalog = {
         'frios': '🥓 Frios',
         'pereciveis': '📦 Perecíveis Gerais'
       }
-    },
-    'padaria': {
-      label: '🍞 Padaria',
-      categories: {
-        'padaria': '🍞 Padaria'
-      }
-    },
-    'hortifruti': {
-      label: '🥬 Hortifruti',
-      categories: {
-        'hortifruti': '🥦 Hortifruti'
-      }
-    },
-    'mercearia': {
-      label: '🛒 Mercearia',
-      categories: {
-        'mercearia': '🛒 Mercearia'
-      }
     }
   },
 
@@ -110,9 +92,6 @@ window.BrigadaCatalog = {
               <option value="todos">🏢 Todos os Setores</option>
               <option value="açougue">🥩 Açougue</option>
               <option value="pereciveis">🧊 Perecíveis</option>
-              <option value="padaria">🍞 Padaria</option>
-              <option value="hortifruti">🥬 Hortifruti</option>
-              <option value="mercearia">🛒 Mercearia</option>
             </select>
 
             <!-- Select 2: Categoria (dinâmico) -->
