@@ -322,7 +322,6 @@ window.BrigadaCatalog = {
           ${!isKiosk ? `<td style="text-align: center;"><input type="checkbox" class="catalog-row-checkbox" value="${p.plu}"></td>` : ''}
           <td data-label="PLU">
             <span class="plu-badge">${p.plu || '—'}</span>
-            ${p.barcode ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Cód: ${p.barcode}</div>` : ''}
           </td>
           <td data-label="Produto" class="product-name">${p.name || '—'}</td>
           <td data-label="Categoria">
