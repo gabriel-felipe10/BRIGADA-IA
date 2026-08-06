@@ -49,16 +49,39 @@ window.BrigadaCatalog = {
   },
 
   getAllowedCatalog() {
-    return window.BrigadaData.catalog || [];
+    const rawCatalog = window.BrigadaData.catalog || [];
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.currentUser?.sector === 'todos';
+    const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
+
+    // Se o usuário pertence a um setor específico e não é SuperAdmin, filtra rigorosamente pelo seu setor
+    if (!isSuperAdmin && userSector !== 'todos' && this.sectorCategoriesMap[userSector]) {
+      const allowedCats = Object.keys(this.sectorCategoriesMap[userSector].categories);
+      return rawCatalog.filter(p => allowedCats.includes(this.normalizeCat(p.category)));
+    }
+    return rawCatalog;
   },
 
   render(container) {
-    const rawCatalog = window.BrigadaData.catalog || [];
+    const isSuperAdmin = window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.currentUser?.sector === 'todos';
     const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
+    const rawCatalog = window.BrigadaData.catalog || [];
+    const catalog = this.getAllowedCatalog();
 
-    // Determina o setor inicial selecionado (se admin ou todos, inicia em todos; caso contrário, no setor do usuário)
+    // Determina as opções de setor visíveis no dropdown
+    let sectorOptionsHTML = '';
+    if (!isSuperAdmin && userSector !== 'todos' && this.sectorCategoriesMap[userSector]) {
+      const secInfo = this.sectorCategoriesMap[userSector];
+      sectorOptionsHTML = `<option value="${userSector}">${secInfo.label}</option>`;
+    } else {
+      sectorOptionsHTML = `
+        <option value="todos">🏢 Todos os Setores</option>
+        <option value="açougue">🥩 Açougue</option>
+        <option value="pereciveis">🧊 Perecíveis</option>
+      `;
+    }
+
     let defaultSector = 'todos';
-    if (userSector !== 'todos' && this.sectorCategoriesMap[userSector]) {
+    if (!isSuperAdmin && userSector !== 'todos' && this.sectorCategoriesMap[userSector]) {
       defaultSector = userSector;
     }
 
@@ -66,10 +89,10 @@ window.BrigadaCatalog = {
       <div class="panel-header">
         <div class="panel-header__left">
           <h2 class="panel-title">📖 Catálogo Base de Produtos</h2>
-          <p class="panel-subtitle">Consulta geral e busca centralizada de produtos por Setor e Categoria</p>
+          <p class="panel-subtitle">Consulta geral e busca de produtos por Setor e Categoria (${!isSuperAdmin && userSector !== 'todos' ? userSector.toUpperCase() : 'TODOS OS SETORES'})</p>
         </div>
         <span id="catalog-count-badge" class="badge badge--ok" style="padding:0.4rem 0.8rem;font-size:0.8rem;">
-          ${rawCatalog.length} produtos
+          ${catalog.length} produtos
         </span>
       </div>
 
@@ -89,9 +112,7 @@ window.BrigadaCatalog = {
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <!-- Select 1: Setor -->
             <select id="catalog-sector-filter" class="form-input" style="min-width: 180px;">
-              <option value="todos">🏢 Todos os Setores</option>
-              <option value="açougue">🥩 Açougue</option>
-              <option value="pereciveis">🧊 Perecíveis</option>
+              ${sectorOptionsHTML}
             </select>
 
             <!-- Select 2: Categoria (dinâmico) -->
@@ -128,6 +149,9 @@ window.BrigadaCatalog = {
 
     // Define setor inicial no select
     sectorSelect.value = defaultSector;
+    if (!isSuperAdmin && userSector !== 'todos' && this.sectorCategoriesMap[userSector]) {
+      sectorSelect.disabled = true; // Trava o setor para usuários não-admin
+    }
 
     // Atualiza opções do dropdown de categoria com base no setor escolhido
     const populateCategoryOptions = (selectedSector) => {
@@ -157,7 +181,10 @@ window.BrigadaCatalog = {
       const chosenSector = sectorSelect.value.toLowerCase();
       const chosenCat = categorySelect.value.toLowerCase();
 
-      const filtered = rawCatalog.filter(p => {
+      // Base da lista respeita rigorosamente a permissão do setor do usuário
+      const baseCatalog = this.getAllowedCatalog();
+
+      const filtered = baseCatalog.filter(p => {
         const normCat = this.normalizeCat(p.category);
 
         // Filtro por Setor
