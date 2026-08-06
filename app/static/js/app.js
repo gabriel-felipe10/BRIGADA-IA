@@ -640,24 +640,6 @@ window.BrigadaRouter = {
               <span>Perecíveis</span>
             </a>
             ` : ''}
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('padaria') ? `
-            <a class="sidebar__link ${activePage === 'padaria' ? 'sidebar__link--active' : ''}" data-page="padaria" href="#">
-              <span class="sidebar__link-icon">🍞</span>
-              <span>Padaria</span>
-            </a>
-            ` : ''}
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
-            <a class="sidebar__link ${activePage === 'hortifruti' ? 'sidebar__link--active' : ''}" data-page="hortifruti" href="#">
-              <span class="sidebar__link-icon">🥦</span>
-              <span>Hortifruti</span>
-            </a>
-            ` : ''}
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('mercearia') ? `
-            <a class="sidebar__link ${activePage === 'mercearia' ? 'sidebar__link--active' : ''}" data-page="mercearia" href="#">
-              <span class="sidebar__link-icon">🛒</span>
-              <span>Mercearia</span>
-            </a>
-            ` : ''}
 
             ${!window.BrigadaAuth.isPromotor() ? `
             <div class="sidebar__section-label">Configurações</div>
@@ -1047,24 +1029,6 @@ window.BrigadaRouter = {
         return;
       }
       window.BrigadaPereciveis.render(container);
-    } else if (page === 'padaria') {
-      if (!window.BrigadaAuth.hasSectorAccess('padaria')) {
-        this.navigate('dashboard');
-        return;
-      }
-      window.BrigadaPadaria.render(container);
-    } else if (page === 'hortifruti') {
-      if (!window.BrigadaAuth.hasSectorAccess('hortifruti')) {
-        this.navigate('dashboard');
-        return;
-      }
-      window.BrigadaHortifruti.render(container);
-    } else if (page === 'mercearia') {
-      if (!window.BrigadaAuth.hasSectorAccess('mercearia')) {
-        this.navigate('dashboard');
-        return;
-      }
-      window.BrigadaMercearia.render(container);
     } else if (page === 'users') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       window.BrigadaUsers.render(container);

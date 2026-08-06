@@ -417,9 +417,6 @@ window.BrigadaNotifications = {
                 <label class="form-label">Selecione o Setor Alvo *</label>
                 <select id="field-banner-target-sector" class="form-input">
                   <option value="açougue">🥩 Açougue</option>
-                  <option value="padaria">🍞 Padaria</option>
-                  <option value="hortifruti">🥬 Hortifruti</option>
-                  <option value="mercearia">🛒 Mercearia</option>
                   <option value="pereciveis">🧊 Perecíveis</option>
                 </select>
               </div>
