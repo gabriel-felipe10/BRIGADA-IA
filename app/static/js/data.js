@@ -696,6 +696,9 @@ window.BrigadaData = {
   // Carrega todos os produtos e usuários do Supabase via backend Flask
   async load() {
     try {
+      // Carrega produtos sem nota (que contém a base de iogurtes cadastrados)
+      await this.loadProdutosSemNota().catch(err => console.warn("Aviso: Falha ao carregar produtos sem nota", err));
+
       const [resProd, resUsers, resCatalog] = await Promise.all([
         fetch('/api/products').then(r => {
           if (!r.ok) throw new Error('Falha ao obter produtos');
@@ -742,7 +745,21 @@ window.BrigadaData = {
         }
       });
 
-      console.log('Dados carregados com sucesso do Supabase via API (mesclado com base local)');
+      // Mescla produtos sem nota (base de iogurtes/laticínios) no catálogo base
+      (this.produtosSemNota || []).forEach(p => {
+        const key = `${p.category}-${p.plu}`;
+        if (!seenCatKeys.has(key)) {
+          seenCatKeys.add(key);
+          this.catalog.push({
+            plu: String(p.plu),
+            name: p.name,
+            category: p.category,
+            barcode: p.barcode || ''
+          });
+        }
+      });
+
+      console.log('Dados carregados com sucesso do Supabase via API (mesclado com base local e sem nota)');
       return true;
     } catch (err) {
       console.warn("Erro ao carregar do Supabase (usando fallback local em memória):", err);
@@ -750,7 +767,7 @@ window.BrigadaData = {
       this.products = PRODUCTS_DB.map(p => this.parseProductCreator(p));
       this.users = [...USERS_DB];
       
-      // Cria catálogo de fallback a partir dos produtos mockados
+      // Cria catálogo de fallback a partir dos produtos mockados e produtos sem nota
       const seenPlus = new Set();
       this.catalog = [];
       this.products.forEach(p => {
@@ -763,6 +780,19 @@ window.BrigadaData = {
           });
         }
       });
+
+      (this.produtosSemNota || []).forEach(p => {
+        if (!seenPlus.has(String(p.plu))) {
+          seenPlus.add(String(p.plu));
+          this.catalog.push({
+            plu: String(p.plu),
+            name: p.name,
+            category: p.category,
+            barcode: p.barcode || ''
+          });
+        }
+      });
+
       return false;
     }
   },
