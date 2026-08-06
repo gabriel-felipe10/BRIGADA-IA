@@ -1090,6 +1090,11 @@ window.BrigadaRouter = {
         container.innerHTML = `<div class="empty-state">Erro ao carregar resumo mensal</div>`;
       }
     }
+
+    // Render active announcement banners for the user
+    if (window.BrigadaBanners) {
+      window.BrigadaBanners.renderUserBanners(container);
+    }
   },
 
   renderAdminPanel(container) {
@@ -1292,6 +1297,117 @@ window.BrigadaRouter = {
     for (let c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
   },
+};
+
+// ── Banners & Recados Display Engine ───────────────────────────────────────
+window.BrigadaBanners = {
+  async renderUserBanners(container) {
+    const user = window.BrigadaAuth.currentUser;
+    if (!user || !container) return;
+
+    try {
+      const rawBanners = await window.BrigadaData.loadSettings('banners');
+      const banners = Array.isArray(rawBanners) ? rawBanners : [];
+      if (banners.length === 0) return;
+
+      const activeBanners = banners.filter(b => {
+        if (!b.active) return false;
+        if (sessionStorage.getItem(`dismissed_banner_${b.id}`)) return false;
+
+        // Target matching
+        if (b.targetType === 'all') return true;
+        if (b.targetType === 'sector') {
+          if (!b.targetValue) return true;
+          return user.sector === 'todos' || user.sector === b.targetValue;
+        }
+        if (b.targetType === 'user') {
+          return String(user.id) === String(b.targetValue) || user.email === b.targetValue;
+        }
+        return false;
+      });
+
+      if (activeBanners.length === 0) return;
+
+      let wrapper = container.querySelector('#app-announcement-banners');
+      if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.id = 'app-announcement-banners';
+        wrapper.style.cssText = 'margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; width: 100%;';
+        container.insertBefore(wrapper, container.firstChild);
+      } else {
+        wrapper.innerHTML = '';
+      }
+
+      wrapper.innerHTML = activeBanners.map(b => this._renderBannerCard(b)).join('');
+
+      wrapper.querySelectorAll('.btn-close-banner').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const card = e.currentTarget.closest('.announcement-banner');
+          const bannerId = btn.dataset.id;
+          sessionStorage.setItem(`dismissed_banner_${bannerId}`, 'true');
+          if (card) {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-10px)';
+            setTimeout(() => card.remove(), 250);
+          }
+        });
+      });
+    } catch (err) {
+      console.warn('Erro ao carregar banners de aviso:', err);
+    }
+  },
+
+  _renderBannerCard(b) {
+    const typeConfig = {
+      info:    { icon: 'ℹ️', color: '#818cf8', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)' },
+      warning: { icon: '⚠️', color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)' },
+      alert:   { icon: '🚨', color: '#f87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' },
+      success: { icon: '✅', color: '#4ade80', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.3)' }
+    }[b.type || 'info'] || { icon: '📌', color: '#818cf8', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)' };
+
+    let targetLabel = '🌐 Todos os Usuários';
+    if (b.targetType === 'sector') {
+      const sectorNames = { açougue: '🥩 Açougue', padaria: '🍞 Padaria', hortifruti: '🥬 Hortifruti', mercearia: '🛒 Mercearia', pereciveis: '🧊 Perecíveis' };
+      targetLabel = `🏢 Setor: ${sectorNames[b.targetValue] || b.targetValue}`;
+    } else if (b.targetType === 'user') {
+      targetLabel = `👤 Exclusivo para Você`;
+    }
+
+    return `
+      <div class="announcement-banner" style="
+        background: ${typeConfig.bg};
+        border: 1px solid ${typeConfig.border};
+        border-left: 4px solid ${typeConfig.color};
+        border-radius: 12px; padding: 1.1rem 1.25rem;
+        position: relative; transition: all 0.3s ease;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15); backdrop-filter: blur(10px);
+        animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      ">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+          <div style="display: flex; gap: 0.85rem; align-items: flex-start; flex: 1;">
+            <span style="font-size: 1.5rem; line-height: 1; flex-shrink: 0; margin-top: 2px;">${typeConfig.icon}</span>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">${b.title || 'Recado Importante'}</h4>
+                <span class="badge" style="font-size: 0.68rem; padding: 0.15rem 0.5rem; background: ${typeConfig.color}25; color: ${typeConfig.color}; border: 1px solid ${typeConfig.color}40;">
+                  ${targetLabel}
+                </span>
+              </div>
+              <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; white-space: pre-line;">${b.message || ''}</div>
+              ${b.createdAt ? `<div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 0.5rem;">Publicado em ${new Date(b.createdAt).toLocaleDateString('pt-BR')} ${b.authorName ? 'por ' + b.authorName : ''}</div>` : ''}
+            </div>
+          </div>
+          <button type="button" class="btn-close-banner" data-id="${b.id}" title="Fechar recado" style="
+            background: transparent; border: none; color: var(--text-tertiary); font-size: 1.2rem;
+            cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px; line-height: 1;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.color='var(--text-primary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.color='var(--text-tertiary)'; this.style.background='transparent';">
+            ✕
+          </button>
+        </div>
+      </div>
+    `;
+  }
 };
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────

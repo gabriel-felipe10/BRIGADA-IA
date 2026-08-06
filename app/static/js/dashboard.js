@@ -13,13 +13,17 @@ window.BrigadaDashboard = {
   getAllowedProducts() {
     let products = window.BrigadaData.products;
     if (window.BrigadaAuth.currentUser) {
-      const email = window.BrigadaAuth.currentUser.email.toLowerCase();
-      const isRestricted = !(email === 'admin@brigada.com' || email === 'marcos@brigada.com' || window.BrigadaAuth.isSuperAdmin());
-      if (isRestricted) {
-        const sector = window.BrigadaAuth.currentUser.sector;
-        if (sector === 'açougue') {
-          products = products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
-        }
+      const sector = window.BrigadaAuth.currentUser.sector;
+      if (sector === 'açougue') {
+        products = products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
+      } else if (sector === 'pereciveis') {
+        products = products.filter(p => ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category));
+      } else if (sector === 'padaria') {
+        products = products.filter(p => p.category === 'padaria');
+      } else if (sector === 'hortifruti') {
+        products = products.filter(p => p.category === 'hortifruti');
+      } else if (sector === 'mercearia') {
+        products = products.filter(p => p.category === 'mercearia');
       }
     }
     return products;

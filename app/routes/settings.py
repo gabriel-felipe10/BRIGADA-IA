@@ -1,7 +1,9 @@
 import json
 import urllib.request
 import urllib.error
+import urllib.parse
 import base64
+import time
 from py_vapid import Vapid
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from pywebpush import webpush, WebPushException
@@ -14,19 +16,9 @@ settings_bp = Blueprint("settings_api", __name__, url_prefix="/api/settings")
 DEFAULT_SETTINGS = {
     "whatsapp": {
         "enabled": True,
-        # Instância Principal (Evolution API)
-        "apiUrl": "https://evolution.rotaflash.com",
-        "instanceId": "rotaflash-instance",
-        "apiToken": "rotaflash-evolution-key-prod",
-        "apiUser": "admin",
-        "apiPassword": "Sh0wT1m304@@",
-        
-        # Instância de Fallback (Pastorini API)
-        "enabledFallback": True,
-        "apiUrlFallback": "https://api.whatsapp.com",
-        "instanceIdFallback": "instance-fallback",
-        "apiTokenFallback": "",
-        
+        "apiUrl": "https://papi.seu-servidor.com",
+        "instanceId": "papi",
+        "apiToken": "",
         "alertDaysBefore": 3,
         "alertTime": "08:00",
         "alertPhone": "",
@@ -35,27 +27,6 @@ DEFAULT_SETTINGS = {
         "reminderTime": "09:00"
     }
 }
-
-def _evolution_headers(api_token: str, api_user: str = "", api_password: str = "", content_type: str = "") -> dict:
-    """Gera os headers necessários para bypassar o Cloudflare e autenticar na Evolution API."""
-    headers = {
-        "apikey": api_token,
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0.0.0 Safari/537.36"
-        ),
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-        "Origin": "https://evolution.rotaflash.com",
-        "Referer": "https://evolution.rotaflash.com/",
-    }
-    if api_user and api_password:
-        credentials = base64.b64encode(f"{api_user}:{api_password}".encode()).decode()
-        headers["Authorization"] = f"Basic {credentials}"
-    if content_type:
-        headers["Content-Type"] = content_type
-    return headers
 
 @settings_bp.route("/<key>", methods=["GET"])
 def get_settings(key):
@@ -74,6 +45,15 @@ def get_settings(key):
                     data = DEFAULT_SETTINGS.get(key, {})
             else:
                 data = val
+
+            # Clean up old Evolution API references if present in DB
+            if key == "whatsapp" and isinstance(data, dict):
+                api_url = str(data.get("apiUrl", ""))
+                instance_id = str(data.get("instanceId", ""))
+                if "evolution" in api_url.lower() or "rotaflash-instance" in instance_id.lower():
+                    data["apiUrl"] = DEFAULT_SETTINGS["whatsapp"]["apiUrl"]
+                    data["instanceId"] = DEFAULT_SETTINGS["whatsapp"]["instanceId"]
+
             return jsonify(data)
         else:
             return jsonify(DEFAULT_SETTINGS.get(key, {}))
@@ -94,10 +74,8 @@ def save_settings(key):
                 if existing_res.data:
                     existing_val = existing_res.data[0]["value"]
                     existing = json.loads(existing_val) if isinstance(existing_val, str) else existing_val
-                    # Preservar credenciais que não devem ser sobrescritas com vazio
-                    for sensitive_field in ("apiUser", "apiPassword", "apiUserFallback", "apiPasswordFallback"):
-                        if not data.get(sensitive_field) and existing.get(sensitive_field):
-                            data[sensitive_field] = existing[sensitive_field]
+                    if not data.get("apiToken") and existing.get("apiToken"):
+                        data["apiToken"] = existing["apiToken"]
             except Exception as merge_err:
                 logger.warning("Não foi possível mesclar credenciais existentes: {}", merge_err)
 
@@ -110,26 +88,19 @@ def save_settings(key):
 
 @settings_bp.route("/whatsapp/test", methods=["POST"])
 def test_whatsapp():
-    """Envia uma notificação de teste utilizando as configurações providas."""
+    """Envia uma notificação de teste utilizando as configurações da Pastorini API."""
     try:
         config = request.get_json(force=True)
         enabled = config.get("enabled", False)
         api_url = config.get("apiUrl", "").strip()
         instance_id = config.get("instanceId", "").strip()
         api_token = config.get("apiToken", "").strip()
-        
-        # Fallback configs
-        enabled_fallback = config.get("enabledFallback", False)
-        api_url_fallback = config.get("apiUrlFallback", "").strip()
-        instance_id_fallback = config.get("instanceIdFallback", "").strip()
-        api_token_fallback = config.get("apiTokenFallback", "").strip()
-        
         phone = config.get("alertPhone", "").strip()
 
         if not phone:
             return jsonify({"error": "Telefone de destino é obrigatório para enviar o teste."}), 400
 
-        msg = "🛡️ *BRIGADA-IA* - Teste de Conexão e Alertas WhatsApp. Suas notificações estão configuradas com sucesso!"
+        msg = "🛡️ *BRIGADA-IA* - Teste de Conexão e Alertas WhatsApp (Pastorini API). Suas notificações estão configuradas com sucesso!"
 
         # Se não habilitado ou se for uma URL de mock/exemplo, simulamos
         is_mock = not enabled or "api.whatsapp.com" in api_url or "exemplo" in api_url or not api_url.startswith("http")
@@ -142,75 +113,42 @@ def test_whatsapp():
                 "message": f"Mensagem de teste simulada enviada com sucesso para {phone}!"
             })
 
-        # Tenta enviar com a principal primeiro (Evolution API)
         try:
-            clean_phone = "".join(filter(str.isdigit, phone))
+            normalized = _normalize_phone_br(phone)
+            if not normalized:
+                return jsonify({"error": f"Formato de telefone brasileiro inválido: {phone}. Certifique-se de informar o DDD."}), 400
+
             payload = {
-                "number": clean_phone,
+                "jid": f"{normalized}@s.whatsapp.net",
                 "text": msg
             }
             req_data = json.dumps(payload).encode('utf-8')
             base_url = api_url.rstrip("/")
-            full_url = f"{base_url}/message/sendText/{instance_id}"
-            
+            full_url = f"{base_url}/api/instances/{instance_id}/send-text"
+
             req = urllib.request.Request(
                 full_url,
                 data=req_data,
                 headers={
                     "Content-Type": "application/json",
-                    "apikey": api_token,
-                    "Authorization": f"Bearer {api_token}"
+                    "x-api-key": api_token
                 },
                 method="POST"
             )
             with urllib.request.urlopen(req, timeout=8) as response:
                 resp_data = response.read().decode('utf-8')
-                logger.info("WhatsApp de teste enviado com sucesso pela instância principal (Evolution) para {}: {}", phone, resp_data)
+                logger.info("WhatsApp de teste enviado com sucesso pela Pastorini API para {}: {}", phone, resp_data)
                 return jsonify({
                     "success": True,
                     "simulated": False,
-                    "message": f"Mensagem de teste enviada com sucesso (via Instância Principal - Evolution API) para {phone}!"
+                    "message": f"Mensagem de teste enviada com sucesso (via Pastorini API) para {phone}!"
                 })
         except Exception as http_err:
-            logger.warning("Falha ao enviar com a instância principal (Evolution): {}. Tentando fallback...", http_err)
-            
-            # Se a principal falhou, verifica se a de fallback está habilitada (Pastorini API)
-            if enabled_fallback and api_url_fallback and instance_id_fallback:
-                try:
-                    clean_phone = "".join(filter(str.isdigit, phone))
-                    payload = {
-                        "jid": f"{clean_phone}@s.whatsapp.net",
-                        "text": msg + "\n\n*(Nota: Enviado via Instância de Fallback - Pastorini API)*"
-                    }
-                    req_data = json.dumps(payload).encode('utf-8')
-                    base_url_fallback = api_url_fallback.rstrip("/")
-                    full_url_fallback = f"{base_url_fallback}/api/instances/{instance_id_fallback}/send-text"
-                    
-                    req = urllib.request.Request(
-                        full_url_fallback,
-                        data=req_data,
-                        headers={
-                            "Content-Type": "application/json",
-                            "x-api-key": api_token_fallback
-                        },
-                        method="POST"
-                    )
-                    with urllib.request.urlopen(req, timeout=8) as response:
-                        resp_data = response.read().decode('utf-8')
-                        logger.info("WhatsApp de teste enviado com sucesso pela instância de fallback (Pastorini) para {}: {}", phone, resp_data)
-                        return jsonify({
-                            "success": True,
-                            "simulated": False,
-                            "message": f"Mensagem de teste enviada com sucesso (via Instância de Fallback - Pastorini API) para {phone}!"
-                        })
-                except Exception as fallback_err:
-                    logger.warning("Falha na chamada de fallback (Pastorini API): {}", fallback_err)
-                    
-            # Fallback final (simulação) se ambas falharem
+            logger.warning("Falha ao enviar via Pastorini API: {}", http_err)
             return jsonify({
                 "success": True,
                 "simulated": True,
-                "warning": f"Não foi possível conectar com os gateways reais (Erro principal: {str(http_err)}), mas o fluxo foi testado e simulado com sucesso!",
+                "warning": f"Não foi possível conectar com o gateway (Erro: {str(http_err)}), mas o fluxo foi testado e simulado com sucesso!",
                 "message": f"Mensagem de teste simulada enviada para {phone}!"
             })
 
@@ -219,99 +157,52 @@ def test_whatsapp():
         return jsonify({"error": "Erro no servidor ao processar teste", "details": str(e)}), 500
 
 
+# Estado global para simulação do WhatsApp em ambiente local/homologação
+MOCK_WHATSAPP_STATUS = "DISCONNECTED"
+MOCK_QR_GENERATED_AT = 0
+
+
 @settings_bp.route("/whatsapp/instance-status", methods=["GET"])
 def whatsapp_instance_status():
-    """Retorna o status atual da instância do Supabase e busca do gateway correspondente."""
+    """Retorna o status atual da instância do WhatsApp via Pastorini API."""
+    global MOCK_WHATSAPP_STATUS, MOCK_QR_GENERATED_AT
     try:
-        instance_type = request.args.get("type", "primary")
-        
-        # Busca a configuração salva no Supabase
         res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
         row = res.data[0] if res.data else None
-        
+
         if not row:
             config = DEFAULT_SETTINGS["whatsapp"]
         else:
             val = row["value"]
             config = json.loads(val) if isinstance(val, str) else val
-        
-        if instance_type == "fallback":
-            api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
-            instance_id = config.get("instanceIdFallback", "").strip()
-            api_token = config.get("apiTokenFallback", "").strip()
-            api_user = config.get("apiUserFallback", "").strip()
-            api_password = config.get("apiPasswordFallback", "").strip()
-        else:
-            api_url = config.get("apiUrl", "").strip().rstrip("/")
-            instance_id = config.get("instanceId", "").strip()
-            api_token = config.get("apiToken", "").strip()
-            api_user = config.get("apiUser", "").strip()
-            api_password = config.get("apiPassword", "").strip()
-        
+
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
+
         if not api_url or not instance_id:
             return jsonify({"status": "DISCONNECTED", "message": "Configurações incompletas."})
-            
-        # Se for a instância principal (Evolution API)
-        if instance_type == "primary":
-            evo_headers = _evolution_headers(api_token, api_user, api_password)
-            status_url = f"{api_url}/instance/connectionState/{instance_id}"
-            try:
-                req = urllib.request.Request(status_url, headers=evo_headers)
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    status_data = json.loads(response.read().decode('utf-8'))
-                    state = "disconnected"
-                    if isinstance(status_data, dict):
-                        state = status_data.get("instance", {}).get("state") or status_data.get("state", "disconnected")
-                    
-                    if state == "open":
-                        return jsonify({
-                            "success": True,
-                            "status": "CONNECTED",
-                            "details": status_data
-                        })
-                    
-                    # Se não estiver conectado, tenta obter o QR code
-                    connect_url = f"{api_url}/instance/connect/{instance_id}"
-                    conn_req = urllib.request.Request(connect_url, headers=evo_headers)
-                    with urllib.request.urlopen(conn_req, timeout=10) as conn_response:
-                        conn_data = json.loads(conn_response.read().decode('utf-8'))
-                        
-                        # Suportar múltiplos formatos da Evolution API
-                        qr_base64 = (
-                            conn_data.get("qrcode", {}).get("base64")
-                            or conn_data.get("base64")
-                            or conn_data.get("qrcode", {}).get("base64Image")
-                        )
-                        
-                        if qr_base64:
-                            if not qr_base64.startswith("data:"):
-                                qr_base64 = f"data:image/png;base64,{qr_base64}"
-                            return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_base64, "details": conn_data})
-                        
-                        # Formato com "code" (texto bruto do QR)
-                        qr_code_text = conn_data.get("code")
-                        if qr_code_text:
-                            import urllib.parse
-                            qr_url = f"https://quickchart.io/qr?text={urllib.parse.quote(qr_code_text)}&size=200"
-                            return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_url, "qrIsUrl": True, "details": conn_data})
-                        
-                        if conn_data.get("status") == "connecting" or state == "connecting":
-                            return jsonify({"success": True, "status": "CONNECTING", "details": conn_data})
-                            
-                    return jsonify({
-                        "success": True,
-                        "status": "DISCONNECTED",
-                        "details": status_data
-                    })
-            except urllib.error.HTTPError as http_err:
-                body = http_err.read().decode('utf-8', errors='ignore')
-                logger.warning("Erro ao consultar status da principal (Evolution API): HTTP {} {} - {}", http_err.code, http_err.reason, body[:300])
-                return jsonify({"success": False, "status": "DISCONNECTED", "error": f"HTTP {http_err.code}: {http_err.reason}", "detail": body[:200]})
-            except Exception as e:
-                logger.warning("Erro ao consultar status da principal (Evolution API): {}", e)
-                return jsonify({"success": False, "status": "DISCONNECTED", "error": str(e)})
 
-        # Caso contrário, Instância de Fallback (Pastorini API)
+        # Verificar se é ambiente de homologação/simulação
+        is_mock = not config.get("enabled") or "api.whatsapp.com" in api_url or "exemplo" in api_url or "seu-servidor" in api_url or not api_url.startswith("http")
+
+        if is_mock:
+            # Simular transição automática de QR_READY para CONNECTED após 8 segundos
+            if MOCK_WHATSAPP_STATUS == "QR_READY" and MOCK_QR_GENERATED_AT > 0:
+                if time.time() - MOCK_QR_GENERATED_AT > 8:
+                    MOCK_WHATSAPP_STATUS = "CONNECTED"
+
+            mock_qr = None
+            if MOCK_WHATSAPP_STATUS == "QR_READY":
+                mock_qr = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="white"/><rect x="0" y="0" width="7" height="7" fill="black"/><rect x="1" y="1" width="5" height="5" fill="white"/><rect x="2" y="2" width="3" height="3" fill="black"/><rect x="22" y="0" width="7" height="7" fill="black"/><rect x="23" y="1" width="5" height="5" fill="white"/><rect x="24" y="2" width="3" height="3" fill="black"/><rect x="0" y="22" width="7" height="7" fill="black"/><rect x="1" y="23" width="5" height="5" fill="white"/><rect x="2" y="24" width="3" height="3" fill="black"/><rect x="18" y="18" width="5" height="5" fill="black"/><rect x="19" y="19" width="3" height="3" fill="white"/><rect x="20" y="20" width="1" height="1" fill="black"/><rect x="6" y="8" width="1" height="14" fill="black"/><rect x="8" y="6" width="14" height="1" fill="black"/><rect x="9" y="9" width="2" height="1" fill="black"/><rect x="13" y="9" width="1" height="3" fill="black"/><rect x="10" y="11" width="2" height="2" fill="black"/><rect x="15" y="10" width="3" height="1" fill="black"/><rect x="8" y="14" width="2" height="2" fill="black"/><rect x="11" y="15" width="3" height="1" fill="black"/><rect x="10" y="17" width="1" height="3" fill="black"/><rect x="13" y="16" width="2" height="2" fill="black"/><rect x="16" y="14" width="2" height="3" fill="black"/><rect x="15" y="12" width="1" height="1" fill="black"/><rect x="9" y="20" width="3" height="2" fill="black"/><rect x="14" y="20" width="2" height="1" fill="black"/><rect x="25" y="9" width="2" height="2" fill="black"/><rect x="22" y="11" width="2" height="1" fill="black"/><rect x="24" y="13" width="3" height="2" fill="black"/><rect x="26" y="16" width="1" height="3" fill="black"/><rect x="9" y="24" width="2" height="3" fill="black"/><rect x="13" y="25" width="3" height="2" fill="black"/></svg>'
+
+            return jsonify({
+                "success": True,
+                "status": MOCK_WHATSAPP_STATUS,
+                "qrImage": mock_qr,
+                "details": {"message": "Modo simulação local (Homologação)"}
+            })
+
         status_url = f"{api_url}/api/instances/{instance_id}/status"
         try:
             req = urllib.request.Request(
@@ -321,15 +212,21 @@ def whatsapp_instance_status():
             with urllib.request.urlopen(req, timeout=5) as response:
                 status_data = json.loads(response.read().decode('utf-8'))
                 status = status_data.get("status", "DISCONNECTED")
-                
+
                 qr_code = None
                 if status == "QR_READY":
-                    qr_url = f"{api_url}/api/instances/{instance_id}/qr"
-                    qr_req = urllib.request.Request(qr_url, headers={"x-api-key": api_token})
-                    with urllib.request.urlopen(qr_req, timeout=5) as qr_res:
-                        qr_data = json.loads(qr_res.read().decode('utf-8'))
-                        qr_code = qr_data.get("qrImage")
-                        
+                    try:
+                        qr_url = f"{api_url}/api/instances/{instance_id}/qr"
+                        qr_req = urllib.request.Request(qr_url, headers={"x-api-key": api_token})
+                        with urllib.request.urlopen(qr_req, timeout=5) as qr_res:
+                            qr_data = json.loads(qr_res.read().decode('utf-8'))
+                            qr_code = qr_data.get("qrImage")
+                    except Exception as qr_err:
+                        logger.info("Endpoint /qr retornou erro ou não existe. Utilizando fallback: {}", qr_err)
+                        raw_qr = status_data.get("qr")
+                        if raw_qr:
+                            qr_code = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={urllib.parse.quote(raw_qr)}"
+
                 return jsonify({
                     "success": True,
                     "status": status,
@@ -339,7 +236,7 @@ def whatsapp_instance_status():
         except Exception as e:
             logger.warning("Erro ao consultar status da instância na API Pastorini: {}", e)
             return jsonify({"success": False, "status": "DISCONNECTED", "error": str(e)})
-            
+
     except Exception as e:
         logger.exception("Erro ao obter status do WhatsApp")
         return jsonify({"error": str(e)}), 500
@@ -347,99 +244,33 @@ def whatsapp_instance_status():
 
 @settings_bp.route("/whatsapp/connect", methods=["POST"])
 def whatsapp_connect():
-    """Tenta criar ou conectar a instância no gateway correspondente."""
+    """Tenta criar ou conectar a instância na Pastorini API."""
+    global MOCK_WHATSAPP_STATUS, MOCK_QR_GENERATED_AT
     try:
-        body = request.get_json(silent=True) or {}
-        instance_type = body.get("type") or request.args.get("type", "primary")
-        
         res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
         row = res.data[0] if res.data else None
-        
+
         if not row:
             config = DEFAULT_SETTINGS["whatsapp"]
         else:
             val = row["value"]
             config = json.loads(val) if isinstance(val, str) else val
-        
-        if instance_type == "fallback":
-            api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
-            instance_id = config.get("instanceIdFallback", "").strip()
-            api_token = config.get("apiTokenFallback", "").strip()
-            api_user = config.get("apiUserFallback", "").strip()
-            api_password = config.get("apiPasswordFallback", "").strip()
-        else:
-            api_url = config.get("apiUrl", "").strip().rstrip("/")
-            instance_id = config.get("instanceId", "").strip()
-            api_token = config.get("apiToken", "").strip()
-            api_user = config.get("apiUser", "").strip()
-            api_password = config.get("apiPassword", "").strip()
+
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
 
         if not api_url or not instance_id:
             return jsonify({"error": "URL ou ID da Instância não informados"}), 400
 
-        # ── Instância Principal (Evolution API) ─────────────────────────────
-        if instance_type == "primary":
-            evo_headers = _evolution_headers(api_token, api_user, api_password)
+        is_mock = not config.get("enabled") or "api.whatsapp.com" in api_url or "exemplo" in api_url or "seu-servidor" in api_url or not api_url.startswith("http")
 
-            # 1) Verificar estado atual — se já conectado, retorna imediatamente
-            try:
-                state_req = urllib.request.Request(
-                    f"{api_url}/instance/connectionState/{instance_id}",
-                    headers=evo_headers
-                )
-                with urllib.request.urlopen(state_req, timeout=10) as r:
-                    state_data = json.loads(r.read().decode("utf-8"))
-                    state = state_data.get("instance", {}).get("state", "disconnected")
-                    if state == "open":
-                        return jsonify({"success": True, "status": "CONNECTED", "details": state_data})
-            except Exception as e:
-                logger.info("Verificação de estado inicial ignorada: {}", e)
+        if is_mock:
+            # Ativar modo QR Code simulado
+            MOCK_WHATSAPP_STATUS = "QR_READY"
+            MOCK_QR_GENERATED_AT = time.time()
+            return whatsapp_instance_status()
 
-            # 2) Solicitar QR Code via /instance/connect/{instance}
-            try:
-                conn_req = urllib.request.Request(
-                    f"{api_url}/instance/connect/{instance_id}",
-                    headers=evo_headers
-                )
-                with urllib.request.urlopen(conn_req, timeout=10) as conn_resp:
-                    conn_data = json.loads(conn_resp.read().decode("utf-8"))
-                    logger.info("Resposta /instance/connect/{}: {}", instance_id, str(conn_data)[:300])
-                    
-                    # Evolution API pode retornar QR em diferentes formatos:
-                    # Formato 1: { "qrcode": { "base64": "..." } }
-                    # Formato 2: { "code": "2@...", "base64": "data:image/png;base64,..." }
-                    # Formato 3: { "base64": "..." }
-                    qr_base64 = (
-                        conn_data.get("qrcode", {}).get("base64")
-                        or conn_data.get("base64")
-                        or conn_data.get("qrcode", {}).get("base64Image")
-                    )
-                    
-                    if qr_base64:
-                        # Garantir prefixo data URI
-                        if not qr_base64.startswith("data:"):
-                            qr_base64 = f"data:image/png;base64,{qr_base64}"
-                        return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_base64, "details": conn_data})
-                    
-                    # Formato 4: "code" contém o texto do QR bruto — gerar imagem via URL do QR
-                    qr_code_text = conn_data.get("code")
-                    if qr_code_text:
-                        # Usar API pública para gerar QR como imagem
-                        import urllib.parse
-                        qr_url = f"https://quickchart.io/qr?text={urllib.parse.quote(qr_code_text)}&size=200"
-                        logger.info("QR Code text recebido, usando QuickChart para gerar imagem")
-                        return jsonify({"success": True, "status": "QR_READY", "qrImage": qr_url, "qrIsUrl": True, "details": conn_data})
-                    
-                    return jsonify({"success": True, "status": "CONNECTING", "details": conn_data})
-            except urllib.error.HTTPError as http_err:
-                body = http_err.read().decode("utf-8", errors="ignore")
-                logger.warning("Erro ao conectar instância principal (Evolution): HTTP {} - {}", http_err.code, body[:300])
-                return jsonify({"error": f"HTTP {http_err.code}: {http_err.reason} — {body[:200]}", "success": False})
-            except Exception as e:
-                logger.exception("Erro ao conectar instância principal (Evolution)")
-                return jsonify({"error": str(e), "success": False})
-
-        # ── Instância de Fallback (Pastorini API) ───────────────────────────
         create_url = f"{api_url}/api/instances"
         payload = {"id": instance_id}
         req_data = json.dumps(payload).encode("utf-8")
@@ -452,11 +283,10 @@ def whatsapp_connect():
             )
             with urllib.request.urlopen(req, timeout=6) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
-                logger.info("Instância fallback {} criada/iniciada: {}", instance_id, res_data)
+                logger.info("Instância {} criada/iniciada na Pastorini API: {}", instance_id, res_data)
         except Exception as e:
-            logger.info("Tentativa de criação de instância fallback retornou: {}", e)
+            logger.info("Tentativa de criação de instância retornou: {}", e)
 
-        request.args = {"type": instance_type}
         return whatsapp_instance_status()
     except Exception as e:
         logger.exception("Erro ao tentar conectar WhatsApp")
@@ -465,55 +295,31 @@ def whatsapp_connect():
 
 @settings_bp.route("/whatsapp/disconnect", methods=["POST"])
 def whatsapp_disconnect():
-    """Realiza o logout/desconexão da instância no gateway correspondente."""
+    """Realiza o logout/desconexão da instância na Pastorini API."""
+    global MOCK_WHATSAPP_STATUS
     try:
-        body = request.get_json(silent=True) or {}
-        instance_type = body.get("type") or request.args.get("type", "primary")
-        
         res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
         row = res.data[0] if res.data else None
-        
+
         if not row:
             config = DEFAULT_SETTINGS["whatsapp"]
         else:
             val = row["value"]
             config = json.loads(val) if isinstance(val, str) else val
-        
-        if instance_type == "fallback":
-            api_url = config.get("apiUrlFallback", "").strip().rstrip("/")
-            instance_id = config.get("instanceIdFallback", "").strip()
-            api_token = config.get("apiTokenFallback", "").strip()
-            api_user = config.get("apiUserFallback", "").strip()
-            api_password = config.get("apiPasswordFallback", "").strip()
-        else:
-            api_url = config.get("apiUrl", "").strip().rstrip("/")
-            instance_id = config.get("instanceId", "").strip()
-            api_token = config.get("apiToken", "").strip()
-            api_user = config.get("apiUser", "").strip()
-            api_password = config.get("apiPassword", "").strip()
+
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
 
         if not api_url or not instance_id:
             return jsonify({"error": "Configurações incompletas"}), 400
-            
-        # Se for instância principal (Evolution API)
-        if instance_type == "primary":
-            evo_headers = _evolution_headers(api_token, api_user, api_password)
-            logout_url = f"{api_url}/instance/logout/{instance_id}"
-            try:
-                req = urllib.request.Request(logout_url, headers=evo_headers, method="DELETE")
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    res_data = json.loads(response.read().decode("utf-8"))
-                    logger.info("Instância principal (Evolution API) {} desconectada: {}", instance_id, res_data)
-                return jsonify({"success": True, "message": "Instância principal desconectada com sucesso."})
-            except urllib.error.HTTPError as http_err:
-                body = http_err.read().decode("utf-8", errors="ignore")
-                logger.warning("Erro ao desconectar instância principal (Evolution): HTTP {} - {}", http_err.code, body[:300])
-                return jsonify({"error": f"HTTP {http_err.code}: {http_err.reason} — {body[:200]}"}), 500
-            except Exception as e:
-                logger.exception("Erro ao desconectar instância principal (Evolution API)")
-                return jsonify({"error": str(e)}), 500
 
-        # Caso contrário, Instância de Fallback (Pastorini API)
+        is_mock = not config.get("enabled") or "api.whatsapp.com" in api_url or "exemplo" in api_url or "seu-servidor" in api_url or not api_url.startswith("http")
+
+        if is_mock:
+            MOCK_WHATSAPP_STATUS = "DISCONNECTED"
+            return jsonify({"success": True, "message": "Instância desconectada com sucesso."})
+
         logout_url = f"{api_url}/api/instances/{instance_id}/logout"
         req = urllib.request.Request(
             logout_url,
@@ -522,12 +328,110 @@ def whatsapp_disconnect():
         )
         with urllib.request.urlopen(req, timeout=6) as response:
             res_data = json.loads(response.read().decode('utf-8'))
-            logger.info("Instância {} desconectada: {}", instance_id, res_data)
-            
+            logger.info("Instância {} desconectada da Pastorini API: {}", instance_id, res_data)
+
         return jsonify({"success": True, "message": "Instância desconectada com sucesso."})
     except Exception as e:
         logger.exception("Erro ao desconectar instância de WhatsApp")
         return jsonify({"error": str(e)}), 500
+
+
+def _normalize_phone_br(phone):
+    """Normaliza número de telefone brasileiro para o formato 55XXXXXXXXXXX."""
+    digits = ''.join(filter(str.isdigit, str(phone)))
+    if not digits:
+        return None
+    # Já tem código do país (55) e pelo menos 12 dígitos
+    if digits.startswith('55') and len(digits) >= 12:
+        return digits
+    # Tem DDD + número (10 ou 11 dígitos) — adiciona 55
+    if len(digits) >= 10:
+        return '55' + digits
+    # Muito curto para normalizar
+    return None
+
+
+@settings_bp.route("/whatsapp/broadcast", methods=["POST"])
+def whatsapp_broadcast():
+    """Envia uma mensagem para múltiplos destinatários via Pastorini API."""
+    try:
+        data = request.get_json(force=True)
+        phones = data.get("phones", [])
+        message = data.get("message", "").strip()
+
+        if not phones:
+            return jsonify({"error": "Nenhum destinatário informado."}), 400
+        if not message:
+            return jsonify({"error": "Mensagem não pode estar vazia."}), 400
+
+        # Carregar configurações do WhatsApp
+        res = supabase.table("settings").select("value").eq("key", "whatsapp").execute()
+        row = res.data[0] if res.data else None
+        if not row:
+            config = DEFAULT_SETTINGS["whatsapp"]
+        else:
+            val = row["value"]
+            config = json.loads(val) if isinstance(val, str) else val
+
+        api_url = config.get("apiUrl", "").strip().rstrip("/")
+        instance_id = config.get("instanceId", "").strip()
+        api_token = config.get("apiToken", "").strip()
+
+        is_mock = not config.get("enabled") or "api.whatsapp.com" in api_url or not api_url.startswith("http")
+
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        for phone in phones:
+            normalized = _normalize_phone_br(phone)
+            if not normalized:
+                error_count += 1
+                errors.append(f"Número inválido: {phone}")
+                continue
+
+            if is_mock:
+                success_count += 1
+                continue
+
+            try:
+                payload = {
+                    "jid": f"{normalized}@s.whatsapp.net",
+                    "text": message
+                }
+                req_data = json.dumps(payload).encode('utf-8')
+                full_url = f"{api_url}/api/instances/{instance_id}/send-text"
+                req = urllib.request.Request(
+                    full_url,
+                    data=req_data,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": api_token
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    response.read()
+                success_count += 1
+            except Exception as send_err:
+                error_count += 1
+                errors.append(f"{phone}: {str(send_err)}")
+                logger.warning("Erro ao enviar broadcast para {}: {}", phone, send_err)
+
+            # Delay entre mensagens para evitar rate-limiting
+            time.sleep(0.5)
+
+        return jsonify({
+            "success": True,
+            "simulated": is_mock,
+            "sent": success_count,
+            "failed": error_count,
+            "errors": errors[:10],
+            "message": f"Disparo concluído: {success_count} enviada(s), {error_count} erro(s)." + (" (Modo simulação)" if is_mock else "")
+        })
+    except Exception as e:
+        logger.exception("Erro ao processar broadcast")
+        return jsonify({"error": "Erro ao processar disparo em massa", "details": str(e)}), 500
 
 
 def get_or_create_vapid_keys():

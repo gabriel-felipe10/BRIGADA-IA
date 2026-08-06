@@ -283,6 +283,7 @@ window.BrigadaConciliacao = {
 
       const sectorCategories = {
         'açougue': ['aves', 'suino', 'bovino', 'pescado'],
+        'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'],
         'padaria': ['padaria'],
         'hortifruti': ['hortifruti'],
         'mercearia': ['mercearia']
@@ -438,6 +439,7 @@ window.BrigadaConciliacao = {
 
     const sectorCategories = {
       'açougue': ['aves', 'suino', 'bovino', 'pescado'],
+      'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'],
       'padaria': ['padaria'],
       'hortifruti': ['hortifruti'],
       'mercearia': ['mercearia']
@@ -670,6 +672,12 @@ window.BrigadaConciliacao = {
         { value: 'bovino', label: '🐮 Bovino' },
         { value: 'pescado', label: '🐟 Pescado' }
       ],
+      'pereciveis': [
+        { value: 'iogurtes', label: '🍦 Iogurtes' },
+        { value: 'laticinios', label: '🧀 Laticínios' },
+        { value: 'frios', label: '🥓 Frios' },
+        { value: 'pereciveis', label: '🍎 Perecíveis' }
+      ],
       'padaria': [
         { value: 'padaria', label: '🍞 Padaria' }
       ],
@@ -681,12 +689,11 @@ window.BrigadaConciliacao = {
       ]
     };
 
-
-
     let categoriesToShow = [];
     if (userSector === 'todos' || window.BrigadaAuth.isSuperAdmin()) {
       categoriesToShow = [
         ...sectorCategories['açougue'],
+        ...sectorCategories['pereciveis'],
         ...sectorCategories['padaria'],
         ...sectorCategories['hortifruti'],
         ...sectorCategories['mercearia']

@@ -11,26 +11,33 @@ window.BrigadaProductList = {
   // Load from localStorage or seed from local database
   load() {
     const stored = localStorage.getItem('master-plu-registry');
+    let currentList = [];
     if (stored) {
-      this.registry = JSON.parse(stored);
-    } else {
-      // Seed from products in data.js
-      const seed = window.BrigadaData.products || [];
-      const seen = new Set();
-      seed.forEach(p => {
-        // Only import meat categories initially
-        if (['aves', 'suino', 'bovino', 'pescado'].includes(p.category)) {
-          const key = `${p.category}-${p.plu}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            this.registry.push({
-              plu: p.plu,
-              name: p.name,
-              category: p.category
-            });
-          }
+      currentList = JSON.parse(stored);
+    }
+    
+    // Seed and sync from products in data.js
+    const seed = window.BrigadaData.products || [];
+    const mapByPlu = new Map(currentList.map(item => [item.plu, item]));
+    
+    let updated = false;
+    seed.forEach(p => {
+      if (mapByPlu.has(p.plu)) {
+        const item = mapByPlu.get(p.plu);
+        if (item.category !== p.category) {
+          item.category = p.category;
+          updated = true;
         }
-      });
+      } else {
+        const newItem = { plu: p.plu, name: p.name, category: p.category };
+        currentList.push(newItem);
+        mapByPlu.set(p.plu, newItem);
+        updated = true;
+      }
+    });
+
+    this.registry = currentList;
+    if (!stored || updated) {
       this.save();
     }
   },
@@ -119,6 +126,36 @@ window.BrigadaProductList = {
             </div>
           </div>
 
+          <!-- IOGURTES -->
+          <div class="category-list-card glass-panel" style="padding: 1.25rem; background: rgba(255,255,255,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">
+              <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary);">🍦 Iogurtes</h3>
+              <span class="badge" id="badge-iogurtes" style="background:rgba(99,102,241,0.15); color:#6366f1; border-radius:10px; padding:2px 8px; font-size:0.75rem; font-weight:700;">0</span>
+            </div>
+            <div class="plu-items-list" id="list-iogurtes" style="display:flex; flex-direction:column; gap:0.75rem; max-height:400px; overflow-y:auto; padding-right:4px;">
+            </div>
+          </div>
+
+          <!-- LATICÍNIOS -->
+          <div class="category-list-card glass-panel" style="padding: 1.25rem; background: rgba(255,255,255,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">
+              <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary);">🧀 Laticínios</h3>
+              <span class="badge" id="badge-laticinios" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-radius:10px; padding:2px 8px; font-size:0.75rem; font-weight:700;">0</span>
+            </div>
+            <div class="plu-items-list" id="list-laticinios" style="display:flex; flex-direction:column; gap:0.75rem; max-height:400px; overflow-y:auto; padding-right:4px;">
+            </div>
+          </div>
+
+          <!-- FRIOS -->
+          <div class="category-list-card glass-panel" style="padding: 1.25rem; background: rgba(255,255,255,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">
+              <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary);">🥓 Frios</h3>
+              <span class="badge" id="badge-frios" style="background:rgba(239,68,68,0.15); color:#ef4444; border-radius:10px; padding:2px 8px; font-size:0.75rem; font-weight:700;">0</span>
+            </div>
+            <div class="plu-items-list" id="list-frios" style="display:flex; flex-direction:column; gap:0.75rem; max-height:400px; overflow-y:auto; padding-right:4px;">
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -148,6 +185,8 @@ window.BrigadaProductList = {
                     <option value="suino">🐷 Suíno</option>
                     <option value="bovino">🐮 Bovino</option>
                     <option value="pescado">🐟 Pescados</option>
+                    <option value="laticinios">🧀 Laticínios</option>
+                    <option value="frios">🥓 Frios</option>
                   </select>
               </div>
             </form>
@@ -177,7 +216,10 @@ window.BrigadaProductList = {
       aves: filtered.filter(item => item.category === 'aves').sort((a, b) => a.name.localeCompare(b.name)),
       suino: filtered.filter(item => item.category === 'suino').sort((a, b) => a.name.localeCompare(b.name)),
       bovino: filtered.filter(item => item.category === 'bovino').sort((a, b) => a.name.localeCompare(b.name)),
-      pescado: filtered.filter(item => item.category === 'pescado').sort((a, b) => a.name.localeCompare(b.name))
+      pescado: filtered.filter(item => item.category === 'pescado').sort((a, b) => a.name.localeCompare(b.name)),
+      iogurtes: filtered.filter(item => item.category === 'iogurtes').sort((a, b) => a.name.localeCompare(b.name)),
+      laticinios: filtered.filter(item => item.category === 'laticinios').sort((a, b) => a.name.localeCompare(b.name)),
+      frios: filtered.filter(item => item.category === 'frios').sort((a, b) => a.name.localeCompare(b.name))
     };
 
     // Update badges
@@ -185,17 +227,26 @@ window.BrigadaProductList = {
     const badgeSuino = container.querySelector('#badge-suino');
     const badgeBovino = container.querySelector('#badge-bovino');
     const badgePescado = container.querySelector('#badge-pescado');
+    const badgeIogurtes = container.querySelector('#badge-iogurtes');
+    const badgeLaticinios = container.querySelector('#badge-laticinios');
+    const badgeFrios = container.querySelector('#badge-frios');
 
     if (badgeAves) badgeAves.textContent = grouped.aves.length;
     if (badgeSuino) badgeSuino.textContent = grouped.suino.length;
     if (badgeBovino) badgeBovino.textContent = grouped.bovino.length;
     if (badgePescado) badgePescado.textContent = grouped.pescado.length;
+    if (badgeIogurtes) badgeIogurtes.textContent = grouped.iogurtes.length;
+    if (badgeLaticinios) badgeLaticinios.textContent = grouped.laticinios.length;
+    if (badgeFrios) badgeFrios.textContent = grouped.frios.length;
 
     // Update HTML lists
     const listAves = container.querySelector('#list-aves');
     const listSuino = container.querySelector('#list-suino');
     const listBovino = container.querySelector('#list-bovino');
     const listPescado = container.querySelector('#list-pescado');
+    const listIogurtes = container.querySelector('#list-iogurtes');
+    const listLaticinios = container.querySelector('#list-laticinios');
+    const listFrios = container.querySelector('#list-frios');
 
     if (listAves) {
       listAves.innerHTML = grouped.aves.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-tertiary); text-align:center; padding:1rem 0;">Nenhum produto cadastrado</p>' : 
@@ -212,6 +263,18 @@ window.BrigadaProductList = {
     if (listPescado) {
       listPescado.innerHTML = grouped.pescado.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-tertiary); text-align:center; padding:1rem 0;">Nenhum produto cadastrado</p>' : 
         grouped.pescado.map(item => this.renderPLURowHTML(item, canManage)).join('');
+    }
+    if (listIogurtes) {
+      listIogurtes.innerHTML = grouped.iogurtes.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-tertiary); text-align:center; padding:1rem 0;">Nenhum produto cadastrado</p>' : 
+        grouped.iogurtes.map(item => this.renderPLURowHTML(item, canManage)).join('');
+    }
+    if (listLaticinios) {
+      listLaticinios.innerHTML = grouped.laticinios.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-tertiary); text-align:center; padding:1rem 0;">Nenhum produto cadastrado</p>' : 
+        grouped.laticinios.map(item => this.renderPLURowHTML(item, canManage)).join('');
+    }
+    if (listFrios) {
+      listFrios.innerHTML = grouped.frios.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-tertiary); text-align:center; padding:1rem 0;">Nenhum produto cadastrado</p>' : 
+        grouped.frios.map(item => this.renderPLURowHTML(item, canManage)).join('');
     }
   },
 

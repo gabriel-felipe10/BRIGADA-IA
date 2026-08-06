@@ -3810,4 +3810,22 @@ input[type="checkbox"]:focus-visible {
   color: #ffffff;
 }
 
+/* Announcement Banners System */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+.announcement-banner {
+  transition: all 0.3s ease;
+}
+
+.announcement-banner:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2) !important;
+}

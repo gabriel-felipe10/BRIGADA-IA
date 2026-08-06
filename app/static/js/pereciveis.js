@@ -46,10 +46,12 @@ window.BrigadaPereciveis = {
       <input type="file" id="import-file-input-pereciveis" accept=".csv" style="display:none;">
 
       <div class="glass-panel" style="padding: 1.5rem; margin-top: 1rem;">
-  <div class="category-tabs" id="category-tabs-pereciveis">
+        <div class="category-tabs" id="category-tabs-pereciveis">
           <button class="cat-tab cat-tab--active" data-cat="all">🏪 Todos</button>
+          <button class="cat-tab" data-cat="iogurtes">🍦 Iogurtes</button>
           <button class="cat-tab" data-cat="laticinios">🧀 Laticínios</button>
           <button class="cat-tab" data-cat="frios">🥓 Frios</button>
+          <button class="cat-tab" data-cat="pereciveis">🍎 Perecíveis</button>
         </div>
 
         <div class="toolbar">
@@ -93,8 +95,10 @@ window.BrigadaPereciveis = {
                   <label class="form-label">Categoria *</label>
                   <select id="field-category-pereciveis" class="form-input" required>
                     <option value="">Selecione...</option>
+                    <option value="iogurtes">🍦 Iogurtes</option>
                     <option value="laticinios">🧀 Laticínios</option>
                     <option value="frios">🥓 Frios</option>
+                    <option value="pereciveis">🍎 Perecíveis</option>
                   </select>
                 </div>
               </div>
@@ -207,7 +211,7 @@ window.BrigadaPereciveis = {
 
   getFilteredProducts() {
     let products = window.BrigadaData.products.filter(p => 
-      p.category && ['laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category.toLowerCase())
+      p.category && ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category.toLowerCase())
     );
 
     if (this.currentFilter !== 'all') {
@@ -250,7 +254,7 @@ window.BrigadaPereciveis = {
     if (!wrapper) return;
 
     const products = this.getFilteredProducts();
-    const catMap = { laticinios: '🧀 Laticínios', frios: '🥓 Frios', pereciveis: '🍎 Perecíveis', perecíveis: '🍎 Perecíveis', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti' };
+    const catMap = { iogurtes: '🍦 Iogurtes', laticinios: '🧀 Laticínios', frios: '🥓 Frios', pereciveis: '🍎 Perecíveis', perecíveis: '🍎 Perecíveis' };
     const locMap = { 
       gondola_fria: '❄️ Gôndola Fria', 
       expositor: '🍎 Expositor', 
@@ -566,7 +570,7 @@ window.BrigadaPereciveis = {
         }
 
         const [plu, name, category, endDate, quantity, unit, location, supplier] = parts;
-        if (!['laticinios', 'frios'].includes(category)) {
+        if (!['laticinios', 'frios', 'iogurtes', 'pereciveis', 'perecíveis'].includes(category.toLowerCase())) {
           skipped++;
           continue;
         }

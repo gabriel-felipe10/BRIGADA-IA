@@ -1,0 +1,2496 @@
+--- PAGE 1 ---
+ 
+ Copiar
+ Copiar
+Rotas Públicas (não requerem autenticação)
+/api/stats - Estatísticas do servidor
+/api/license/status - Status da licença
+/api/instances/:id/public-status - Status público (para QR client)
+Resposta de Erro (401)
+// Quando a chave não é fornecida ou é inválida
+{
+  "error": "Unauthorized",
+  "message": "API key required. Provide via x-api-key header, Autho
+}
+ Dica: A chave da API é a mesma configurada em PANEL_API_KEY. Não
+existe uma chave por instância - é uma única chave global para todo o
+servidor.
+Respostas Padronizadasv1.6
+📋Formato de Resposta dos Envios
+Todos os endpoints de envio de mensagens agora retornam respostas
+padronizadas com informações detalhadas sobre o envio, incluindo o ID da
+mensagem para rastreamento.
+✅  Resposta de Sucesso
+Quando a mensagem é enviada com sucesso:
+{
+  "success": true,
+  "messageId": "3EB0B430F7A4D8C1E2F3",
+  "remoteJid": "5511999999999@s.whatsapp.net",
+  "timestamp": 1703847600
+}
+CAMPO TIPO DESCRIÇÃO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 11/77
+--- PAGE 2 ---
+ Copiar
+ Copiar
+ Copiar
+success boolean Sempre true quando o envio foi bem-sucedido
+messageId string ID único da mensagem no WhatsApp (use para rastrear,
+reagir, editar ou deletar)
+remoteJid string JID do destinatário (pode ser diferente do enviado se foi
+normalizado)
+timestamp number Timestamp Unix do momento do envio
+❌  Erro de Validação (400)
+Quando há erro de validação nos parâmetros ou o número não existe no
+WhatsApp:
+// Campo obrigatório faltando
+{
+  "success": false,
+  "error": "jid is required"
+}
+// Número não existe no WhatsApp
+{
+  "success": false,
+  "error": "Number not registered on WhatsApp",
+  "number": "5511999999999"
+}
+❌  Erro de Execução (500)
+Quando ocorre um erro durante o envio:
+{
+  "success": false,
+  "error": "Failed to send message",
+  "details": "Connection closed"
+}
+❌  Instância não encontrada (404)
+{
+  "success": false,
+  "error": "Instance not found or not connected"
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 12/77
+--- PAGE 3 ---
+ Copiar
+🔍Validação Automática de NúmeroNOVO
+Todos os endpoints de envio agora validam automaticamente se o número
+existe no WhatsApp antes de enviar. Isso evita envios para números inválidos e
+retorna erro 400 imediatamente.
+Comportamento Padrão
+A validação é ativada por padrão para números individuais
+Grupos (@g.us) e broadcasts não são validados
+Se o número não existir no WhatsApp, retorna erro 400
+Desativar Validação
+Se você já validou o número previamente ou quer pular a validação por
+performance, adicione validateNumber: false no body:
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "text": "Olá!",
+  "validateNumber": false
+}
+ Dica: Use o endpoint GET /api/instances/:id/check-number/:phone para
+validar números em lote antes de enviar, e depois envie com
+validateNumber: false para melhor performance.
+📝Endpoints Atualizados
+Os seguintes endpoints agora retornam o formato padronizado com messageId:
+ENDPOINT DESCRIÇÃO
+/send-text Enviar mensagem de texto
+/send-image Enviar imagem
+/send-video Enviar vídeo
+/send-audio Enviar áudio
+/send-document Enviar documento
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 13/77
+--- PAGE 4 ---
+ Copiar
+/send-location Enviar localização
+/send-contact Enviar contato
+/send-sticker Enviar sticker
+/send-reaction Enviar reação
+/send-poll Enviar enquete
+/send-buttons Enviar botões
+/send-list Enviar lista
+/send-carousel Enviar carrossel
+/send-product Enviar produto
+/send-products Enviar múltiplos produtos
+/delete-message Deletar mensagem
+/edit-message Editar mensagem
+Instâncias
+GET /api/instances
+Lista todas as instâncias criadas com seus status atuais.
+// Resposta
+[
+  {
+    "id": "minha-instancia",
+    "status": "CONNECTED",
+    "name": "João Silva",
+    "phoneNumber": "5511999999999"
+  }
+]
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 14/77
+--- PAGE 5 ---
+ Copiar
+ Copiar
+ Copiar
+POST /api/instances
+Cria uma nova instância do WhatsApp. Após criar, use o endpoint de QR Code
+para conectar.
+PARÂMETRO TIPO DESCRIÇÃO
+id *obrigatório string Identificador único da instância
+// Requisição
+{
+  "id": "minha-instancia"
+}
+// Resposta
+{
+  "id": "minha-instancia",
+  "status": "CONNECTING"
+}
+GET /api/instances/:id/qr
+Obtém o QR Code para conectar a instância ao WhatsApp.
+// Resposta
+{
+  "qrImage": "data:image/png;base64,..."
+}
+GET /api/instances/:id/statusNOVO
+Obtém o status detalhado de uma instância específica.
+// Resposta
+{
+  "id": "minha-instancia",
+  "status": "CONNECTED",
+  "name": "João Silva",
+  "phoneNumber": "5511999999999"
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 15/77
+--- PAGE 6 ---
+ Copiar
+ Copiar
+ Copiar
+DELETE /api/instances/:id
+Remove uma instância e desconecta do WhatsApp.
+// Resposta
+{
+  "success": true
+}
+POST /api/instances/:id/toggle-public-linkNOVO
+Habilita ou desabilita o link público de QR Code. Quando habilitado, você
+pode compartilhar um link para que clientes escaneiem o QR Code
+diretamente.
+PARÂMETRO TIPO DESCRIÇÃO
+enabled *obrigatório boolean true para habilitar, false para desabilitar
+// Requisição
+{
+  "enabled": true
+}
+// Resposta
+{
+  "success": true,
+  "enabled": true
+}
+// Link público para compartilhar:
+https://seu-servidor.com/qr-client.html?id=minha-instancia
+GET /api/instances/:id/public-statusNOVO
+Obtém o status da instância para uso público (página de QR do cliente). Só
+funciona se o link público estiver habilitado.
+// Resposta (link habilitado)
+{
+  "id": "minha-instancia",
+  "status": "QR_READY",
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 16/77
+--- PAGE 7 ---
+ 
+ Copiar
+ Copiar
+  "qr": "2@abc123...",
+  "publicLinkEnabled": true
+}
+// Resposta (link desabilitado)
+{
+  "error": "Public link disabled"
+}
+POST /api/instances/:id/logoutNOVO
+Desconecta a instância do WhatsApp sem deletar os dados da sessão.
+// Resposta
+{
+  "success": true
+}
+GET /api/instances/:id/check-number/:phoneNOVO
+Verifica se um número de telefone está registrado no WhatsApp.
+// Exemplo: GET /api/instances/minha-instancia/check-number/5511999
+// Resposta (número existe)
+{
+  "exists": true,
+  "jid": "5511999999999@s.whatsapp.net"
+}
+// Resposta (número não existe)
+{
+  "exists": false,
+  "jid": null
+}
+Webhook
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 17/77
+--- PAGE 8 ---
+ Copiar
+ Copiar
+POST /api/instances/:id/webhookNOVO
+Configura o webhook para receber mensagens e eventos em tempo real.
+Quando uma mensagem é recebida, ela será enviada para a URL configurada.
+PARÂMETRO TIPO DESCRIÇÃO
+url *obrigatório string URL que receberá os eventos (POST)
+enabled *obrigatórioboolean Habilitar ou desabilitar o webhook
+events array Eventos para receber: ["messages", "status", "all"]
+// Requisição
+{
+  "url": "https://seu-servidor.com/webhook",
+  "enabled": true,
+  "events": ["messages", "status"]
+}
+// Resposta
+{
+  "success": true,
+  "webhook": {
+    "url": "https://seu-servidor.com/webhook",
+    "enabled": true,
+    "events": ["messages", "status"]
+  }
+}
+GET /api/instances/:id/webhookNOVO
+Obtém a configuração atual do webhook.
+// Resposta
+{
+  "webhook": {
+    "url": "https://seu-servidor.com/webhook",
+    "enabled": true,
+    "events": ["messages", "status"]
+  }
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 18/77
+--- PAGE 9 ---
+GET Eventos Disponíveis
+Lista de todos os eventos que podem ser configurados no webhook:
+ Mensagens
+EVENTO DESCRIÇÃO
+messages Mensagens recebidas (texto, imagem, vídeo, áudio,
+documento, localização, contato, sticker)
+message_status Status de mensagens enviadas (2=enviado, 3=entregue,
+4=lido)
+message_reaction Reações em mensagens (emoji adicionado/removido)
+ Grupos
+EVENTO DESCRIÇÃO
+group_update Atualizações de grupos (nome, foto, descrição
+alterados)
+group_participants Participantes de grupos (entrada, saída, promoção,
+rebaixamento)
+ Contatos & Presença
+EVENTO DESCRIÇÃO
+presence Presença de contatos (available, unavailable, composing, recording,
+paused)
+contacts Atualizações de contatos (nome, foto de perfil)
+ Chamadas
+EVENTO DESCRIÇÃO
+call Chamadas de voz/vídeo (ringing, accepted, rejected, timeout)
+⚙ Outros
+EVENTO DESCRIÇÃO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 19/77
+--- PAGE 10 ---
+ 
+ Copiar
+ Copiar
+chats Atualizações de conversas (arquivado, fixado, silenciado)
+labels Labels/etiquetas (associação e edição)
+history_sync Sincronização de histórico (quando conecta)
+all Receber TODOS os eventos
+Headers enviados em cada webhook
+Content-Type: application/json
+X-Instance-ID: minha-instancia
+X-Event-Type: messages | message_status | message_reaction | group_
+Exemplos de Payload
+// Mensagem recebida (messages)
+{
+  "type": "message",
+  "instanceId": "minha-instancia",
+  "data": {
+    "key": { "remoteJid": "5511999999999@s.whatsapp.net", "id": "AB
+    "message": { "conversation": "Olá!" },
+    "pushName": "João",
+    "messageTimestamp": 1702500000
+  }
+}
+// Status de mensagem (message_status)
+{
+  "type": "message_status",
+  "instanceId": "minha-instancia",
+  "data": {
+    "key": { "remoteJid": "5511999999999@s.whatsapp.net", "id": "AB
+    "update": { "status": 3 }  // 2=enviado, 3=entregue, 4=lido
+  }
+}
+// Reação em mensagem (message_reaction)
+{
+  "type": "message_reaction",
+  "instanceId": "minha-instancia",
+  "data": [{
+    "key": { "remoteJid": "5511999999999@s.whatsapp.net", "id": "MS
+    "reaction": { "text": " 👍 ", "senderTimestampMs": 1702500000 }
+  }]
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 20/77
+--- PAGE 11 ---
+// Atualização de grupo (group_update)
+{
+  "type": "group_update",
+  "instanceId": "minha-instancia",
+  "data": [{
+    "id": "123456789@g.us",
+    "subject": "Novo Nome do Grupo",
+    "desc": "Nova descrição"
+  }]
+}
+// Participantes de grupo (group_participants)
+{
+  "type": "group_participants",
+  "instanceId": "minha-instancia",
+  "data": {
+    "id": "123456789@g.us",
+    "participants": ["5511999999999@s.whatsapp.net"],
+    "action": "add"  // add, remove, promote, demote
+  }
+}
+// Presença (presence)
+{
+  "type": "presence",
+  "instanceId": "minha-instancia",
+  "data": {
+    "id": "5511999999999@s.whatsapp.net",
+    "presences": {
+      "5511999999999@s.whatsapp.net": { "lastKnownPresence": "compo
+    }
+  }
+}
+// Chamada (call)
+{
+  "type": "call",
+  "instanceId": "minha-instancia",
+  "data": [{
+    "from": "5511999999999@s.whatsapp.net",
+    "id": "CALL_ID",
+    "status": "ringing",  // ringing, accepted, rejected, timeout
+    "isVideo": false,
+    "isGroup": false
+  }]
+}
+ Mídia em Base64 NEW
+Quando uma mensagem com mídia (imagem, vídeo, áudio, documento,
+sticker) é recebida, a API automaticamente faz download e converte para
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 21/77
+--- PAGE 12 ---
+ 
+ 
+ Copiar
+ Copiar
+Base64, incluindo no payload do webhook:
+// Mensagem com mídia (imagem, vídeo, áudio, documento, sticker)
+{
+  "type": "message",
+  "instanceId": "minha-instancia",
+  "data": {
+    "key": { "remoteJid": "5511999999999@s.whatsapp.net", "id": "AB
+    "message": { 
+      "imageMessage": { 
+        "mimetype": "image/jpeg",
+        "caption": "Olha essa foto!"
+      } 
+    },
+    "pushName": "João",
+    "messageTimestamp": 1702500000,
+    // ⬇  MÍDIA EM BASE64 (automático)
+    "media": {
+      "base64": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "mimetype": "image/jpeg",
+      "filename": "file_1702500000.jpeg"
+    }
+  }
+}
+Como decodificar Base64
+// Node.js - Salvar arquivo
+const fs = require('fs');
+const { base64, filename } = data.media;
+const buffer = Buffer.from(base64, 'base64');
+fs.writeFileSync(`./downloads/${filename}`, buffer);
+// Python - Salvar arquivo
+import base64
+file_bytes = base64.b64decode(data['media']['base64'])
+with open(f"./downloads/{data['media']['filename']}", 'wb') as f:
+    f.write(file_bytes)
+// PHP - Salvar arquivo
+$fileContent = base64_decode($data['media']['base64']);
+file_put_contents("./downloads/{$data['media']['filename']}", $file
+ Nota: Mídias de newsletters/canais não são processadas (não possuem
+mediaKey para descriptografia).
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 22/77
+--- PAGE 13 ---
+ Copiar
+ Copiar
+WebSocket NOVO
+POST /api/instances/:id/websocketNOVO
+Configura o WebSocket para receber eventos em tempo real. Similar ao
+webhook, mas usando conexão persistente WebSocket.
+PARÂMETRO TIPO DESCRIÇÃO
+url *obrigatório string URL do servidor WebSocket (ws:// ou wss://)
+enabled
+*obrigatório boolean Habilitar ou desabilitar o WebSocket
+events string[] Lista de eventos para receber (mesmos do
+webhook)
+// Requisição
+{
+  "url": "wss://seu-servidor.com/ws",
+  "enabled": true,
+  "events": ["messages", "connection", "qr"]
+}
+// Resposta
+{
+  "success": true,
+  "websocket": {
+    "url": "wss://seu-servidor.com/ws",
+    "enabled": true,
+    "events": ["messages", "connection", "qr"]
+  }
+}
+GET /api/instances/:id/websocketNOVO
+Obtém a configuração atual do WebSocket.
+// Resposta
+{
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 23/77
+--- PAGE 14 ---
+ Copiar
+  "websocket": {
+    "url": "wss://seu-servidor.com/ws",
+    "enabled": true,
+    "events": ["messages", "connection"]
+  }
+}
+Configurações da InstânciaATUALIZADO
+POST /api/instances/:id/settingsATUALIZADO
+Configura comportamentos automáticos da instância como rejeitar chamadas,
+ignorar grupos, ignorar canais/newsletters, etc.
+PARÂMETRO TIPO DESCRIÇÃO
+rejectCalls boolean Rejeitar todas as chamadas automaticamente
+ignoreGroups boolean Ignorar todas as mensagens de grupos
+(@g.us)
+ignoreNewsletters boolean Ignorar mensagens de canais/newsletters
+(@newsletter, @broadcast)
+alwaysOnline boolean Permanecer sempre online
+readMessages boolean Marcar todas as mensagens como lidas
+automaticamente
+readStatus boolean Visualizar todos os status automaticamente
+syncFullHistory boolean Sincronizar histórico completo ao conectar
+// Requisição
+{
+  "rejectCalls": true,
+  "ignoreGroups": false,
+  "ignoreNewsletters": true,
+  "alwaysOnline": true,
+  "readMessages": true,
+  "readStatus": false,
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 24/77
+--- PAGE 15 ---
+ Copiar
+  "syncFullHistory": true
+}
+// Resposta
+{
+  "success": true,
+  "settings": {
+    "rejectCalls": true,
+    "ignoreGroups": false,
+    "ignoreNewsletters": true,
+    "alwaysOnline": true,
+    "readMessages": true,
+    "readStatus": false,
+    "syncFullHistory": true
+  }
+}
+GET /api/instances/:id/settingsATUALIZADO
+Obtém as configurações atuais da instância.
+// Resposta
+{
+  "settings": {
+    "rejectCalls": false,
+    "ignoreGroups": false,
+    "ignoreNewsletters": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": true
+  }
+}
+⚙Configuração
+GET Storage (PostgreSQL + Redis)v1.3
+A Pastorini API suporta 3 tipos de armazenamento para sessões, configuráveis
+via variáveis de ambiente:
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 25/77
+--- PAGE 16 ---
+ Copiar
+TIPO DESCRIÇÃO RECOMENDADO PARA
+file Armazena sessões em
+arquivos no disco
+Desenvolvimento, até 50
+instâncias
+postgres Armazena sessões no
+PostgreSQL Produção, 50-500 instâncias
+postgres+redis PostgreSQL + Redis como
+cache Alta escala, 500+ instâncias
+# Variáveis de ambiente (.env)
+# Tipo de storage: file | postgres | postgres+redis
+STORAGE_TYPE=postgres+redis
+# PostgreSQL
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=pastorini_api
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=sua_senha
+# Redis (apenas para postgres+redis)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+Arquitetura com Redis: O Redis atua como cache L1 (in-memory) enquanto o
+PostgreSQL é o storage persistente. Isso proporciona leituras extremamente
+rápidas (~1ms) com a segurança de persistência do PostgreSQL.
+ Setup Rápido com Docker
+Execute um único comando para subir PostgreSQL e Redis:
+# Subir PostgreSQL + Redis
+npm run setup
+# Ou usando docker-compose diretamente
+docker-compose up -d
+# Iniciar a API
+npm run server
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 26/77
+--- PAGE 17 ---
+ Copiar
+# Ou tudo junto (setup + server)
+npm run dev
+Mensagens
+POST /api/instances/:id/send-textATUALIZADO
+Envia uma mensagem de texto simples. Valida automaticamente se o número
+existe no WhatsApp.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário (ex:
+5511999999999@s.whatsapp.net)
+text *obrigatório string Texto da mensagem
+validateNumber boolean Validar se número existe no WhatsApp (padrão:
+true)
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "text": "Olá! Esta é uma mensagem de teste."
+}
+// Resposta de Sucesso (200)
+{
+  "success": true,
+  "messageId": "3EB0B430F7A4D8C1E2F3",
+  "remoteJid": "5511999999999@s.whatsapp.net",
+  "timestamp": 1703847600
+}
+// Erro: Número não existe no WhatsApp (400)
+{
+  "success": false,
+  "error": "Number not registered on WhatsApp",
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 27/77
+--- PAGE 18 ---
+ Copiar
+  "number": "5511999999999"
+}
+POST /api/instances/:id/send-imageATUALIZADO
+Envia uma imagem com legenda opcional. Aceita URL ou base64.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+url string URL da imagem (obrigatório se não usar base64)
+base64 string Imagem em base64 (obrigatório se não usar url)
+caption string Legenda da imagem
+mimetype string Tipo MIME (padrão: image/jpeg)
+validateNumber boolean Validar se número existe no WhatsApp (padrão:
+true)
+// Requisição com URL
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "url": "https://exemplo.com/imagem.jpg",
+  "caption": "Veja esta imagem!"
+}
+// OU com Base64
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "base64": "/9j/4AAQSkZJRgABAQEAYABgAAD...",
+  "mimetype": "image/jpeg",
+  "caption": "Veja esta imagem!"
+}
+// Resposta de Sucesso (200)
+{
+  "success": true,
+  "messageId": "3EB0B430F7A4D8C1E2F3",
+  "remoteJid": "5511999999999@s.whatsapp.net",
+  "timestamp": 1703847600
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 28/77
+--- PAGE 19 ---
+ Copiar
+POST /api/instances/:id/send-videoATUALIZADO
+Envia um vídeo com legenda opcional. Aceita URL ou base64.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+url string URL do vídeo (obrigatório se não usar base64)
+base64 string Vídeo em base64 (obrigatório se não usar url)
+caption string Legenda do vídeo
+gifPlayback boolean Enviar como GIF (loop)
+mimetype string Tipo MIME (padrão: video/mp4)
+validateNumber boolean Validar se número existe no WhatsApp (padrão:
+true)
+// Requisição com URL
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "url": "https://exemplo.com/video.mp4",
+  "caption": "Confira este vídeo!",
+  "gifPlayback": false
+}
+// OU com Base64
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "base64": "AAAAIGZ0eXBpc29tAAACAGlzb21pc28y...",
+  "mimetype": "video/mp4",
+  "caption": "Confira este vídeo!"
+}
+// Resposta de Sucesso (200)
+{
+  "success": true,
+  "messageId": "3EB0B430F7A4D8C1E2F3",
+  "remoteJid": "5511999999999@s.whatsapp.net",
+  "timestamp": 1703847600
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 29/77
+--- PAGE 20 ---
+ Copiar
+POST /api/instances/:id/send-audioATUALIZADO
+Envia um áudio (pode ser como mensagem de voz). Aceita URL ou base64.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+url string URL do áudio (obrigatório se não usar base64)
+base64 string Áudio em base64 (obrigatório se não usar url)
+ptt boolean Enviar como mensagem de voz (push-to-talk)
+mimetype string Tipo MIME (padrão: audio/mpeg ou audio/ogg se
+ptt=true)
+validateNumber boolean Validar se número existe no WhatsApp (padrão:
+true)
+// Requisição com URL
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "url": "https://exemplo.com/audio.mp3",
+  "ptt": true
+}
+// OU com Base64
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "base64": "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2Z...",
+  "mimetype": "audio/mpeg",
+  "ptt": true
+}
+// Resposta de Sucesso (200)
+{
+  "success": true,
+  "messageId": "3EB0B430F7A4D8C1E2F3",
+  "remoteJid": "5511999999999@s.whatsapp.net",
+  "timestamp": 1703847600
+}
+POST /api/instances/:id/send-documentNOVO
+Envia um documento (PDF, DOC, etc).
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 30/77
+--- PAGE 21 ---
+ Copiar
+ Copiar
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+url *obrigatório string URL do documento
+filename string Nome do arquivo
+mimetype string Tipo MIME (ex: application/pdf)
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "url": "https://exemplo.com/documento.pdf",
+  "filename": "Contrato.pdf",
+  "mimetype": "application/pdf"
+}
+POST /api/instances/:id/send-locationNOVO
+Envia uma localização.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+latitude *obrigatório number Latitude
+longitude *obrigatório number Longitude
+name string Nome do local
+address string Endereço
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "latitude": -23.5505,
+  "longitude": -46.6333,
+  "name": "São Paulo",
+  "address": "Av. Paulista, 1000"
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 31/77
+--- PAGE 22 ---
+ Copiar
+ Copiar
+POST /api/instances/:id/send-contactNOVO
+Envia um cartão de contato.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+name *obrigatório string Nome do contato
+phone *obrigatório string Telefone do contato
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "name": "Maria Silva",
+  "phone": "+5511988888888"
+}
+POST /api/instances/:id/send-stickerNOVO
+Envia um sticker/figurinha.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+url *obrigatório string URL do sticker (WebP)
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "url": "https://exemplo.com/sticker.webp"
+}
+POST /api/instances/:id/send-reactionNOVO
+Envia uma reação (emoji) a uma mensagem.
+PARÂMETRO TIPO DESCRIÇÃO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 32/77
+--- PAGE 23 ---
+ Copiar
+jid *obrigatório string JID do chat
+messageId *obrigatório string ID da mensagem para reagir
+emoji *obrigatório string Emoji da reação (vazio para remover)
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "messageId": "3EB0B430A...",
+  "emoji": " 👍 "
+}
+Mensagens Interativas
+POST /api/instances/:id/send-buttons
+Envia uma mensagem com botões interativos. ✅  Funciona em Web, iOS e
+Android!
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+text *obrigatório string Texto principal da mensagem
+footer string Texto do rodapé
+buttons *obrigatório array Array de botões (ver tipos abaixo)
+✅  Compatibilidade WhatsApp Web:
+Combinações que funcionam no Web:
+✅  Apenas quick_reply (até 3 botões)
+✅  Apenas CTAs juntos: cta_copy + cta_url + cta_call
+⚠  NÃO misture: quick_reply com CTAs (não aparece no Web)
+Tipos de Botões:
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 33/77
+--- PAGE 24 ---
+ Copiar
+ Copiar
+// Botão de Resposta Rápida (quick_reply)
+{
+  "type": "quick_reply",
+  "displayText": "Sim",
+  "id": "btn_sim"
+}
+// Botão de URL (cta_url)
+{
+  "type": "cta_url",
+  "displayText": "Visitar Site",
+  "url": "https://google.com"
+}
+// Botão de Ligação (cta_call)
+{
+  "type": "cta_call",
+  "displayText": "Ligar",
+  "phoneNumber": "+5511999999999"
+}
+// Botão de Copiar Código - PIX, Cupom, etc (cta_copy)
+{
+  "type": "cta_copy",
+  "displayText": " 📋  Copiar Código PIX",
+  "copyCode": "00020126580014br.gov.bcb.pix..."
+}
+✅  Exemplo 1: Todos os CTAs juntos (funciona no Web):
+// PIX + Link + Ligação - FUNCIONA NO WEB!
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "text": " 💳  Pagamento via PIX\n\nValor: R$ 150,00\nPedido: #12345
+  "footer": "Clique no botão para copiar o código",
+  "buttons": [
+    { 
+      "type": "cta_call", 
+      "displayText": " 📞  Ligar para Suporte", 
+      "phoneNumber": "+5511999999999" 
+    },
+    { 
+      "type": "cta_copy", 
+      "displayText": " 📋  Copiar Código PIX", 
+      "copyCode": "00020126580014br.gov.bcb.pix0136123e4567-e12b-12
+    },
+    { 
+      "type": "cta_url", 
+      "displayText": " 🌐  Ver Pedido", 
+      "url": "https://exemplo.com/pedido/12345" 
+    }
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 34/77
+--- PAGE 25 ---
+ 
+ 
+ 
+ Copiar
+  ]
+}
+✅  Exemplo 2: Apenas quick_reply (funciona no Web):
+// Apenas botões de resposta rápida - FUNCIONA NO WEB!
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "text": "Escolha uma opção:",
+  "footer": "Atendimento automático",
+  "buttons": [
+    { "type": "quick_reply", "displayText": " 🛒  Fazer Pedido", "id"
+    { "type": "quick_reply", "displayText": " 🔧  Suporte Técnico", "
+    { "type": "quick_reply", "displayText": " 💰  Financeiro", "id": 
+  ]
+}
+❌  Exemplo que NÃO funciona no Web (mistura CTA + quick_reply):
+// NÃO FUNCIONA NO WEB - mistura tipos!
+{
+  "buttons": [
+    { "type": "cta_copy", "displayText": "Copiar", "copyCode": 
+    { "type": "quick_reply", "displayText": "Confirmar", "id": 
+  ]
+}
+POST /api/instances/:id/send-list
+Envia uma mensagem com lista de opções. ✅  Funciona em Web, iOS e
+Android!
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+title string Título da mensagem
+text *obrigatório string Texto principal
+footer string Texto do rodapé
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 35/77
+--- PAGE 26 ---
+ 
+ Copiar
+ Copiar
+buttonText *obrigatório string Texto do botão que abre a lista
+sections *obrigatório array Seções com opções da lista
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": "Menu Principal",
+  "text": "Selecione uma opção abaixo:",
+  "footer": "Atendimento 24h",
+  "buttonText": "Ver Opções",
+  "sections": [
+    {
+      "title": "Produtos",
+      "rows": [
+        { "title": "Produto A", "description": "Descrição do produt
+        { "title": "Produto B", "description": "Descrição do produt
+      ]
+    },
+    {
+      "title": "Suporte",
+      "rows": [
+        { "title": "Falar com Atendente", "description": "Atendimen
+      ]
+    }
+  ]
+}
+POST /api/instances/:id/send-carousel
+Envia um carrossel de cards com imagens e botões. Nota: Funciona apenas no
+celular.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+cards *obrigatório array Array de cards (máximo 10)
+// Requisição
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 🛍  Ofertas Especiais",
+  "body": "Confira nossos produtos!",
+  "footer": "Loja Virtual",
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 36/77
+--- PAGE 27 ---
+ Copiar
+  "cards": [
+    {
+      "imageUrl": "https://exemplo.com/img1.jpg",
+      "title": " 📱  Produto 1",
+      "body": "Descrição do produto 1",
+      "footer": "R$ 99,90",
+      "buttons": [
+        { "id": "comprar_p1", "title": " 🛒  Comprar" },
+        { "id": "info_p1", "title": " 📋  Detalhes" }
+      ]
+    },
+    {
+      "imageUrl": "https://exemplo.com/img2.jpg",
+      "title": " 💻  Produto 2",
+      "body": "Descrição do produto 2",
+      "footer": "R$ 149,90",
+      "buttons": [
+        { "id": "comprar_p2", "title": " 🛒  Comprar" }
+      ]
+    }
+  ]
+}
+POST /api/instances/:id/send-productsNOVO
+Envia múltiplos produtos do catálogo do WhatsApp Business. Requer:
+Catálogo configurado no WhatsApp Business.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+productIds
+*obrigatório string[] Array de IDs dos produtos do catálogo
+(máximo 30)
+catalogId string ID do catálogo (opcional, usa o padrão da
+conta)
+title string Título da mensagem
+body string Texto da mensagem
+footer string Rodapé da mensagem
+// Enviar múltiplos produtos do catálogo
+{
+  "jid": "5511999999999@s.whatsapp.net",
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 37/77
+--- PAGE 28 ---
+ Copiar
+  "productIds": ["produto_001", "produto_002", "produto_003"],
+  "title": "Ofertas da Semana",
+  "body": "Confira nossos produtos em promoção!",
+  "footer": "Válido até domingo"
+}
+ Importante: Os productIds devem corresponder aos IDs dos produtos
+cadastrados no seu catálogo do WhatsApp Business.
+POST /api/instances/:id/send-productNOVO
+Envia um único produto do catálogo com detalhes completos. Requer:
+Catálogo configurado no WhatsApp Business.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string Número do destinatário
+productId *obrigatório string ID do produto no catálogo
+catalogId string ID do catálogo (opcional)
+body string Texto da mensagem
+footer string Rodapé da mensagem
+// Enviar produto único do catálogo
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "productId": "produto_001",
+  "body": "Olha esse produto incrível!",
+  "footer": "Frete grátis"
+}
+POST /api/instances/:id/send-pollNOVO
+Envia uma enquete/votação para um contato ou grupo. Funciona no celular e
+desktop!
+PARÂMETRO TIPO DESCRIÇÃO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 38/77
+--- PAGE 29 ---
+ Copiar
+jid *obrigatório string Número do destinatário (ex:
+5511999999999@s.whatsapp.net)
+name *obrigatório string Pergunta da enquete
+options *obrigatóriostring[] Lista de opções (mínimo 2, máximo 12)
+selectableCount number Quantidade de opções selecionáveis (1 = única,
+0 = múltipla). Padrão: 1
+// Enquete de escolha única
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "name": "Qual sua linguagem favorita?",
+  "options": ["JavaScript", "Python", "TypeScript", "Go"],
+  "selectableCount": 1
+}
+// Enquete de múltipla escolha
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "name": "Quais tecnologias você usa?",
+  "options": ["React", "Vue", "Angular", "Node.js", "Docker"],
+  "selectableCount": 0
+}
+ Vantagem: Enquetes funcionam tanto no celular quanto no WhatsApp
+Desktop!
+Catálogo de Produtos
+Gerencie o catálogo de produtos do WhatsApp Business. Requer: Conta WhatsApp
+Business com catálogo configurado.
+GET /api/instances/:id/catalogNOVO
+Lista todos os produtos do seu catálogo.
+PARÂMETRO TIPO DESCRIÇÃO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 39/77
+--- PAGE 30 ---
+ Copiar
+ Copiar
+limit number Quantidade máxima de produtos (padrão: 100)
+cursor string Cursor para paginação (retornado na resposta anterior)
+// Resposta
+{
+  "success": true,
+  "jid": "5511999999999@s.whatsapp.net",
+  "productsCount": 15,
+  "products": [
+    {
+      "id": "produto_001",
+      "name": "Camiseta Básica",
+      "description": "Camiseta 100% algodão",
+      "price": 4990,
+      "currency": "BRL",
+      "imageUrl": "https://..."
+    }
+  ],
+  "nextPageCursor": "abc123..."
+}
+GET /api/instances/:id/catalog/:numberNOVO
+Obtém o catálogo de outro número do WhatsApp Business.
+PARÂMETRO TIPO DESCRIÇÃO
+number
+*obrigatório string Número do WhatsApp Business (ex:
+5511999999999)
+limit number Quantidade máxima de produtos (padrão: 100)
+// GET /api/instances/minha-instancia/catalog/5511888888888
+// Resposta
+{
+  "success": true,
+  "jid": "5511888888888@s.whatsapp.net",
+  "productsCount": 25,
+  "products": [...]
+}
+POST /api/instances/:id/catalog/productNOVO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 40/77
+--- PAGE 31 ---
+ 
+ Copiar
+Cria um novo produto no catálogo.
+PARÂMETRO TIPO DESCRIÇÃO
+name *obrigatório string Nome do produto
+description string Descrição do produto
+price number Preço em centavos (ex: 4990 = R$ 49,90)
+currency string Moeda (padrão: BRL)
+imageUrl string URL da imagem do produto
+url string Link para o produto (site)
+retailerId string ID interno do produto (SKU)
+isHidden boolean Ocultar produto do catálogo público
+// Criar produto
+{
+  "name": "Camiseta Premium",
+  "description": "Camiseta 100% algodão, várias cores disponíveis",
+  "price": 7990,
+  "currency": "BRL",
+  "imageUrl": "https://exemplo.com/camiseta.jpg",
+  "url": "https://minhaloja.com/camiseta-premium",
+  "retailerId": "SKU-001",
+  "isHidden": false
+}
+PUT /api/instances/:id/catalog/product/:productIdNOVO
+Atualiza um produto existente no catálogo.
+PARÂMETRO TIPO DESCRIÇÃO
+productId *obrigatório string ID do produto (na URL)
+name string Novo nome do produto
+price number Novo preço em centavos
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 41/77
+--- PAGE 32 ---
+ 
+ Copiar
+ Copiar
+ Copiar
+... (mesmos campos do criar)
+// PUT /api/instances/minha-instancia/catalog/product/produto_001
+{
+  "price": 5990,
+  "description": "Promoção! Camiseta com 25% de desconto"
+}
+DELETE /api/instances/:id/catalog/product/:productIdNOVO
+Remove um produto do catálogo.
+PARÂMETRO TIPO DESCRIÇÃO
+productId *obrigatório string ID do produto a ser removido
+// DELETE /api/instances/minha-instancia/catalog/product/produto_00
+// Resposta
+{
+  "success": true,
+  "deletedProductId": "produto_001"
+}
+GET /api/instances/:id/catalog/collectionsNOVO
+Lista as coleções do catálogo (categorias de produtos).
+PARÂMETRO TIPO DESCRIÇÃO
+limit number Quantidade máxima de coleções (padrão: 50)
+// Resposta
+{
+  "success": true,
+  "collectionsCount": 3,
+  "collections": [
+    {
+      "id": "colecao_001",
+      "name": "Roupas Masculinas",
+      "productsCount": 12
+    },
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 42/77
+--- PAGE 33 ---
+ 
+ Copiar
+ Copiar
+    {
+      "id": "colecao_002",
+      "name": "Acessórios",
+      "productsCount": 8
+    }
+  ]
+}
+POST /api/instances/:id/catalog/collectionNOVO
+Cria uma nova coleção no catálogo com produtos selecionados.
+PARÂMETRO TIPO DESCRIÇÃO
+name *obrigatório string Nome da coleção
+productIds
+*obrigatório string[] Array de IDs dos produtos para incluir na
+coleção
+// Criar coleção
+{
+  "name": "Promoções de Verão",
+  "productIds": ["produto_001", "produto_002", "produto_003"]
+}
+DELETE /api/instances/:id/catalog/collection/:collectionIdNOVO
+Remove uma coleção do catálogo. Os produtos não são deletados, apenas
+removidos da coleção.
+PARÂMETRO TIPO DESCRIÇÃO
+collectionId *obrigatório string ID da coleção a ser removida (na URL)
+// DELETE /api/instances/minha-instancia/catalog/collection/colecao
+// Resposta
+{
+  "success": true,
+  "deletedCollectionId": "colecao_001"
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 43/77
+--- PAGE 34 ---
+ Copiar
+ Importante: Para usar o catálogo, sua conta deve ser WhatsApp Business e
+ter o catálogo configurado no aplicativo ou via Facebook Business Manager.
+Grupos
+POST /api/instances/:id/groups/createNOVO
+Cria um novo grupo.
+PARÂMETRO TIPO DESCRIÇÃO
+name *obrigatório string Nome do grupo
+participants *obrigatório array Lista de JIDs dos participantes
+// Requisição
+{
+  "name": "Meu Grupo",
+  "participants": [
+    "5511999999999@s.whatsapp.net",
+    "5511888888888@s.whatsapp.net"
+  ]
+}
+GET /api/instances/:id/groups/:groupId/metadataNOVO
+Obtém metadados de um grupo (nome, descrição, participantes, etc).
+GET /api/instances/:id/groups/:groupId/invite-
+code NOVO
+Obtém o código de convite do grupo.
+POST /api/instances/:id/groups/:groupId/participantsNOVO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 44/77
+--- PAGE 35 ---
+ Copiar
+Gerencia participantes do grupo (adicionar, remover, promover, rebaixar).
+PARÂMETRO TIPO DESCRIÇÃO
+action *obrigatório string Ação: add, remove, promote, demote
+participants *obrigatório array Lista de JIDs
+// Adicionar participantes
+{
+  "action": "add",
+  "participants": ["5511999999999@s.whatsapp.net"]
+}
+// Remover participantes
+{
+  "action": "remove",
+  "participants": ["5511999999999@s.whatsapp.net"]
+}
+// Promover a admin
+{
+  "action": "promote",
+  "participants": ["5511999999999@s.whatsapp.net"]
+}
+// Rebaixar de admin
+{
+  "action": "demote",
+  "participants": ["5511999999999@s.whatsapp.net"]
+}
+PUT /api/instances/:id/groups/:groupId/settingsNOVO
+Atualiza configurações do grupo.
+PARÂMETRO TIPO DESCRIÇÃO
+subject string Nome do grupo
+description string Descrição do grupo
+announce boolean Apenas admins enviam mensagens
+restrict boolean Apenas admins editam info
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 45/77
+--- PAGE 36 ---
+POST /api/instances/:id/groups/:groupId/leaveNOVO
+Sai do grupo.
+GET /api/instances/:id/groupsNOVO
+Lista todos os grupos que você participa.
+Perfil
+GET /api/instances/:id/profile-picture/:jidNOVO
+Obtém a URL da foto de perfil de um contato ou grupo.
+PUT /api/instances/:id/profile-pictureNOVO
+Atualiza sua foto de perfil.
+PARÂMETRO TIPO DESCRIÇÃO
+url *obrigatório string URL da imagem ou base64
+PUT /api/instances/:id/profile-statusNOVO
+Atualiza seu recado/status.
+PARÂMETRO TIPO DESCRIÇÃO
+status *obrigatório string Texto do recado
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 46/77
+--- PAGE 37 ---
+PUT /api/instances/:id/profile-nameNOVO
+Atualiza seu nome de perfil.
+PARÂMETRO TIPO DESCRIÇÃO
+name *obrigatório string Novo nome
+Privacidade
+GET /api/instances/:id/privacy-settingsNOVO
+Obtém as configurações de privacidade atuais.
+POST /api/instances/:id/blockNOVO
+Bloqueia ou desbloqueia um contato.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string JID do contato
+action *obrigatório string block ou unblock
+Outros
+POST /api/instances/:id/presenceNOVO
+Atualiza a presença (online, digitando, gravando áudio).
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 47/77
+--- PAGE 38 ---
+ Copiar
+ Copiar
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string JID do chat
+presence
+*obrigatório string available, unavailable, composing, recording,
+paused
+// Mostrar "digitando..."
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "presence": "composing"
+}
+// Mostrar "gravando áudio..."
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "presence": "recording"
+}
+// Ficar online
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "presence": "available"
+}
+POST /api/instances/:id/read-messagesNOVO
+Marca mensagens como lidas.
+PARÂMETRO TIPO DESCRIÇÃO
+keys *obrigatório array Array de chaves de mensagens
+// Requisição
+{
+  "keys": [
+    {
+      "remoteJid": "5511999999999@s.whatsapp.net",
+      "id": "3EB0B430A...",
+      "fromMe": false
+    }
+  ]
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 48/77
+--- PAGE 39 ---
+ Copiar
+POST /api/instances/:id/labelsNOVO
+Gerencia etiquetas/labels (WhatsApp Business).
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string JID do chat
+labelId *obrigatório string ID da etiqueta
+action *obrigatório string add ou remove
+GET /api/instances/:id/check-number/:phoneNOVO
+Verifica se um número está registrado no WhatsApp.
+// Resposta
+{
+  "exists": true,
+  "jid": "5511999999999@s.whatsapp.net"
+}
+POST /api/instances/:id/delete-messageNOVO
+Deleta uma mensagem.
+PARÂMETRO TIPO DESCRIÇÃO
+jid *obrigatório string JID do chat
+messageId *obrigatório string ID da mensagem
+fromMe *obrigatório boolean Se a mensagem foi enviada por você
+POST /api/instances/:id/edit-messageNOVO
+Edita uma mensagem enviada por você.
+PARÂMETRO TIPO DESCRIÇÃO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 49/77
+--- PAGE 40 ---
+jid *obrigatório string JID do chat
+messageId *obrigatório string ID da mensagem
+newText *obrigatório string Novo texto da mensagem
+POST /api/instances/:id/logoutNOVO
+Desconecta a instância do WhatsApp (logout).
+Informações Importantes
+Formato do JID
+O JID (Jabber ID) é o identificador único de um contato ou grupo no
+WhatsApp.
+// Contato individual
+"5511999999999@s.whatsapp.net"
+// Grupo
+"123456789012345678@g.us"
+// Status/Stories
+"status@broadcast"
+Status das Instâncias
+STATUS DESCRIÇÃO
+CONNECTING Conectando ao WhatsApp
+QR_READY QR Code pronto para escanear
+CONNECTED Conectado e pronto para uso
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 50/77
+--- PAGE 41 ---
+ Copiar
+DISCONNECTED Desconectado
+SMS
+POST /api/sms/sendNOVO
+Envia SMS através do gateway integrado. Suporta rotação automática de chips
+(30 portas disponíveis).
+PARÂMETRO TIPO DESCRIÇÃO
+number * string Número do destinatário (apenas números, ex:
+5582988898565)
+text * string Texto da mensagem SMS
+port number Porta do chip (1-30). Se não informado, usa rotação
+automática
+// Requisição
+POST /api/sms/send
+{
+  "number": "5582988898565",
+  "text": "Olá! Sua confirmação de pedido #12345",
+  "port": 5  // opcional
+}
+// Resposta
+{
+  "success": true,
+  "message": "SMS enviado",
+  "port": 5,
+  "response": "OK"
+}
+GET /api/call-instancesNOVO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 51/77
+--- PAGE 42 ---
+ Copiar
+Gerencia instâncias de ligação/SMS. Cada instância pode ter uma porta de chip
+configurada.
+Endpoints Disponíveis
+MÉTODO ENDPOINT DESCRIÇÃO
+GET /api/call-instances Lista todas as instâncias de
+ligação
+POST /api/call-instances Cria nova instância
+PUT /api/call-instances/:id Atualiza instância
+DEL /api/call-instances/:id Remove instância
+POST /api/call-instances/test-
+sms Envia SMS de teste
+// Criar instância de ligação
+POST /api/call-instances
+{
+  "name": "Suporte",
+  "number": "5582988898565",
+  "port": 1,
+  "mode": "manual"  // manual | audio | ai
+}
+// Enviar SMS de teste
+POST /api/call-instances/test-sms
+{
+  "instanceId": "call_1234567890",
+  "number": "5582988898565",
+  "text": "Teste de SMS"
+}
+Proxy
+Configure proxies HTTP, HTTPS ou SOCKS para suas instâncias. Útil para contornar
+bloqueios de IP ou usar IPs de diferentes regiões.
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 52/77
+--- PAGE 43 ---
+ Copiar
+POST /api/instances/:id/proxyNOVO
+Configura um proxy específico para uma instância. Após configurar, reconecte
+a instância para aplicar.
+PARÂMETRO TIPO DESCRIÇÃO
+enabled * boolean Habilita ou desabilita o proxy para esta instância
+url string URL do proxy no formato:
+protocolo://usuario:senha@host:porta
+Protocolos Suportados
+PROTOCOLO EXEMPLO
+HTTP http://user:pass@proxy.example.com:8080
+HTTPS https://user:pass@proxy.example.com:8080
+SOCKS4 socks4://proxy.example.com:1080
+SOCKS5 socks5://user:pass@proxy.example.com:1080
+// Requisição - Habilitar proxy HTTP
+POST /api/instances/minha-instancia/proxy
+{
+  "enabled": true,
+  "url": "http://user:pass@proxy.example.com:8080"
+}
+// Requisição - Habilitar proxy SOCKS5
+POST /api/instances/minha-instancia/proxy
+{
+  "enabled": true,
+  "url": "socks5://user:pass@proxy.example.com:1080"
+}
+// Requisição - Desabilitar proxy
+POST /api/instances/minha-instancia/proxy
+{
+  "enabled": false,
+  "url": ""
+}
+// Resposta
+{
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 53/77
+--- PAGE 44 ---
+ 
+ Copiar
+ Copiar
+  "success": true,
+  "proxy": {
+    "enabled": true,
+    "url": "http://user:pass@proxy.example.com:8080"
+  },
+  "message": "Proxy configurado. Reconecte a instância para aplicar
+}
+GET /api/instances/:id/proxy
+Obtém a configuração de proxy de uma instância e informações sobre o proxy
+global.
+// Requisição
+GET /api/instances/minha-instancia/proxy
+// Resposta
+{
+  "proxy": {
+    "enabled": true,
+    "url": "http://user:pass@proxy.example.com:8080"
+  },
+  "globalProxy": {
+    "enabled": false,
+    "url": ""
+  }
+}
+GET /api/proxy/global
+Obtém a configuração do proxy global (definido via variáveis de ambiente).
+Variáveis de Ambiente
+VARIÁVEL DESCRIÇÃO EXEMPLO
+PROXY_ENABLED Habilita o proxy global true ou false
+PROXY_URL URL do proxy global http://proxy.example.com:8080
+// Configuração no .env
+PROXY_ENABLED=true
+PROXY_URL=http://user:pass@proxy.example.com:8080
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 54/77
+--- PAGE 45 ---
+ Copiar
+// Requisição
+GET /api/proxy/global
+// Resposta
+{
+  "globalProxy": {
+    "enabled": true,
+    "url": "http://user:pass@proxy.example.com:8080"
+  }
+}
+ Prioridade: O proxy configurado na instância tem prioridade sobre o proxy
+global. Se ambos estiverem habilitados, o da instância será usado.
+Status do Servidor
+GET /api/stats
+Retorna estatísticas em tempo real do servidor: CPU, memória, uptime e
+instâncias conectadas. Esta rota é pública (não requer autenticação).
+// Requisição
+GET /api/stats
+// Resposta
+{
+  "cpu": {
+    "usage": 15.2,
+    "cores": 8
+  },
+  "memory": {
+    "total": 17179869184,
+    "used": 8589934592,
+    "free": 8589934592,
+    "usagePercent": 50
+  },
+  "process": {
+    "rss": 157286400,
+    "heapTotal": 67108864,
+    "heapUsed": 45088768
+  },
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 55/77
+--- PAGE 46 ---
+  "system": {
+    "platform": "linux",
+    "nodeVersion": "v20.10.0",
+    "uptime": 86400
+  },
+  "api": {
+    "uptime": 3600,
+    "instances": 5,
+    "connectedInstances": 3
+  }
+}
+Campos da Resposta
+CAMPO DESCRIÇÃO
+cpu.usage Uso de CPU em porcentagem
+cpu.cores Número de núcleos do processador
+memory.usagePercent Uso de memória RAM em porcentagem
+process.rss Memória usada pelo processo Node.js (bytes)
+api.uptime Tempo de atividade da API em segundos
+api.instances Total de instâncias criadas
+api.connectedInstances Instâncias atualmente conectadas
+Fila de Mensagens
+Sistema de fila com Redis para envio de mensagens com rate limiting, retry
+automático e persistência. Requer STORAGE_TYPE=postgres+redis.
+🚀  Como Usar
+A fila é integrada aos endpoints de envio existentes. Você pode ativá-la de
+duas formas:
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 56/77
+--- PAGE 47 ---
+ Copiar
+ Copiar
+MODO COMO ATIVAR DESCRIÇÃO
+Automático QUEUE_AUTO_ENABLED=true Todos os envios passam pela fila
+automaticamente
+Por
+Request "useQueue": true Adicione este parâmetro em
+qualquer endpoint de envio
+Exemplo de Uso
+// POST /api/instances/:id/send-text
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "text": "Olá! Esta mensagem passa pela fila.",
+  "useQueue": true
+}
+// Resposta quando usa fila:
+{
+  "success": true,
+  "queued": true,
+  "queueId": "instancia:1735500000:abc123",
+  "remoteJid": "5511999999999@s.whatsapp.net"
+}
+Funciona com: /send-text, /send-image, /send-video, /send-audio, /send-document,
+/send-location, /send-contact, /send-sticker
+GET /api/queue/statusNOVO
+Verifica se a fila está habilitada e retorna a configuração atual.
+{
+  "enabled": true,
+  "config": {
+    "messagesPerMinute": 20,
+    "maxRetries": 3,
+    "retryDelayMs": 5000
+  }
+}
+GET /api/instances/:id/queue/statsNOVO
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 57/77
+--- PAGE 48 ---
+ Copiar
+Retorna estatísticas da fila de uma instância.
+{
+  "success": true,
+  "stats": {
+    "instanceId": "minha-instancia",
+    "pending": 15,
+    "processing": 1,
+    "completed": 1250,
+    "failed": 3,
+    "messagesLastMinute": 18
+  }
+}
+POST /api/instances/:id/queue/configNOVO
+Configura rate limit específico para uma instância.
+PARÂMETRO TIPO DESCRIÇÃO
+messagesPerMinute number Máximo de mensagens por minuto (padrão:
+20)
+maxRetries number Tentativas em caso de falha (padrão: 3)
+retryDelayMs number Delay base para retry em ms (padrão: 5000)
+Endpoints de Gerenciamento
+MÉTODO ENDPOINT DESCRIÇÃO
+GET /api/queue/stats Estatísticas de todas
+as filas
+GET /api/instances/:id/queue/pending Lista mensagens
+pendentes
+GET /api/instances/:id/queue/failed Lista mensagens que
+falharam
+POST /api/instances/:id/queue/retry-
+failed
+Reprocessa
+mensagens que
+falharam
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 58/77
+--- PAGE 49 ---
+ Copiar
+DELETE /api/instances/:id/queue Limpa fila de uma
+instância
+⚙  Variáveis de Ambiente
+VARIÁVEL PADRÃO DESCRIÇÃO
+QUEUE_AUTO_ENABLED false Se true, todos os envios usam
+fila automaticamente
+QUEUE_MESSAGES_PER_MINUTE 20 Rate limit global por instância
+QUEUE_MAX_RETRIES 3 Máximo de tentativas
+QUEUE_RETRY_DELAY_MS 5000 Delay base para retry (ms)
+QUEUE_PROCESSING_INTERVAL_MS 1000 Intervalo de processamento
+(ms)
+Templates Prontos
+Templates prontos para copiar e usar nas suas requisições. Basta copiar o JSON e
+ajustar os dados conforme sua necessidade.
+📱Templates de Carrossel
+O carrossel permite enviar múltiplos cards horizontais com imagem, título,
+descrição e botões. Ideal para catálogos de produtos, cardápios, imóveis e
+serviços.
+🛒  E-commerce - Catálogo de Produtos
+Perfeito para lojas online mostrarem produtos com preços e botões de
+compra.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 59/77
+--- PAGE 50 ---
+ 
+ Copiar
+  "title": " 🛍  Ofertas Especiais",
+  "body": "Confira nossos produtos em destaque!",
+  "footer": "Loja Virtual - Entrega em todo Brasil",
+  "cards": [
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1592750475338-
+      "title": " 📱  iPhone 15 Pro Max",
+      "body": "256GB - Titânio Natural\n 💰  R$ 8.999,00 à vista\n 💳  
+      "footer": "Frete Grátis",
+      "buttons": [
+        { "id": "comprar_iphone", "title": " 🛒  Comprar Agora" },
+        { "id": "info_iphone", "title": " 📋  Mais Detalhes" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1517336714731-
+      "title": " 💻  MacBook Air M3",
+      "body": "8GB RAM - 256GB SSD\n 💰  R$ 12.499,00 à vista\n 💳  12
+      "footer": "Garantia Apple 1 ano",
+      "buttons": [
+        { "id": "comprar_macbook", "title": " 🛒  Comprar Agora" },
+        { "id": "info_macbook", "title": " 📋  Mais Detalhes" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1546868871-704
+      "title": " ⌚  Apple Watch Series 9",
+      "body": "GPS + Cellular - 45mm\n 💰  R$ 5.299,00 à vista\n 💳  1
+      "footer": "Pronta Entrega",
+      "buttons": [
+        { "id": "comprar_watch", "title": " 🛒  Comprar Agora" },
+        { "id": "info_watch", "title": " 📋  Mais Detalhes" }
+      ]
+    }
+  ]
+}
+🍕  Restaurante - Cardápio Digital
+Ideal para restaurantes, pizzarias e delivery mostrarem seus pratos.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 🍽  Cardápio do Dia",
+  "body": "Escolha seu prato favorito!",
+  "footer": "Restaurante Sabor & Arte - Delivery",
+  "cards": [
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1544025162-d76
+      "title": " 🥩  Picanha na Brasa",
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 60/77
+--- PAGE 51 ---
+ 
+ Copiar
+      "body": "Picanha grelhada 400g\nAcompanha: arroz, feijão trop
+      "footer": "R$ 89,90 - Serve 2 pessoas",
+      "buttons": [
+        { "id": "pedir_picanha", "title": " 🛒  Pedir Agora" },
+        { "id": "add_bebida", "title": " 🍺  Adicionar Bebida" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1574894709920-
+      "title": " 🍝  Lasanha Bolonhesa",
+      "body": "Massa fresca artesanal\nMolho bolonhesa caseiro\nQue
+      "footer": "R$ 49,90 - Porção Individual",
+      "buttons": [
+        { "id": "pedir_lasanha", "title": " 🛒  Pedir Agora" },
+        { "id": "ver_massas", "title": " 🍝  Ver Outras Massas" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1579871494447-
+      "title": " 🍣  Combo Sushi",
+      "body": "30 peças variadas:\n• 10 Hot Rolls\n• 10 Uramakis\n•
+      "footer": "R$ 79,90 - Serve 2 pessoas",
+      "buttons": [
+        { "id": "pedir_sushi", "title": " 🛒  Pedir Agora" },
+        { "id": "personalizar", "title": " ✏  Personalizar" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1624353365286-
+      "title": " 🍰  Petit Gateau",
+      "body": "Bolo de chocolate com centro cremoso\nAcompanha sorv
+      "footer": "R$ 29,90",
+      "buttons": [
+        { "id": "pedir_sobremesa", "title": " 🛒  Adicionar" },
+        { "id": "ver_sobremesas", "title": " 🍨  Mais Sobremesas" }
+      ]
+    }
+  ]
+}
+🏠  Imobiliária - Imóveis Disponíveis
+Para corretores e imobiliárias apresentarem imóveis aos clientes.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 🏠  Imóveis Selecionados",
+  "body": "Encontramos opções perfeitas para você!",
+  "footer": "Imobiliária Premium - CRECI 12345",
+  "cards": [
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 61/77
+--- PAGE 52 ---
+ 
+ Copiar
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1545324418-cc1
+      "title": " 🏢  Apartamento Alto Padrão",
+      "body": " 📍  Jardins - São Paulo\n 🛏  3 suítes | 🚗  2 vagas\n 📐
+      "footer": "R$ 2.500.000 ou R$ 12.000/mês",
+      "buttons": [
+        { "id": "agendar_visita_1", "title": " 📅  Agendar Visita" },
+        { "id": "fotos_1", "title": " 📸  Ver Fotos" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1564013799919-
+      "title": " 🏡  Casa em Condomínio",
+      "body": " 📍  Alphaville - Barueri\n 🛏  4 suítes | 🚗  4 vagas\n
+      "footer": "R$ 4.200.000",
+      "buttons": [
+        { "id": "agendar_visita_2", "title": " 📅  Agendar Visita" },
+        { "id": "fotos_2", "title": " 📸  Ver Fotos" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1497366216548-
+      "title": " 🏬  Sala Comercial",
+      "body": " 📍  Av. Paulista - SP\n 📐  120m² | 🚗  2 vagas\n 🏢  Edi
+      "footer": "R$ 18.000/mês",
+      "buttons": [
+        { "id": "agendar_visita_3", "title": " 📅  Agendar Visita" },
+        { "id": "proposta_3", "title": " 💼  Fazer Proposta" }
+      ]
+    }
+  ]
+}
+💼  Serviços - Catálogo de Planos
+Para empresas de serviços apresentarem seus planos e pacotes.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 📋  Nossos Planos",
+  "body": "Escolha o plano ideal para sua empresa",
+  "footer": "Marketing Digital Pro",
+  "cards": [
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1460925895917-
+      "title": " 🥉  Plano Starter",
+      "body": " ✅  10 posts/mês\n ✅  2 redes sociais\n ✅  Relatório m
+      "footer": "R$ 497/mês",
+      "buttons": [
+        { "id": "contratar_starter", "title": " ✅  Contratar" },
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 62/77
+--- PAGE 53 ---
+ 
+ 
+ Copiar
+        { "id": "info_starter", "title": " ℹ  Saiba Mais" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1551288049-beb
+      "title": " 🥈  Plano Professional",
+      "body": " ✅  20 posts/mês\n ✅  4 redes sociais\n ✅  Gestão de t
+      "footer": "R$ 997/mês",
+      "buttons": [
+        { "id": "contratar_pro", "title": " ✅  Contratar" },
+        { "id": "info_pro", "title": " ℹ  Saiba Mais" }
+      ]
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1553877522-432
+      "title": " 🥇  Plano Enterprise",
+      "body": " ✅  Posts ilimitados\n ✅  Todas as redes\n ✅  Equipe d
+      "footer": "R$ 2.497/mês",
+      "buttons": [
+        { "id": "contratar_enterprise", "title": " ✅  Contratar" },
+        { "id": "reuniao", "title": " 📞  Agendar Reunião" }
+      ]
+    }
+  ]
+}
+🔘Templates de Botões
+Botões permitem respostas rápidas do usuário. Máximo de 3 botões por
+mensagem.
+📞  Atendimento - Menu Inicial
+Menu de opções para início de atendimento.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 👋  Olá! Bem-vindo(a)!",
+  "body": "Sou o assistente virtual da Empresa XYZ.\n\nComo posso a
+  "footer": "Atendimento 24h",
+  "buttons": [
+    { "id": "vendas", "title": " 🛒  Fazer Pedido" },
+    { "id": "suporte", "title": " 🔧  Suporte Técnico" },
+    { "id": "financeiro", "title": " 💰  Financeiro" }
+  ]
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 63/77
+--- PAGE 54 ---
+ 
+ 
+ Copiar
+ Copiar
+ Copiar
+✅  Confirmação de Pedido
+Solicitar confirmação do cliente.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 📦  Confirme seu Pedido",
+  "body": "Pedido #12345\n\n 🛒  Itens:\n• 2x Camiseta Básica - R$ 79
+  "footer": "Prazo de entrega: 3-5 dias úteis",
+  "buttons": [
+    { "id": "confirmar_pedido", "title": " ✅  Confirmar Pedido" },
+    { "id": "alterar_pedido", "title": " ✏  Alterar Pedido" },
+    { "id": "cancelar_pedido", "title": " ❌  Cancelar" }
+  ]
+}
+⭐  Pesquisa de Satisfação
+Coletar feedback do cliente após atendimento.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " ⭐  Avalie nosso Atendimento",
+  "body": "Seu feedback é muito importante para nós!\n\nComo foi su
+  "footer": "Obrigado por ser nosso cliente!",
+  "buttons": [
+    { "id": "avaliacao_otimo", "title": " 😍  Excelente" },
+    { "id": "avaliacao_bom", "title": " 😊  Bom" },
+    { "id": "avaliacao_ruim", "title": " 😞  Precisa Melhorar" }
+  ]
+}
+📅  Agendamento
+Opções de horários para agendamento.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 📅  Agende sua Consulta",
+  "body": "Dr. João Silva - Cardiologista\n\nHorários disponíveis p
+  "footer": "Clínica Saúde Total",
+  "buttons": [
+    { "id": "horario_09h", "title": " 🕘  09:00" },
+    { "id": "horario_14h", "title": " 🕑  14:00" },
+    { "id": "horario_16h", "title": " 🕓  16:00" }
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 64/77
+--- PAGE 55 ---
+ 
+ 
+ Copiar
+  ]
+}
+📋Templates de Lista
+Listas permitem organizar muitas opções em seções. Ideal quando há mais de
+3 opções.
+🍔  Cardápio Completo
+Menu de restaurante organizado por categorias.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 🍔  Cardápio Completo",
+  "body": "Escolha uma categoria para ver os itens disponíveis",
+  "footer": "Delivery - Taxa grátis acima de R$ 50",
+  "buttonText": " 📋  Ver Cardápio",
+  "sections": [
+    {
+      "title": " 🍔  Hambúrgueres",
+      "rows": [
+        { "id": "burger_classico", "title": "Clássico", "descriptio
+        { "id": "burger_bacon", "title": "Bacon Lovers", "descripti
+        { "id": "burger_vegano", "title": "Veggie Burger", "descrip
+      ]
+    },
+    {
+      "title": " 🍕  Pizzas",
+      "rows": [
+        { "id": "pizza_margherita", "title": "Margherita", "descrip
+        { "id": "pizza_pepperoni", "title": "Pepperoni", "descripti
+        { "id": "pizza_4queijos", "title": "Quatro Queijos", "descr
+      ]
+    },
+    {
+      "title": " 🥤  Bebidas",
+      "rows": [
+        { "id": "bebida_refri", "title": "Refrigerante 350ml", "des
+        { "id": "bebida_suco", "title": "Suco Natural 500ml", "desc
+        { "id": "bebida_agua", "title": "Água Mineral", "descriptio
+      ]
+    }
+  ]
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 65/77
+--- PAGE 56 ---
+ 
+ Copiar
+ Copiar
+🏢  Departamentos da Empresa
+Direcionar cliente para o setor correto.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 🏢  Central de Atendimento",
+  "body": "Selecione o departamento desejado para ser direcionado a
+  "footer": "Empresa XYZ - Atendimento Humanizado",
+  "buttonText": " 📞  Escolher Departamento",
+  "sections": [
+    {
+      "title": " 💼  Comercial",
+      "rows": [
+        { "id": "comercial_orcamento", "title": "Solicitar Orçament
+        { "id": "comercial_catalogo", "title": "Catálogo de Produto
+        { "id": "comercial_parceria", "title": "Seja um Parceiro", 
+      ]
+    },
+    {
+      "title": " 🔧  Suporte Técnico",
+      "rows": [
+        { "id": "suporte_instalacao", "title": "Instalação", "descr
+        { "id": "suporte_problema", "title": "Reportar Problema", "
+        { "id": "suporte_garantia", "title": "Garantia", "descripti
+      ]
+    },
+    {
+      "title": " 💰  Financeiro",
+      "rows": [
+        { "id": "financeiro_boleto", "title": "2ª Via de Boleto", "
+        { "id": "financeiro_nota", "title": "Nota Fiscal", "descrip
+        { "id": "financeiro_pagamento", "title": "Formas de Pagamen
+      ]
+    }
+  ]
+}
+📅  Agendamento de Serviços
+Seleção de serviço e horário para agendamento.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " 💇  Agende seu Horário",
+  "body": "Escolha o serviço desejado. Após a seleção, enviaremos o
+  "footer": "Salão Beauty Hair - Desde 2010",
+  "buttonText": " ✂  Ver Serviços",
+  "sections": [
+    {
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 66/77
+--- PAGE 57 ---
+ 
+ Copiar
+      "title": " ✂  Cortes",
+      "rows": [
+        { "id": "corte_feminino", "title": "Corte Feminino", "descr
+        { "id": "corte_masculino", "title": "Corte Masculino", "des
+        { "id": "corte_infantil", "title": "Corte Infantil", "descr
+      ]
+    },
+    {
+      "title": " 🎨  Coloração",
+      "rows": [
+        { "id": "cor_tintura", "title": "Tintura Completa", "descri
+        { "id": "cor_mechas", "title": "Mechas/Luzes", "description
+        { "id": "cor_retoque", "title": "Retoque de Raiz", "descrip
+      ]
+    },
+    {
+      "title": " 💅  Unhas",
+      "rows": [
+        { "id": "unha_manicure", "title": "Manicure", "description"
+        { "id": "unha_pedicure", "title": "Pedicure", "description"
+        { "id": "unha_combo", "title": "Combo Mani + Pedi", "descri
+      ]
+    }
+  ]
+}
+❓  FAQ - Perguntas Frequentes
+Autoatendimento com dúvidas mais comuns.
+{
+  "jid": "5511999999999@s.whatsapp.net",
+  "title": " ❓  Central de Ajuda",
+  "body": "Encontre respostas para as dúvidas mais frequentes ou fa
+  "footer": "Suporte 24 horas",
+  "buttonText": " 🔍  Buscar Ajuda",
+  "sections": [
+    {
+      "title": " 📦  Pedidos e Entregas",
+      "rows": [
+        { "id": "faq_rastrear", "title": "Rastrear meu pedido", "de
+        { "id": "faq_prazo", "title": "Prazo de entrega", "descript
+        { "id": "faq_frete", "title": "Calcular frete", "descriptio
+      ]
+    },
+    {
+      "title": " 💳  Pagamentos",
+      "rows": [
+        { "id": "faq_formas", "title": "Formas de pagamento", "desc
+        { "id": "faq_parcelamento", "title": "Parcelamento", "descr
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 67/77
+--- PAGE 58 ---
+ 
+        { "id": "faq_cupom", "title": "Usar cupom de desconto", "de
+      ]
+    },
+    {
+      "title": " 🔄  Trocas e Devoluções",
+      "rows": [
+        { "id": "faq_trocar", "title": "Trocar produto", "descripti
+        { "id": "faq_devolver", "title": "Devolver produto", "descr
+        { "id": "faq_reembolso", "title": "Prazo de reembolso", "de
+      ]
+    },
+    {
+      "title": " 👤  Minha Conta",
+      "rows": [
+        { "id": "faq_senha", "title": "Esqueci minha senha", "descr
+        { "id": "faq_dados", "title": "Alterar dados cadastrais", "
+        { "id": "faq_atendente", "title": "Falar com atendente", "d
+      ]
+    }
+  ]
+}
+Integração TypebotNOVO
+Conecte sua instância WhatsApp ao Typebot para criar fluxos de conversação
+automatizados. Suporta Typebot self-hosted ou cloud.
+POST /api/instances/{id}/integrations/typebot
+Configura a integração com Typebot para a instância.
+PARÂMETRO TIPO DESCRIÇÃO
+enabled boolean Ativar/desativar integração
+url string URL do Typebot (ex: https://typebot.io ou self-
+hosted)
+typebot string Nome/ID do typebot a ser executado
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 68/77
+--- PAGE 59 ---
+ 
+ Copiar
+expire number Tempo em minutos para expirar sessão (0 = não
+expira)
+keywordFinish string Palavra-chave para finalizar (ex: #sair)
+keywordRestart string Palavra-chave para reiniciar (ex: #reiniciar)
+unknownMessage string Mensagem quando não entende a resposta
+stopBotFromMe boolean Parar bot quando você enviar mensagem
+manual
+debounceTime number Tempo de debounce em ms (agrupa mensagens
+rápidas)
+triggerType string Tipo de gatilho: "all", "keyword" ou "none"
+triggerOperator string Operador: "contains", "equals", "startsWith",
+"endsWith", "regex"
+triggerValue string Valor do gatilho (palavra-chave, regex, etc)
+{
+  "enabled": true,
+  "url": "https://typebot.seudominio.com",
+  "typebot": "atendimento-vendas",
+  "expire": 30,
+  "keywordFinish": "#sair",
+  "keywordRestart": "#reiniciar",
+  "unknownMessage": "Desculpe, não entendi. Digite #sair para falar
+  "stopBotFromMe": true,
+  "debounceTime": 3000,
+  "triggerType": "keyword",
+  "triggerOperator": "contains",
+  "triggerValue": "oi|olá|bom dia|boa tarde"
+}
+Tipos de Gatilho
+all - Todas as mensagens iniciam o bot
+keyword - Apenas mensagens que correspondem ao triggerValue
+none - Bot desativado (útil para pausar temporariamente)
+GET /api/instances/{id}/integrations/typebot
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 69/77
+--- PAGE 60 ---
+Obtém a configuração atual do Typebot.
+Integração Chatwoot NOVO
+Conecte sua instância ao Chatwoot para atendimento humano. Cria inbox
+automaticamente e configura webhook.
+POST /api/instances/{id}/integrations/chatwoot
+Configura a integração com Chatwoot. Testa conexão, cria inbox e configura
+webhook automaticamente.
+PARÂMETRO TIPO DESCRIÇÃO
+enabled boolean Ativar/desativar integração
+url string URL do Chatwoot (ex:
+https://app.chatwoot.com)
+accountId string ID da conta no Chatwoot
+token string Token de acesso (API Access Token)
+nameInbox string Nome da inbox a criar/usar
+autoCreateInbox boolean Criar inbox automaticamente se não existir
+webhookUrl string URL pública da API (para configurar
+webhook)
+signMsg boolean Assinar mensagens com nome do agente
+signDelimiter string Delimitador da assinatura (ex: "\n\n")
+reopenConversation boolean Reabrir conversa ao receber nova
+mensagem
+conversationPending boolean Criar conversa como pendente
+mergeBrazilContacts boolean Mesclar contatos brasileiros (9º dígito)
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 70/77
+--- PAGE 61 ---
+ 
+ Copiar
+convertAudioToOpus boolean NOVO  Converter áudios para
+OGG/Opus (PTT nativo) - Default: false
+useMessageQueue boolean NOVO  Usar fila de mensagens (Redis) -
+Default: false
+pauseTypebotOnAgent boolean NOVO  Pausar Typebot quando agente
+assumir - Default: false
+{
+  "enabled": true,
+  "url": "https://chatwoot.seudominio.com",
+  "accountId": "1",
+  "token": "seu_api_access_token",
+  "nameInbox": "WhatsApp - Vendas",
+  "autoCreateInbox": true,
+  "webhookUrl": "https://api.seudominio.com",
+  "signMsg": true,
+  "signDelimiter": "\\n\\n",
+  "reopenConversation": true,
+  "conversationPending": false,
+  "mergeBrazilContacts": true,
+  
+  // Novos parâmetros opcionais
+  "convertAudioToOpus": false,      // Converter áudios para PTT na
+  "useMessageQueue": false,          // Usar fila de mensagens
+  "pauseTypebotOnAgent": false       // Pausar Typebot quando agent
+}
+ Conversão de Áudio (convertAudioToOpus)
+Quando habilitado: Áudios enviados pelo Chatwoot (MP3, M4A, WAV)
+são convertidos automaticamente para formato OGG/Opus (PTT nativo do
+WhatsApp).
+Quando desabilitado (padrão): Áudios são enviados no formato original
+com flag PTT.
+ Fallback automático: Se a conversão falhar, o áudio original é enviado (nunca
+perde mensagens).
+ Fila de Mensagens (useMessageQueue)
+Quando habilitado: Mensagens do Chatwoot são adicionadas à fila Redis
+para processamento assíncrono com rate limiting.
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 71/77
+--- PAGE 62 ---
+ 
+Quando desabilitado (padrão): Mensagens são enviadas diretamente
+(comportamento atual).
+ Fallback automático: Se Redis não estiver disponível, envia direto.
+ Coexistência com Typebot (pauseTypebotOnAgent)
+Quando habilitado: Typebot pausa automaticamente quando você envia
+uma mensagem do celular (agente assume).
+Como funciona:
+Mensagem do celular (fromMe) marca agente ativo no Redis (30 min)
+Typebot detecta agente ativo e pausa respostas automáticas
+Evita respostas duplicadas (bot + humano)
+ Requer: Typebot também deve ter pauseOnChatwootAgent: true
+Webhook Automático
+Quando autoCreateInbox está ativo e webhookUrl é fornecido, o sistema
+configura automaticamente o webhook no Chatwoot:
+{webhookUrl}/api/instances/{instanceId}/chatwoot/webhook
+Exemplo: https://api.seudominio.com/api/instances/vendas/chatwoot/w
+Fluxo de Mensagens
+WhatsApp → Chatwoot: Mensagens recebidas são enviadas
+automaticamente para o Chatwoot
+Chatwoot → WhatsApp: Respostas dos agentes são enviadas via webhook
+para o WhatsApp
+Celular → WhatsApp: Mensagens do celular podem pausar Typebot (se
+configurado)
+GET /api/instances/{id}/integrations/chatwoot
+Obtém a configuração atual do Chatwoot.
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 72/77
+--- PAGE 63 ---
+ Copiar
+POST /api/instances/{id}/chatwoot/webhook
+Endpoint que recebe mensagens do Chatwoot (configurado automaticamente
+na inbox).
+Este endpoint é chamado pelo Chatwoot quando um agente envia uma mensagem.
+Não precisa ser chamado manualmente.
+PowerTools IA - Agentes Inteligentes PRO
+Sistema de agentes de IA multimodal com Google Gemini. Crie assistentes
+inteligentes que respondem automaticamente no WhatsApp com contexto,
+personalidade e conhecimento personalizado.
+ Recursos do PowerTools IA
+🎯  Vinculação com 1 Clique
+Selecione um agente e vincule à
+instância instantaneamente
+🖼  Multimodal
+Processa texto, imagens, áudios e
+documentos
+📚  Base de Conhecimento
+Treine com produtos, FAQs e
+informações da empresa
+🎭  Personalidade
+Defina tom, estilo e comportamento
+do agente
+GET /api/agents
+Lista todos os agentes de IA disponíveis no PapiZAI.
+POST /api/instances/{id}/agent
+Vincula um agente de IA à instância WhatsApp.
+{
+  "agentId": "uuid-do-agente"
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 73/77
+--- PAGE 64 ---
+}
+GET /api/instances/{id}/agent
+Obtém o agente vinculado à instância.
+DELETE /api/instances/{id}/agent
+Remove o vínculo do agente com a instância.
+Central de Ligações VoIP PRO
+Sistema completo de telefonia VoIP integrado. Gerencie instâncias de ligação, faça
+chamadas e envie SMS.
+ Recursos VoIP
+📞  Ligações de Voz
+Faça e receba ligações via API
+📱  Envio de SMS
+Envie SMS em massa ou individual
+📊  Disparo em Massa
+Campanhas de ligações automatizadas
+🔢  Múltiplos Números
+Gerencie vários números de telefone
+GET /api/call-instances
+Lista todas as instâncias de ligação configuradas.
+POST /api/call-instances
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 74/77
+--- PAGE 65 ---
+ Copiar
+ Copiar
+Cria uma nova instância de ligação.
+{
+  "name": "Linha Comercial",
+  "provider": "twilio",
+  "phoneNumber": "+5511999999999",
+  "accountSid": "ACxxxxxxxxxxxxxxx",
+  "authToken": "xxxxxxxxxxxxxxx"
+}
+Disparo de LigaçõesPRO
+Crie campanhas de ligações em massa com áudio personalizado, agendamento e
+relatórios detalhados.
+GET /api/call-campaigns
+Lista todas as campanhas de ligação.
+POST /api/call-campaigns
+Cria uma nova campanha de disparo de ligações.
+{
+  "name": "Campanha Black Friday",
+  "callInstanceId": "uuid-da-instancia",
+  "audioUrl": "https://exemplo.com/audio-promocao.mp3",
+  "numbers": [
+    "+5511999999999",
+    "+5511888888888"
+  ],
+  "scheduleAt": "2025-11-29T10:00:00Z",
+  "maxConcurrent": 5,
+  "retryAttempts": 2
+}
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 75/77
+--- PAGE 66 ---
+ 
+ Copiar
+ Copiar
+POST /api/call-campaigns/{id}/start
+Inicia uma campanha de ligações.
+POST /api/call-campaigns/{id}/pause
+Pausa uma campanha em andamento.
+Envio de SMSPRO
+Envie SMS individual ou em massa através das instâncias de ligação configuradas.
+POST /api/sms/send
+Envia um SMS para um número.
+{
+  "callInstanceId": "uuid-da-instancia",
+  "to": "+5511999999999",
+  "message": "Olá! Sua consulta está confirmada para amanhã às 14h.
+}
+POST /api/sms/send-bulk
+Envia SMS em massa para múltiplos números.
+{
+  "callInstanceId": "uuid-da-instancia",
+  "numbers": [
+    "+5511999999999",
+    "+5511888888888",
+    "+5511777777777"
+  ],
+©  2 0 2 5  P A P I  -  D e s e n v ol v i d o p or  M a t h e u s  P a s t or i n i
+←Voltar ao Painel
+27/02/2026, 15:21 Documentação da API - Pastorini API
+74.1.20.130:3000/docs.html 76/77

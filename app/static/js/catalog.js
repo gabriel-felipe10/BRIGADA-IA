@@ -3,14 +3,94 @@
  */
 
 window.BrigadaCatalog = {
+  normalizeCat(c) {
+    if (!c) return '';
+    let str = c.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (str.startsWith('suin')) return 'suino';
+    if (str.startsWith('bovin')) return 'bovino';
+    if (str.startsWith('pescad')) return 'pescado';
+    if (str.startsWith('ave')) return 'aves';
+    if (str.startsWith('iogurt')) return 'iogurtes';
+    if (str.startsWith('laticin')) return 'laticinios';
+    if (str.startsWith('frio')) return 'frios';
+    if (str.startsWith('padari')) return 'padaria';
+    if (str.startsWith('hortifrut')) return 'hortifruti';
+    if (str.startsWith('merceari')) return 'mercearia';
+    return str;
+  },
+
+  getAllowedCatalog() {
+    let catalog = window.BrigadaData.catalog || [];
+    if (window.BrigadaAuth.currentUser) {
+      const sector = window.BrigadaAuth.currentUser.sector;
+      if (sector === 'açougue') {
+        catalog = catalog.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(this.normalizeCat(p.category)));
+      } else if (sector === 'pereciveis') {
+        catalog = catalog.filter(p => ['iogurtes', 'laticinios', 'frios', 'pereciveis'].includes(this.normalizeCat(p.category)));
+      } else if (sector === 'padaria') {
+        catalog = catalog.filter(p => this.normalizeCat(p.category) === 'padaria');
+      } else if (sector === 'hortifruti') {
+        catalog = catalog.filter(p => this.normalizeCat(p.category) === 'hortifruti');
+      } else if (sector === 'mercearia') {
+        catalog = catalog.filter(p => this.normalizeCat(p.category) === 'mercearia');
+      }
+    }
+    return catalog;
+  },
+
   render(container) {
-    const catalog = window.BrigadaData.catalog || [];
+    const rawCatalog = window.BrigadaData.catalog || [];
+    const catalog = this.getAllowedCatalog();
+    const sector = window.BrigadaAuth.currentUser?.sector || 'todos';
+
+    // Mapeamento padrão com ícones
+    const categoryLabels = {
+      'aves': '🐔 Aves',
+      'bovino': '🐮 Bovinos',
+      'suino': '🐷 Suínos',
+      'pescado': '🐟 Pescados',
+      'iogurtes': '🍦 Iogurtes',
+      'laticinios': '🧀 Laticínios',
+      'frios': '🥓 Frios',
+      'padaria': '🍞 Padaria',
+      'hortifruti': '🥦 Hortifruti',
+      'mercearia': '🛒 Mercearia'
+    };
+
+    // Coleta todas as categorias únicas no catálogo geral e no permitido
+    const availableCategories = new Map();
+    rawCatalog.forEach(p => {
+      if (p.category) {
+        const norm = this.normalizeCat(p.category);
+        if (!availableCategories.has(norm)) {
+          const label = categoryLabels[norm] || `📦 ${p.category}`;
+          availableCategories.set(norm, label);
+        }
+      }
+    });
+
+    // Se houver categorias fixas para o setor, garante que estejam no mapa
+    if (sector === 'açougue') {
+      if (!availableCategories.has('aves')) availableCategories.set('aves', '🐔 Aves');
+      if (!availableCategories.has('bovino')) availableCategories.set('bovino', '🐮 Bovinos');
+      if (!availableCategories.has('suino')) availableCategories.set('suino', '🐷 Suínos');
+      if (!availableCategories.has('pescado')) availableCategories.set('pescado', '🐟 Pescados');
+    } else if (sector === 'pereciveis') {
+      if (!availableCategories.has('iogurtes')) availableCategories.set('iogurtes', '🍦 Iogurtes');
+      if (!availableCategories.has('laticinios')) availableCategories.set('laticinios', '🧀 Laticínios');
+      if (!availableCategories.has('frios')) availableCategories.set('frios', '🥓 Frios');
+    }
+
+    let optionsHTML = '<option value="todos">Todas Categorias</option>';
+    availableCategories.forEach((label, normKey) => {
+      optionsHTML += `<option value="${normKey}">${label}</option>`;
+    });
 
     container.innerHTML = `
       <div class="panel-header">
         <div class="panel-header__left">
           <h2 class="panel-title">📖 Catálogo Base de Produtos</h2>
-          <p class="panel-subtitle">Lista de todos os produtos cadastrados no sistema central</p>
+          <p class="panel-subtitle">Lista de produtos cadastrados no sistema central (${sector === 'todos' ? 'Geral' : sector.toUpperCase()})</p>
         </div>
         <span class="badge badge--ok" style="padding:0.4rem 0.8rem;font-size:0.8rem;">
           ${catalog.length} produtos
@@ -29,12 +109,8 @@ window.BrigadaCatalog = {
             <input type="text" id="catalog-search" class="form-input" placeholder="Buscar por PLU, Código ou Nome..." style="flex: 1;">
             <button id="btn-scan-catalog" class="btn btn--outline" style="padding: 0.5rem;" title="Escanear Código">📷</button>
           </div>
-          <select id="catalog-filter" class="form-input" style="max-width: 200px;">
-            <option value="todos">Todas Categorias</option>
-            <option value="aves">🐔 Aves</option>
-            <option value="bovino">🐮 Bovino</option>
-            <option value="suino">🐷 Suíno</option>
-            <option value="pescado">🐟 Pescado</option>
+          <select id="catalog-filter" class="form-input" style="max-width: 220px;">
+            ${optionsHTML}
           </select>
           ${!window.BrigadaAuth.isKiosk() ? `<button id="btn-print-selected" class="btn btn--primary" style="margin-left: auto;">🖨️ Imprimir Selecionados</button>` : ''}
         </div>
@@ -67,16 +143,11 @@ window.BrigadaCatalog = {
     const updateFilter = () => {
       const terms = searchInput.value.toLowerCase().split(/\s+/).filter(t => t.length > 0);
       const cat = filterSelect.value.toLowerCase();
-      const normalizeCat = (c) => {
-        if (!c) return '';
-        let str = c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (str.startsWith('suino')) return 'suino';
-        if (str.startsWith('bovino')) return 'bovino';
-        if (str.startsWith('pescado')) return 'pescado';
-        return str;
-      };
 
-      const filtered = catalog.filter(p => {
+      // Se o usuário selecionar uma categoria específica que não pertence ao filtro estrito do setor (ex: Iogurtes no Açougue), busca no catálogo geral
+      const baseList = (cat !== 'todos' && !catalog.some(p => this.normalizeCat(p.category) === cat)) ? rawCatalog : catalog;
+
+      const filtered = baseList.filter(p => {
         const itemName = p.name ? p.name.toLowerCase() : '';
         const itemPlu = p.plu ? p.plu.toLowerCase() : '';
         const itemBarcode = p.barcode ? p.barcode.toLowerCase() : '';
@@ -88,7 +159,7 @@ window.BrigadaCatalog = {
 
         let matchCat = true;
         if (cat !== 'todos') {
-          matchCat = (normalizeCat(p.category) === cat);
+          matchCat = (this.normalizeCat(p.category) === cat);
         }
 
         return matchText && matchCat;
@@ -128,7 +199,7 @@ window.BrigadaCatalog = {
       }
       
       const selectedPlus = Array.from(selectedCheckboxes).map(cb => cb.value);
-      const selectedProducts = catalog.filter(p => selectedPlus.includes(p.plu));
+      const selectedProducts = rawCatalog.filter(p => selectedPlus.includes(p.plu));
       
       let printContent = `
         <div style="font-family: sans-serif; padding: 20px; color: #000; background: #fff;">
@@ -171,19 +242,14 @@ window.BrigadaCatalog = {
 
     tbody.innerHTML = data.map(p => {
       let icon = '';
-      const normalizeCat = (c) => {
-        if (!c) return '';
-        let str = c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (str.startsWith('suino')) return 'suino';
-        if (str.startsWith('bovino')) return 'bovino';
-        if (str.startsWith('pescado')) return 'pescado';
-        return str;
-      };
-      const safeCat = normalizeCat(p.category);
+      const safeCat = this.normalizeCat(p.category);
       if (safeCat === 'aves') icon = '🐔 Aves';
       else if (safeCat === 'bovino') icon = '🐮 Bovino';
       else if (safeCat === 'suino') icon = '🐷 Suíno';
       else if (safeCat === 'pescado') icon = '🐟 Pescado';
+      else if (safeCat === 'iogurtes') icon = '🍦 Iogurtes';
+      else if (safeCat === 'laticinios') icon = '🧀 Laticínios';
+      else if (safeCat === 'frios') icon = '🥓 Frios';
       else if (safeCat === 'padaria') icon = '🍞 Padaria';
       else if (safeCat === 'hortifruti') icon = '🥦 Hortifruti';
       else if (safeCat === 'mercearia') icon = '🛒 Mercearia';
@@ -205,3 +271,4 @@ window.BrigadaCatalog = {
     }).join('');
   }
 };
+
