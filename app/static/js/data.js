@@ -745,8 +745,9 @@ window.BrigadaData = {
         }
       });
 
-      // Mescla produtos sem nota (base de iogurtes/laticínios) no catálogo base
-      (this.produtosSemNota || []).forEach(p => {
+      // Mescla produtos sem nota e base de iogurtes/laticínios no catálogo base
+      const itemsToMerge = [...(this.produtosSemNota || []), ...(this.iogurtesDb || [])];
+      itemsToMerge.forEach(p => {
         const key = `${p.category}-${p.plu}`;
         if (!seenCatKeys.has(key)) {
           seenCatKeys.add(key);
@@ -781,7 +782,8 @@ window.BrigadaData = {
         }
       });
 
-      (this.produtosSemNota || []).forEach(p => {
+      const fallbackItemsToMerge = [...(this.produtosSemNota || []), ...(this.iogurtesDb || [])];
+      fallbackItemsToMerge.forEach(p => {
         if (!seenPlus.has(String(p.plu))) {
           seenPlus.add(String(p.plu));
           this.catalog.push({

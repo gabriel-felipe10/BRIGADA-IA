@@ -20,22 +20,7 @@ window.BrigadaCatalog = {
   },
 
   getAllowedCatalog() {
-    let catalog = window.BrigadaData.catalog || [];
-    if (window.BrigadaAuth.currentUser) {
-      const sector = window.BrigadaAuth.currentUser.sector;
-      if (sector === 'açougue') {
-        catalog = catalog.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(this.normalizeCat(p.category)));
-      } else if (sector === 'pereciveis') {
-        catalog = catalog.filter(p => ['iogurtes', 'laticinios', 'frios', 'pereciveis'].includes(this.normalizeCat(p.category)));
-      } else if (sector === 'padaria') {
-        catalog = catalog.filter(p => this.normalizeCat(p.category) === 'padaria');
-      } else if (sector === 'hortifruti') {
-        catalog = catalog.filter(p => this.normalizeCat(p.category) === 'hortifruti');
-      } else if (sector === 'mercearia') {
-        catalog = catalog.filter(p => this.normalizeCat(p.category) === 'mercearia');
-      }
-    }
-    return catalog;
+    return window.BrigadaData.catalog || [];
   },
 
   render(container) {
