@@ -19,66 +19,75 @@ window.BrigadaCatalog = {
     return str;
   },
 
+  sectorCategoriesMap: {
+    'açougue': {
+      label: '🥩 Açougue',
+      categories: {
+        'aves': '🐔 Aves',
+        'bovino': '🐮 Bovinos',
+        'suino': '🐷 Suínos',
+        'pescado': '🐟 Pescados'
+      }
+    },
+    'pereciveis': {
+      label: '🧊 Perecíveis',
+      categories: {
+        'iogurtes': '🍦 Iogurtes',
+        'laticinios': '🧀 Laticínios',
+        'frios': '🥓 Frios',
+        'pereciveis': '📦 Perecíveis Gerais'
+      }
+    },
+    'padaria': {
+      label: '🍞 Padaria',
+      categories: {
+        'padaria': '🍞 Padaria'
+      }
+    },
+    'hortifruti': {
+      label: '🥬 Hortifruti',
+      categories: {
+        'hortifruti': '🥦 Hortifruti'
+      }
+    },
+    'mercearia': {
+      label: '🛒 Mercearia',
+      categories: {
+        'mercearia': '🛒 Mercearia'
+      }
+    }
+  },
+
+  getAllCategories() {
+    const all = {};
+    Object.values(this.sectorCategoriesMap).forEach(sec => {
+      Object.assign(all, sec.categories);
+    });
+    return all;
+  },
+
   getAllowedCatalog() {
     return window.BrigadaData.catalog || [];
   },
 
   render(container) {
     const rawCatalog = window.BrigadaData.catalog || [];
-    const catalog = this.getAllowedCatalog();
-    const sector = window.BrigadaAuth.currentUser?.sector || 'todos';
+    const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
 
-    // Mapeamento padrão com ícones
-    const categoryLabels = {
-      'aves': '🐔 Aves',
-      'bovino': '🐮 Bovinos',
-      'suino': '🐷 Suínos',
-      'pescado': '🐟 Pescados',
-      'iogurtes': '🍦 Iogurtes',
-      'laticinios': '🧀 Laticínios',
-      'frios': '🥓 Frios',
-      'padaria': '🍞 Padaria',
-      'hortifruti': '🥦 Hortifruti',
-      'mercearia': '🛒 Mercearia'
-    };
-
-    // Coleta todas as categorias únicas no catálogo geral e no permitido
-    const availableCategories = new Map();
-    rawCatalog.forEach(p => {
-      if (p.category) {
-        const norm = this.normalizeCat(p.category);
-        if (!availableCategories.has(norm)) {
-          const label = categoryLabels[norm] || `📦 ${p.category}`;
-          availableCategories.set(norm, label);
-        }
-      }
-    });
-
-    // Se houver categorias fixas para o setor, garante que estejam no mapa
-    if (sector === 'açougue') {
-      if (!availableCategories.has('aves')) availableCategories.set('aves', '🐔 Aves');
-      if (!availableCategories.has('bovino')) availableCategories.set('bovino', '🐮 Bovinos');
-      if (!availableCategories.has('suino')) availableCategories.set('suino', '🐷 Suínos');
-      if (!availableCategories.has('pescado')) availableCategories.set('pescado', '🐟 Pescados');
-    } else if (sector === 'pereciveis') {
-      if (!availableCategories.has('iogurtes')) availableCategories.set('iogurtes', '🍦 Iogurtes');
-      if (!availableCategories.has('laticinios')) availableCategories.set('laticinios', '🧀 Laticínios');
-      if (!availableCategories.has('frios')) availableCategories.set('frios', '🥓 Frios');
+    // Determina o setor inicial selecionado (se admin ou todos, inicia em todos; caso contrário, no setor do usuário)
+    let defaultSector = 'todos';
+    if (userSector !== 'todos' && this.sectorCategoriesMap[userSector]) {
+      defaultSector = userSector;
     }
-
-    let optionsHTML = '<option value="todos">Todas Categorias</option>';
-    availableCategories.forEach((label, normKey) => {
-      optionsHTML += `<option value="${normKey}">${label}</option>`;
-    });
 
     container.innerHTML = `
       <div class="panel-header">
         <div class="panel-header__left">
           <h2 class="panel-title">📖 Catálogo Base de Produtos</h2>
-          <p class="panel-subtitle">Lista de produtos cadastrados no sistema central (${sector === 'todos' ? 'Geral' : sector.toUpperCase()})</p>
+          <p class="panel-subtitle">Consulta geral e busca centralizada de produtos por Setor e Categoria</p>
         </div>
-        <span class="badge badge--ok" style="padding:0.4rem 0.8rem;font-size:0.8rem;">
-          ${catalog.length} produtos
+        <span id="catalog-count-badge" class="badge badge--ok" style="padding:0.4rem 0.8rem;font-size:0.8rem;">
+          ${rawCatalog.length} produtos
         </span>
       </div>
 
@@ -90,13 +99,28 @@ window.BrigadaCatalog = {
 
       <div class="glass-panel">
         <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap;">
-          <div style="display: flex; gap: 0.5rem; align-items: center; max-width: 450px; flex: 1;">
+          <div style="display: flex; gap: 0.5rem; align-items: center; min-width: 260px; flex: 1;">
             <input type="text" id="catalog-search" class="form-input" placeholder="Buscar por PLU, Código ou Nome..." style="flex: 1;">
             <button id="btn-scan-catalog" class="btn btn--outline" style="padding: 0.5rem;" title="Escanear Código">📷</button>
           </div>
-          <select id="catalog-filter" class="form-input" style="max-width: 220px;">
-            ${optionsHTML}
-          </select>
+
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- Select 1: Setor -->
+            <select id="catalog-sector-filter" class="form-input" style="min-width: 180px;">
+              <option value="todos">🏢 Todos os Setores</option>
+              <option value="açougue">🥩 Açougue</option>
+              <option value="pereciveis">🧊 Perecíveis</option>
+              <option value="padaria">🍞 Padaria</option>
+              <option value="hortifruti">🥬 Hortifruti</option>
+              <option value="mercearia">🛒 Mercearia</option>
+            </select>
+
+            <!-- Select 2: Categoria (dinâmico) -->
+            <select id="catalog-category-filter" class="form-input" style="min-width: 200px;">
+              <!-- Preenchido via JS -->
+            </select>
+          </div>
+
           ${!window.BrigadaAuth.isKiosk() ? `<button id="btn-print-selected" class="btn btn--primary" style="margin-left: auto;">🖨️ Imprimir Selecionados</button>` : ''}
         </div>
 
@@ -118,44 +142,88 @@ window.BrigadaCatalog = {
       </div>
     `;
 
-    this.renderTable(catalog);
-
-    // Filtros e busca
     const searchInput = document.getElementById('catalog-search');
     const scanBtn = document.getElementById('btn-scan-catalog');
-    const filterSelect = document.getElementById('catalog-filter');
+    const sectorSelect = document.getElementById('catalog-sector-filter');
+    const categorySelect = document.getElementById('catalog-category-filter');
 
+    // Define setor inicial no select
+    sectorSelect.value = defaultSector;
+
+    // Atualiza opções do dropdown de categoria com base no setor escolhido
+    const populateCategoryOptions = (selectedSector) => {
+      let optionsHTML = '';
+      if (selectedSector === 'todos') {
+        optionsHTML += '<option value="todos">Todas Categorias</option>';
+        const allCats = this.getAllCategories();
+        Object.entries(allCats).forEach(([catKey, label]) => {
+          optionsHTML += `<option value="${catKey}">${label}</option>`;
+        });
+      } else if (this.sectorCategoriesMap[selectedSector]) {
+        const secInfo = this.sectorCategoriesMap[selectedSector];
+        optionsHTML += `<option value="todos">Todas Categorias (${secInfo.label})</option>`;
+        Object.entries(secInfo.categories).forEach(([catKey, label]) => {
+          optionsHTML += `<option value="${catKey}">${label}</option>`;
+        });
+      }
+      categorySelect.innerHTML = optionsHTML;
+    };
+
+    // Preenche categorias iniciais
+    populateCategoryOptions(sectorSelect.value);
+
+    // Função de filtragem
     const updateFilter = () => {
       const terms = searchInput.value.toLowerCase().split(/\s+/).filter(t => t.length > 0);
-      const cat = filterSelect.value.toLowerCase();
+      const chosenSector = sectorSelect.value.toLowerCase();
+      const chosenCat = categorySelect.value.toLowerCase();
 
-      // Se o usuário selecionar uma categoria específica que não pertence ao filtro estrito do setor (ex: Iogurtes no Açougue), busca no catálogo geral
-      const baseList = (cat !== 'todos' && !catalog.some(p => this.normalizeCat(p.category) === cat)) ? rawCatalog : catalog;
+      const filtered = rawCatalog.filter(p => {
+        const normCat = this.normalizeCat(p.category);
 
-      const filtered = baseList.filter(p => {
-        const itemName = p.name ? p.name.toLowerCase() : '';
-        const itemPlu = p.plu ? p.plu.toLowerCase() : '';
-        const itemBarcode = p.barcode ? p.barcode.toLowerCase() : '';
+        // Filtro por Setor
+        let matchSector = true;
+        if (chosenSector !== 'todos' && this.sectorCategoriesMap[chosenSector]) {
+          const allowedCats = Object.keys(this.sectorCategoriesMap[chosenSector].categories);
+          matchSector = allowedCats.includes(normCat);
+        }
 
+        // Filtro por Categoria
+        let matchCat = true;
+        if (chosenCat !== 'todos') {
+          matchCat = (normCat === chosenCat);
+        }
+
+        // Filtro por Texto (PLU, Nome, Código de barras)
         let matchText = true;
         if (terms.length > 0) {
+          const itemName = p.name ? p.name.toLowerCase() : '';
+          const itemPlu = p.plu ? p.plu.toLowerCase() : '';
+          const itemBarcode = p.barcode ? p.barcode.toLowerCase() : '';
           matchText = terms.every(t => itemPlu.includes(t) || itemName.includes(t) || itemBarcode.includes(t));
         }
 
-        let matchCat = true;
-        if (cat !== 'todos') {
-          matchCat = (this.normalizeCat(p.category) === cat);
-        }
-
-        return matchText && matchCat;
+        return matchSector && matchCat && matchText;
       });
+
+      // Atualiza badge de contagem
+      const countBadge = document.getElementById('catalog-count-badge');
+      if (countBadge) {
+        countBadge.textContent = `${filtered.length} produtos`;
+      }
 
       this.renderTable(filtered);
     };
 
+    // Eventos
+    sectorSelect.addEventListener('change', () => {
+      populateCategoryOptions(sectorSelect.value);
+      updateFilter();
+    });
+
+    categorySelect.addEventListener('change', updateFilter);
     searchInput.addEventListener('input', updateFilter);
-    filterSelect.addEventListener('change', updateFilter);
-    
+
     if (scanBtn) {
       scanBtn.addEventListener('click', () => {
         window.BrigadaUI.openScanner((result) => {
@@ -169,13 +237,13 @@ window.BrigadaCatalog = {
       });
     }
 
-    // Toggle all checkboxes
+    // Toggle checkboxes
     document.getElementById('catalog-select-all')?.addEventListener('change', (e) => {
       const checkboxes = document.querySelectorAll('.catalog-row-checkbox');
       checkboxes.forEach(cb => cb.checked = e.target.checked);
     });
 
-    // Print selected function
+    // Impressão de selecionados
     document.getElementById('btn-print-selected')?.addEventListener('click', () => {
       const selectedCheckboxes = document.querySelectorAll('.catalog-row-checkbox:checked');
       if (selectedCheckboxes.length === 0) {
@@ -212,6 +280,9 @@ window.BrigadaCatalog = {
 
       window.BrigadaUI.printContent(printContent);
     });
+
+    // Executa filtro inicial
+    updateFilter();
   },
 
   renderTable(data) {
@@ -256,4 +327,3 @@ window.BrigadaCatalog = {
     }).join('');
   }
 };
-
