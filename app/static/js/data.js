@@ -1049,12 +1049,8 @@ window.BrigadaData = {
           const sector = window.BrigadaAuth.currentUser.sector;
           if (sector === 'açougue') {
             allowedProducts = this.products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
-          } else if (sector === 'padaria') {
-            allowedProducts = this.products.filter(p => ['padaria'].includes(p.category));
-          } else if (sector === 'hortifruti') {
-            allowedProducts = this.products.filter(p => ['hortifruti'].includes(p.category));
-          } else if (sector === 'mercearia') {
-            allowedProducts = this.products.filter(p => ['mercearia'].includes(p.category));
+          } else if (sector === 'pereciveis') {
+            allowedProducts = this.products.filter(p => ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category));
           }
         }
       }

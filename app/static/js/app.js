@@ -329,6 +329,25 @@ window.BrigadaRouter = {
     
     await window.BrigadaData.load();
     
+    // Iniciar intervalo para atualização em background a cada 15 segundos
+    setInterval(async () => {
+      if (window.BrigadaAuth.isLoggedIn() && this.currentPage && this.currentPage !== 'login') {
+        try {
+          await window.BrigadaData.load();
+          const pageContainer = document.getElementById('page-container');
+          if (pageContainer) {
+            if (this.currentPage === 'products' && window.BrigadaProducts) {
+              window.BrigadaProducts.renderTable(pageContainer);
+            } else if (this.currentPage === 'pereciveis' && window.BrigadaPereciveis) {
+              window.BrigadaPereciveis.renderTable(pageContainer);
+            }
+          }
+        } catch (e) {
+          console.error("Erro na sincronização em background:", e);
+        }
+      }
+    }, 15000);
+
     if (window.BrigadaAuth.isLoggedIn()) {
       if (window.BrigadaAuth.isKiosk()) {
         this.navigate('catalog');
@@ -340,7 +359,7 @@ window.BrigadaRouter = {
     }
   },
 
-  navigate(page) {
+  async navigate(page) {
     this.currentPage = page;
     const root = document.getElementById('app-root');
     if (!root) return;
@@ -353,6 +372,14 @@ window.BrigadaRouter = {
     } else {
       // Require auth for all other pages
       if (!window.BrigadaAuth.requireAuth()) return;
+      
+      // Carrega os dados mais recentes do servidor ao navegar
+      try {
+        await window.BrigadaData.load();
+      } catch (err) {
+        console.error("Erro ao carregar dados atualizados:", err);
+      }
+      
       this.renderShell(root, page);
     }
   },
