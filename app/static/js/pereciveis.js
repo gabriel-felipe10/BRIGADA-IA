@@ -178,7 +178,6 @@ window.BrigadaPereciveis = {
                   <select id="field-unit-pereciveis" class="form-input">
                     <option value="kg">kg</option>
                     <option value="un">un</option>
-                    <option value="cx">cx</option>
                   </select>
                 </div>
               </div>
