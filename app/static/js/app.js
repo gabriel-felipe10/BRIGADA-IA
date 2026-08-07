@@ -353,6 +353,10 @@ window.BrigadaRouter = {
         this.navigate('catalog');
       } else {
         this.navigate('dashboard');
+        // Exibir versículo do dia após o login (apenas 1x por dia)
+        if (window.BrigadaVerseOfTheDay) {
+          window.BrigadaVerseOfTheDay.init();
+        }
       }
     } else {
       this.navigate('login');

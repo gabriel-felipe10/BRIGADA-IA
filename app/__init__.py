@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from app.config import Config
 from app.logging_config import logger
 from app.models.database import init_db
+from app.models.bible import init_bible_db
 
 # Carrega as variáveis do arquivo .env
 load_dotenv()
@@ -25,6 +26,7 @@ def create_app():
 
     # Inicializa o banco de dados local (SQLite)
     init_db()
+    init_bible_db()
 
     # Verifica e migra schema do Supabase (adiciona colunas faltantes)
     _ensure_supabase_schema()
@@ -37,6 +39,7 @@ def create_app():
     from app.routes.users import users_bp
     from app.routes.settings import settings_bp
     from app.routes.produtos_sem_nota import produtos_sem_nota_bp
+    from app.routes.bible import bible_bp
 
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_bp)
@@ -45,8 +48,9 @@ def create_app():
     app.register_blueprint(users_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(produtos_sem_nota_bp)
+    app.register_blueprint(bible_bp)
 
-    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota")
+    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota, bible")
     logger.info("🛡️  BRIGADA-IA pronta para receber requisições")
 
     return app
