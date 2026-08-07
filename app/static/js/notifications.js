@@ -17,10 +17,7 @@ window.BrigadaNotifications = {
 
   SECTORS: [
     { id: 'açougue',    label: 'Açougue',    icon: '🥩', color: '#ef4444', categories: ['aves','suino','bovino','pescado'] },
-    { id: 'padaria',    label: 'Padaria',    icon: '🍞', color: '#f59e0b', categories: ['padaria'] },
-    { id: 'hortifruti', label: 'Hortifruti', icon: '🥬', color: '#22c55e', categories: ['hortifruti'] },
-    { id: 'mercearia',  label: 'Mercearia',  icon: '🛒', color: '#6366f1', categories: ['mercearia'] },
-    { id: 'pereciveis', label: 'Perecíveis', icon: '🧊', color: '#06b6d4', categories: ['aves','suino','bovino','pescado','padaria','hortifruti'] },
+    { id: 'pereciveis', label: 'Perecíveis', icon: '🧊', color: '#06b6d4', categories: ['aves','suino','bovino','pescado','iogurtes','laticinios','frios','pereciveis'] },
   ],
 
   // ═══════════════════════════════════════════════════════════════════
@@ -680,7 +677,7 @@ window.BrigadaNotifications = {
       return;
     }
 
-    const sectorNames = { açougue: '🥩 Açougue', padaria: '🍞 Padaria', hortifruti: '🥬 Hortifruti', mercearia: '🛒 Mercearia', pereciveis: '🧊 Perecíveis', todos: '🌍 Todos' };
+    const sectorNames = { açougue: '🥩 Açougue', pereciveis: '🧊 Perecíveis', todos: '🌍 Todos' };
 
     select.innerHTML = activeUsers.map(u => `
       <option value="${u.id}">${u.name} (${u.role || 'usuário'} — ${sectorNames[u.sector] || u.sector})</option>
@@ -1107,7 +1104,7 @@ window.BrigadaNotifications = {
       success: { label: '🟢 Sucesso',    color: '#4ade80', bg: 'rgba(34,197,94,0.1)' },
     };
 
-    const sectorLabels = { açougue: '🥩 Açougue', padaria: '🍞 Padaria', hortifruti: '🥬 Hortifruti', mercearia: '🛒 Mercearia', pereciveis: '🧊 Perecíveis' };
+    const sectorLabels = { açougue: '🥩 Açougue', pereciveis: '🧊 Perecíveis' };
 
     listEl.innerHTML = this.bannersList.map(b => {
       const typeInfo = typeBadges[b.type] || typeBadges.info;
@@ -1406,8 +1403,7 @@ window.BrigadaNotifications = {
     }
 
     const sectorLabels = {
-      'todos': '🌍 Todos', 'açougue': '🥩 Açougue', 'pereciveis': '🧊 Perecíveis',
-      'padaria': '🍞 Padaria', 'hortifruti': '🥬 Hortifruti', 'mercearia': '🛒 Mercearia'
+      'todos': '🌍 Todos', 'açougue': '🥩 Açougue', 'pereciveis': '🧊 Perecíveis'
     };
 
     listEl.innerHTML = contacts.map(u => `

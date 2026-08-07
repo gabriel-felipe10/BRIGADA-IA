@@ -677,15 +677,6 @@ window.BrigadaConciliacao = {
         { value: 'laticinios', label: '🧀 Laticínios' },
         { value: 'frios', label: '🥓 Frios' },
         { value: 'pereciveis', label: '🍎 Perecíveis' }
-      ],
-      'padaria': [
-        { value: 'padaria', label: '🍞 Padaria' }
-      ],
-      'hortifruti': [
-        { value: 'hortifruti', label: '🥦 Hortifruti' }
-      ],
-      'mercearia': [
-        { value: 'mercearia', label: '🛒 Mercearia' }
       ]
     };
 
@@ -693,10 +684,7 @@ window.BrigadaConciliacao = {
     if (userSector === 'todos' || window.BrigadaAuth.isSuperAdmin()) {
       categoriesToShow = [
         ...sectorCategories['açougue'],
-        ...sectorCategories['pereciveis'],
-        ...sectorCategories['padaria'],
-        ...sectorCategories['hortifruti'],
-        ...sectorCategories['mercearia']
+        ...sectorCategories['pereciveis']
       ];
     } else if (sectorCategories[userSector]) {
       categoriesToShow = sectorCategories[userSector];

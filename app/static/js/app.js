@@ -1376,7 +1376,7 @@ window.BrigadaBanners = {
 
     let targetLabel = '🌐 Todos os Usuários';
     if (b.targetType === 'sector') {
-      const sectorNames = { açougue: '🥩 Açougue', padaria: '🍞 Padaria', hortifruti: '🥬 Hortifruti', mercearia: '🛒 Mercearia', pereciveis: '🧊 Perecíveis' };
+      const sectorNames = { açougue: '🥩 Açougue', pereciveis: '🧊 Perecíveis' };
       targetLabel = `🏢 Setor: ${sectorNames[b.targetValue] || b.targetValue}`;
     } else if (b.targetType === 'user') {
       targetLabel = `👤 Exclusivo para Você`;
