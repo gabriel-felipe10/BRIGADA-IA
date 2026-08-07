@@ -5,7 +5,7 @@
 
 // ── UI Helpers ────────────────────────────────────────────────────────────────
 window.BrigadaUI = {
-  setupPluAutocomplete(container, inputSelector, suggestionsContainerSelector, fieldsMapping) {
+  setupPluAutocomplete(container, inputSelector, suggestionsContainerSelector, fieldsMapping, allowedCategories = null, mainField = 'plu') {
     const input = container.querySelector(inputSelector);
     const suggContainer = container.querySelector(suggestionsContainerSelector);
     if (!input || !suggContainer) return;
@@ -21,7 +21,11 @@ window.BrigadaUI = {
 
       // Search central catalog
       const catalog = window.BrigadaData.catalog || [];
-      const matches = catalog.filter(item => 
+      let matches = catalog;
+      if (allowedCategories && allowedCategories.length > 0) {
+        matches = matches.filter(item => allowedCategories.includes(window.BrigadaCatalog.normalizeCat(item.category)));
+      }
+      matches = matches.filter(item => 
         (item.plu && item.plu.toLowerCase().includes(query)) ||
         (item.barcode && item.barcode.toLowerCase().includes(query)) ||
         (item.name && item.name.toLowerCase().includes(query))
@@ -34,8 +38,8 @@ window.BrigadaUI = {
 
       suggContainer.innerHTML = matches.map(item => `
         <div class="autocomplete-suggestion-item" data-plu="${item.plu}">
-          <span class="suggestion-plu">${item.plu}</span>
-          <span class="suggestion-name">${item.name}</span>
+          <span class="suggestion-plu" style="color: var(--accent); font-weight: bold; font-family: monospace;">${item.plu}</span>
+          <span class="suggestion-name" style="text-align: left; margin-left: 10px; flex-grow: 1;">${item.name}</span>
         </div>
       `).join('');
       suggContainer.style.display = 'block';
@@ -46,16 +50,23 @@ window.BrigadaUI = {
           const plu = el.dataset.plu;
           const selected = catalog.find(item => item.plu === plu);
           if (selected) {
-            input.value = selected.plu;
+            input.value = mainField === 'name' ? (selected.name || '') : (selected.plu || '');
             
             // Pre-fill mapped fields
+            if (fieldsMapping.plu) {
+              const pluEl = container.querySelector(fieldsMapping.plu);
+              if (pluEl) pluEl.value = selected.plu || '';
+            }
             if (fieldsMapping.name) {
               const nameEl = container.querySelector(fieldsMapping.name);
               if (nameEl) nameEl.value = selected.name || '';
             }
             if (fieldsMapping.category) {
               const catEl = container.querySelector(fieldsMapping.category);
-              if (catEl) catEl.value = selected.category || '';
+              if (catEl) {
+                const norm = window.BrigadaCatalog.normalizeCat(selected.category);
+                catEl.value = norm || selected.category || '';
+              }
             }
             if (fieldsMapping.barcode) {
               const barEl = container.querySelector(fieldsMapping.barcode);

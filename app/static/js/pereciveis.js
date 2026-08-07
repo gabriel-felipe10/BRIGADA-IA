@@ -87,9 +87,10 @@ window.BrigadaPereciveis = {
             <form id="product-form-pereciveis">
               <input type="hidden" id="field-id-pereciveis">
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                   <label class="form-label">PLU *</label>
-                  <input type="text" id="field-plu-pereciveis" class="form-input" placeholder="ex: PE001" required>
+                  <input type="text" id="field-plu-pereciveis" class="form-input" placeholder="ex: PE001" autocomplete="off" required>
+                  <div id="plu-suggestions-pereciveis" class="autocomplete-suggestions"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Categoria *</label>
@@ -102,9 +103,10 @@ window.BrigadaPereciveis = {
                   </select>
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="position: relative;">
                 <label class="form-label">Nome do Produto *</label>
-                <input type="text" id="field-name-pereciveis" class="form-input" placeholder="Nome do produto" required>
+                <input type="text" id="field-name-pereciveis" class="form-input" placeholder="Nome do produto" autocomplete="off" required>
+                <div id="name-suggestions-pereciveis" class="autocomplete-suggestions"></div>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -424,6 +426,19 @@ window.BrigadaPereciveis = {
     // PDF Export
     const btnPdf = container.querySelector('#btn-export-pdf-pereciveis');
     btnPdf?.addEventListener('click', () => this.exportPDF());
+
+    // Auto-complete inteligente do Catalogo (PLU e Nome)
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-plu-pereciveis', '#plu-suggestions-pereciveis', {
+      name: '#field-name-pereciveis',
+      category: '#field-category-pereciveis',
+      unit: '#field-unit-pereciveis'
+    }, ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'], 'plu');
+
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-name-pereciveis', '#name-suggestions-pereciveis', {
+      plu: '#field-plu-pereciveis',
+      category: '#field-category-pereciveis',
+      unit: '#field-unit-pereciveis'
+    }, ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'], 'name');
   },
 
   openModal(container, id = null) {

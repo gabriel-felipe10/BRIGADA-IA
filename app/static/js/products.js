@@ -111,9 +111,10 @@ window.BrigadaProducts = {
                 </div>
               </div>
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                   <label class="form-label">Nome do Produto *</label>
-                  <input type="text" id="field-name" class="form-input" placeholder="Nome do produto" required>
+                  <input type="text" id="field-name" class="form-input" placeholder="Nome do produto" autocomplete="off" required>
+                  <div id="name-suggestions" class="autocomplete-suggestions"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Cód. Barras (Fábrica)</label>
@@ -494,13 +495,20 @@ window.BrigadaProducts = {
       if (e.target.id === 'delete-modal') this.closeDeleteModal(container);
     });
 
-    // Initialize PLU catalog autocomplete
+    // Initialize PLU catalog autocomplete (PLU e Nome)
     window.BrigadaUI.setupPluAutocomplete(container, '#field-plu', '#plu-suggestions', {
       name: '#field-name',
       category: '#field-category',
       barcode: '#field-barcode',
       unit: '#field-unit'
-    });
+    }, ['aves', 'suino', 'bovino', 'pescado'], 'plu');
+
+    window.BrigadaUI.setupPluAutocomplete(container, '#field-name', '#name-suggestions', {
+      plu: '#field-plu',
+      category: '#field-category',
+      barcode: '#field-barcode',
+      unit: '#field-unit'
+    }, ['aves', 'suino', 'bovino', 'pescado'], 'name');
 
     // Listener para o campo de quantidade exibir/ocultar anotação
     const qtyInput = container.querySelector('#field-quantity');
