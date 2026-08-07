@@ -13,11 +13,15 @@ window.BrigadaVerseOfTheDay = {
    */
   async init() {
     try {
+      const user = window.BrigadaAuth?.currentUser;
+      const userId = user?.id || user?.email || 'default';
+      const storageKey = `brigada_votd_date_${userId}`;
+
       const today = new Date().toISOString().split('T')[0];
-      const lastShown = localStorage.getItem('brigada_votd_date');
+      const lastShown = localStorage.getItem(storageKey);
 
       if (lastShown === today) {
-        console.log('[VOTD] Versículo já exibido hoje.');
+        console.log(`[VOTD] Versículo já exibido hoje para o usuário ${user?.name || userId}.`);
         return;
       }
 
@@ -36,7 +40,7 @@ window.BrigadaVerseOfTheDay = {
       // Pequeno delay para a interface principal carregar antes
       setTimeout(() => {
         this.showModal(verse);
-        localStorage.setItem('brigada_votd_date', today);
+        localStorage.setItem(storageKey, today);
       }, 800);
 
     } catch (err) {
