@@ -1027,6 +1027,9 @@ window.BrigadaRouter = {
 
     if (page === 'dashboard') {
       window.BrigadaDashboard.render(container, user.role);
+      if (window.BrigadaVerseOfTheDay) {
+        window.BrigadaVerseOfTheDay.init();
+      }
     } else if (page === 'conciliacao') {
       if (window.BrigadaConciliacao) {
         window.BrigadaConciliacao.render(container);
