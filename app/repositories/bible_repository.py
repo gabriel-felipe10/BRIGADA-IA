@@ -187,36 +187,36 @@ class BibleRepository:
             if 'conn' in locals() and conn:
                 conn.close()
 
-    def get_daily_verse(self, date_str: str):
-        """Busca o versículo registrado para o dia especificado (YYYY-MM-DD)."""
+    def get_daily_verse(self, date_str: str, user_id: str = 'global'):
+        """Busca o versículo registrado para o dia especificado (YYYY-MM-DD) e usuário."""
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT b.* FROM daily_verses d
                 JOIN bible_verses b ON d.verse_id = b.id
-                WHERE d.date = ?
-            """, (date_str,))
+                WHERE d.date = ? AND d.user_id = ?
+            """, (date_str, str(user_id)))
             return _format_verse(cursor.fetchone())
         except Exception as e:
-            logger.error(f"Erro ao buscar versículo diário para {date_str}: {e}")
+            logger.error(f"Erro ao buscar versículo diário para {date_str} (user: {user_id}): {e}")
             return None
         finally:
             if 'conn' in locals() and conn:
                 conn.close()
 
-    def save_daily_verse(self, date_str: str, verse_id: int) -> None:
-        """Salva ou atualiza o versículo do dia especificado."""
+    def save_daily_verse(self, date_str: str, verse_id: int, user_id: str = 'global') -> None:
+        """Salva ou atualiza o versículo do dia especificado para determinado usuário."""
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT OR REPLACE INTO daily_verses (date, verse_id)
-                VALUES (?, ?)
-            """, (date_str, verse_id))
+                INSERT OR REPLACE INTO daily_verses (date, user_id, verse_id)
+                VALUES (?, ?, ?)
+            """, (date_str, str(user_id), verse_id))
             conn.commit()
         except Exception as e:
-            logger.error(f"Erro ao salvar versículo diário para {date_str}: {e}")
+            logger.error(f"Erro ao salvar versículo diário para {date_str} (user: {user_id}): {e}")
         finally:
             if 'conn' in locals() and conn:
                 conn.close()

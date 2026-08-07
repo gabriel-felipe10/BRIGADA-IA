@@ -34,14 +34,22 @@ def init_bible_db():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_bible_translation ON bible_verses(translation);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_bible_text ON bible_verses(text);")
         
-        # Tabela de versículos do dia
+        # Tabela de versículos do dia (por usuário)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS daily_verses (
-                date        TEXT PRIMARY KEY,
+                date        TEXT NOT NULL,
+                user_id     TEXT NOT NULL DEFAULT 'global',
                 verse_id    INTEGER NOT NULL,
+                PRIMARY KEY (date, user_id),
                 FOREIGN KEY (verse_id) REFERENCES bible_verses(id)
             );
         """)
+        
+        # Migração se a tabela já existir sem a coluna user_id
+        try:
+            cursor.execute("ALTER TABLE daily_verses ADD COLUMN user_id TEXT NOT NULL DEFAULT 'global'")
+        except sqlite3.OperationalError:
+            pass
         
         conn.commit()
         logger.info("Tabelas da Bíblia inicializadas com sucesso.")

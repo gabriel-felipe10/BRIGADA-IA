@@ -25,7 +25,7 @@ window.BrigadaVerseOfTheDay = {
         return;
       }
 
-      const response = await fetch('/api/bible/verse-of-the-day');
+      const response = await fetch(`/api/bible/verse-of-the-day?user_id=${encodeURIComponent(userId)}`);
       if (!response.ok) {
         console.warn('[VOTD] Falha ao buscar versículo do dia:', response.status);
         return;

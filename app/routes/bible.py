@@ -20,9 +20,10 @@ def ensure_data():
 
 @bible_bp.route('/verse-of-the-day', methods=['GET'])
 def verse_of_the_day():
-    """Endpoint que retorna o versículo do dia."""
+    """Endpoint que retorna o versículo do dia (opcionalmente por usuário com ?user_id=1)."""
     try:
-        verse = votd_service.get_today_verse()
+        user_id = request.args.get('user_id', 'global').strip()
+        verse = votd_service.get_today_verse(user_id=user_id)
         if not verse:
             return jsonify({'error': 'Não foi possível encontrar o versículo do dia.'}), 404
         return jsonify(verse), 200
