@@ -1,6 +1,7 @@
 /**
  * BRIGADA-IA — Quebra / Formulário de Avaria Module
  * Gestão de registro de avarias, perdas e descartes conforme modelo padronizado.
+ * Otimizado com alta responsividade mobile para smartphones e tablets.
  */
 
 window.BrigadaQuebra = {
@@ -156,28 +157,29 @@ window.BrigadaQuebra = {
         }
 
         .metric-icon-q {
-          font-size: 2.2rem;
-          width: 52px;
-          height: 52px;
+          font-size: 2rem;
+          width: 50px;
+          height: 50px;
           border-radius: 12px;
           background: rgba(239, 68, 68, 0.12);
           color: #ef4444;
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
         }
 
         .metric-info-q h4 {
           margin: 0;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           color: var(--text-secondary);
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
 
         .metric-info-q p {
-          margin: 0.25rem 0 0 0;
-          font-size: 1.5rem;
+          margin: 0.2rem 0 0 0;
+          font-size: 1.4rem;
           font-weight: 700;
           color: var(--text-primary);
         }
@@ -194,9 +196,98 @@ window.BrigadaQuebra = {
           gap: 1rem;
         }
 
+        /* ── Responsividade Aprimorada para Mobile (iPhone, Galaxy, Pixel) ────── */
         @media (max-width: 768px) {
+          .panel-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+          }
+
+          .panel-header button {
+            width: 100%;
+            justify-content: center;
+            min-height: 48px;
+            font-size: 0.95rem;
+          }
+
+          .quebra-metrics {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+          }
+
           .form-row-2, .form-row-3 {
             grid-template-columns: 1fr;
+            gap: 0.85rem;
+          }
+
+          .form-input, .select-control, select, input[type="text"], input[type="number"], input[type="date"], textarea {
+            font-size: 16px !important; /* Evita auto-zoom incômodo no iOS Safari */
+            min-height: 46px;
+            padding: 0.6rem 0.9rem;
+          }
+
+          .toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+          }
+
+          .toolbar .search-box, 
+          .toolbar select, 
+          .toolbar button {
+            width: 100% !important;
+            min-width: 100% !important;
+            min-height: 44px;
+          }
+
+          /* Transformação da Tabela de Registros em Lista de Cartões no Mobile */
+          .responsive-table, 
+          .responsive-table thead, 
+          .responsive-table tbody, 
+          .responsive-table th, 
+          .responsive-table td, 
+          .responsive-table tr {
+            display: block;
+          }
+
+          .responsive-table thead {
+            display: none;
+          }
+
+          .responsive-table tbody tr {
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.1rem;
+            position: relative;
+          }
+
+          .responsive-table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.55rem 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+            text-align: right;
+            font-size: 0.9rem;
+          }
+
+          .responsive-table td:last-child {
+            border-bottom: none;
+            padding-top: 0.75rem;
+            justify-content: flex-end;
+          }
+
+          .responsive-table td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            text-align: left;
+            margin-right: 1rem;
           }
         }
       </style>
@@ -691,16 +782,16 @@ window.BrigadaQuebra = {
 
       return `
         <tr>
-          <td><strong>${item.plu || 'S/N'}</strong></td>
-          <td><strong>${item.productName}</strong></td>
-          <td><strong>${qtyStr}</strong></td>
-          <td><span class="badge" style="background: rgba(255,255,255,0.06);">${item.origin || 'Salão de Vendas'}</span></td>
-          <td><span class="badge badge--expired">${item.occurrence || 'Vencimento'}</span></td>
-          <td><span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #818cf8;">${item.reason || 'Qualidade'}</span></td>
-          <td>${item.responsibleName || '—'}</td>
-          <td style="text-align: right;">
-            <button class="btn btn--sm btn--ghost btn-delete-quebra" data-id="${item.id}" title="Excluir Registro" style="color: #ef4444;">
-              🗑️
+          <td data-label="Código"><strong>${item.plu || 'S/N'}</strong></td>
+          <td data-label="Produto"><strong>${item.productName}</strong></td>
+          <td data-label="Qtd / Peso"><strong>${qtyStr}</strong></td>
+          <td data-label="Origem"><span class="badge" style="background: rgba(255,255,255,0.06);">${item.origin || 'Salão de Vendas'}</span></td>
+          <td data-label="Ocorrência"><span class="badge badge--expired">${item.occurrence || 'Vencimento'}</span></td>
+          <td data-label="Motivo"><span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #818cf8;">${item.reason || 'Qualidade'}</span></td>
+          <td data-label="Responsável">${item.responsibleName || '—'}</td>
+          <td data-label="Ações" style="text-align: right;">
+            <button class="btn btn--sm btn--ghost btn-delete-quebra" data-id="${item.id}" title="Excluir Registro" style="color: #ef4444; padding: 6px 12px; font-size: 0.9rem;">
+              🗑️ Excluir
             </button>
           </td>
         </tr>
