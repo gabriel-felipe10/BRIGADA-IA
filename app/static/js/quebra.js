@@ -152,7 +152,7 @@ window.BrigadaQuebra = {
 
         .metric-card-q:hover {
           transform: translateY(-2px);
-          border-color: rgba(250, 204, 21, 0.4);
+          border-color: rgba(239, 68, 68, 0.4);
         }
 
         .metric-icon-q {
@@ -160,8 +160,8 @@ window.BrigadaQuebra = {
           width: 52px;
           height: 52px;
           border-radius: 12px;
-          background: rgba(250, 204, 21, 0.15);
-          color: #facc15;
+          background: rgba(239, 68, 68, 0.12);
+          color: #ef4444;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -203,11 +203,11 @@ window.BrigadaQuebra = {
 
       <div class="panel-header animate-slide-in">
         <div class="panel-header__left">
-          <h2 class="panel-title" style="color: #facc15;">📋 FORMULÁRIO DE AVARIA</h2>
+          <h2 class="panel-title">📋 FORMULÁRIO DE AVARIA</h2>
           <p class="panel-subtitle">Sistema de Controle de Avarias, Origem, Ocorrência e Motivos</p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn--primary" id="btn-export-pdf-quebra" style="background: #facc15; color: #000; font-weight: bold; border: none;">
+          <button type="button" class="btn btn--primary" id="btn-export-pdf-quebra">
             <span>🖨️ Imprimir / PDF (Modelo Oficial)</span>
           </button>
         </div>
@@ -221,8 +221,8 @@ window.BrigadaQuebra = {
       <div class="quebra-grid animate-slide-in">
         
         <!-- Formulário de Registro de Avaria -->
-        <div class="card card--glass" style="padding: 1.5rem; border-top: 3px solid #facc15;">
-          <h3 class="card-title" style="margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px; color: #facc15;">
+        <div class="card card--glass" style="padding: 1.5rem; border-top: 3px solid #ef4444;">
+          <h3 class="card-title" style="margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px; color: #ef4444;">
             📝 Registrar Nova Avaria
           </h3>
           
@@ -316,7 +316,7 @@ window.BrigadaQuebra = {
             </div>
 
             <div class="form-group" style="margin-top: 0.5rem;">
-              <button type="submit" class="btn btn--primary" id="btn-submit-quebra" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; background: #facc15; color: #000; padding: 0.9rem; font-weight: bold; border: none;">
+              <button type="submit" class="btn btn--primary" id="btn-submit-quebra" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 0.9rem; font-weight: bold;">
                 <span>💾 Salvar Avaria</span>
               </button>
             </div>
@@ -328,7 +328,7 @@ window.BrigadaQuebra = {
         <div class="card card--glass" style="padding: 1.5rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
             <h3 class="card-title" style="margin: 0;">📋 Lançamentos Cadastrados</h3>
-            <span class="badge" id="q-count-badge" style="background: rgba(250, 204, 21, 0.2); color: #facc15; padding: 0.4rem 0.8rem; border-radius: 20px;">0 registros</span>
+            <span class="badge" id="q-count-badge" style="background: rgba(255, 255, 255, 0.06); padding: 0.4rem 0.8rem; border-radius: 20px;">0 registros</span>
           </div>
 
           <!-- Barra de Filtros -->
@@ -658,10 +658,10 @@ window.BrigadaQuebra = {
         </div>
 
         <div class="metric-card-q">
-          <div class="metric-icon-q" style="background: rgba(250, 204, 21, 0.15); color: #facc15;">⚠️</div>
+          <div class="metric-icon-q" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">⚠️</div>
           <div class="metric-info-q">
             <h4>Ocorrência Principal</h4>
-            <p style="font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #facc15;" title="${topOccurrence}">${topOccurrence}</p>
+            <p style="font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);" title="${topOccurrence}">${topOccurrence}</p>
           </div>
         </div>
       `;
@@ -693,10 +693,10 @@ window.BrigadaQuebra = {
         <tr>
           <td><strong>${item.plu || 'S/N'}</strong></td>
           <td><strong>${item.productName}</strong></td>
-          <td><strong style="color: #facc15;">${qtyStr}</strong></td>
+          <td><strong>${qtyStr}</strong></td>
           <td><span class="badge" style="background: rgba(255,255,255,0.06);">${item.origin || 'Salão de Vendas'}</span></td>
           <td><span class="badge badge--expired">${item.occurrence || 'Vencimento'}</span></td>
-          <td><span class="badge" style="background: rgba(250, 204, 21, 0.12); color: #facc15;">${item.reason || 'Qualidade'}</span></td>
+          <td><span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #818cf8;">${item.reason || 'Qualidade'}</span></td>
           <td>${item.responsibleName || '—'}</td>
           <td style="text-align: right;">
             <button class="btn btn--sm btn--ghost btn-delete-quebra" data-id="${item.id}" title="Excluir Registro" style="color: #ef4444;">
@@ -728,7 +728,6 @@ window.BrigadaQuebra = {
     const todayStr = new Date().toLocaleDateString('pt-BR');
     const firstSupplier = list[0]?.supplier || '';
 
-    // Garante no mínimo 20 linhas como na planilha original do Excel
     const rowsCount = Math.max(list.length, 18);
     const tableRows = [];
 
@@ -747,7 +746,6 @@ window.BrigadaQuebra = {
           </tr>
         `);
       } else {
-        // Linhas em branco para manter a estrutura idêntica ao modelo impresso
         tableRows.push(`
           <tr style="height: 22px;">
             <td style="border: 1px solid #000;"></td>
@@ -767,32 +765,28 @@ window.BrigadaQuebra = {
         <style>
           @page { size: A4 landscape; margin: 6mm; }
           body { font-family: Arial, sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          .yellow-bar { background-color: #ffff00 !important; border: 1px solid #000; font-size: 11px; font-weight: bold; padding: 4px 8px; }
+          .header-bar { background-color: #f1f5f9 !important; border: 1px solid #000; font-size: 11px; font-weight: bold; padding: 4px 8px; }
           .legend-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 8px; }
           .legend-table th { border: 1px solid #000; background: #fff; text-align: center; font-weight: bold; font-size: 9px; padding: 2px; }
           .legend-table td { border: 1px solid #000; padding: 1px 3px; }
           .main-avaria-table { width: 100%; border-collapse: collapse; }
-          .main-avaria-table th { background-color: #ffff00 !important; border: 1px solid #000; font-size: 10px; font-weight: bold; text-align: center; padding: 4px; }
+          .main-avaria-table th { background-color: #e2e8f0 !important; border: 1px solid #000; font-size: 10px; font-weight: bold; text-align: center; padding: 4px; }
           .main-avaria-table td { border: 1px solid #000; }
         </style>
 
-        <!-- Titulo / Barra Amarela de Fornecedor e Data -->
         <div style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">
           FORMULARIO DE AVARIA
         </div>
 
-        <div class="yellow-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <div class="header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <div><strong>Nome do Fornecedor:</strong> ${firstSupplier ? firstSupplier : '________________________________________________'}</div>
           <div><strong>Data:</strong> ${todayStr}</div>
         </div>
 
-        <!-- Layout em 2 colunas: Legendas na esquerda + Tabela Principal na direita -->
         <div style="display: flex; gap: 8px; align-items: start;">
           
-          <!-- Coluna Esquerda: Legendas (Origem, Ocorrência, Motivo) -->
           <div style="width: 220px; flex-shrink: 0;">
             
-            <!-- ORIGEM -->
             <table class="legend-table">
               <thead>
                 <tr>
@@ -810,7 +804,6 @@ window.BrigadaQuebra = {
               </tbody>
             </table>
 
-            <!-- OCORRÊNCIA -->
             <table class="legend-table">
               <thead>
                 <tr>
@@ -828,7 +821,6 @@ window.BrigadaQuebra = {
               </tbody>
             </table>
 
-            <!-- MOTIVO -->
             <table class="legend-table">
               <thead>
                 <tr>
@@ -848,7 +840,6 @@ window.BrigadaQuebra = {
 
           </div>
 
-          <!-- Coluna Direita: Tabela de Dados da Avaria -->
           <div style="flex: 1;">
             <table class="main-avaria-table">
               <thead>
