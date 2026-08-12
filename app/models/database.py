@@ -82,6 +82,27 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS quebras (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            plu              TEXT,
+            product_name     TEXT NOT NULL,
+            quantity         REAL NOT NULL,
+            unit             TEXT DEFAULT 'kg',
+            supplier         TEXT,
+            origin           TEXT,
+            occurrence       TEXT,
+            reason           TEXT NOT NULL,
+            sector           TEXT NOT NULL DEFAULT 'Açougue',
+            occurrence_date  TEXT NOT NULL,
+            responsible_name TEXT,
+            created_by       TEXT NOT NULL,
+            notes            TEXT,
+            signature        TEXT,
+            created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     # Migração para bases SQLite já existentes
     try:
         cursor.execute("ALTER TABLE produtos_sem_nota ADD COLUMN signature TEXT")
@@ -93,11 +114,32 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE quebras ADD COLUMN supplier TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE quebras ADD COLUMN origin TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE quebras ADD COLUMN occurrence TEXT")
+    except sqlite3.OperationalError:
+        pass
+
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_sem_nota_plu
         ON produtos_sem_nota(plu)
     """)
 
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_quebras_date
+        ON quebras(occurrence_date DESC)
+    """)
+
     conn.commit()
     logger.info("Banco de dados inicializado | path={}", Config.DB_PATH)
     conn.close()
+

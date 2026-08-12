@@ -63,6 +63,7 @@ window.BrigadaData = {
   products: [],
   catalog: [],
   produtosSemNota: [],
+  quebras: [],
 
   parseProductCreator(p) {
     if (!p.supplier) {
@@ -638,6 +639,31 @@ window.BrigadaData = {
       const cached = localStorage.getItem('brigada_produtos_sem_nota');
       this.produtosSemNota = cached ? JSON.parse(cached) : (this.iogurtesDb || []);
       return this.produtosSemNota;
+    }
+  },
+
+  async loadQuebras() {
+    try {
+      const res = await fetch('/api/quebras');
+      if (!res.ok) throw new Error('Falha ao buscar quebras');
+      const apiItems = await res.json();
+      const cached = localStorage.getItem('brigada_quebras');
+      const localData = cached ? JSON.parse(cached) : [];
+      const seenIds = new Set(apiItems.map(i => String(i.id)));
+      const merged = [...apiItems];
+      localData.forEach(item => {
+        if (!seenIds.has(String(item.id))) {
+          seenIds.add(String(item.id));
+          merged.push(item);
+        }
+      });
+      this.quebras = merged;
+      return this.quebras;
+    } catch (err) {
+      console.error('Erro na API ao carregar quebras (usando fallback local):', err);
+      const cached = localStorage.getItem('brigada_quebras');
+      this.quebras = cached ? JSON.parse(cached) : [];
+      return this.quebras;
     }
   },
 
@@ -4661,6 +4687,59 @@ window.BrigadaData = {
       console.error('Erro na API ao excluir produto sem nota (usando fallback local):', err);
       this.produtosSemNota = this.produtosSemNota.filter(p => p.id !== id);
       localStorage.setItem('brigada_produtos_sem_nota', JSON.stringify(this.produtosSemNota));
+      return { success: true };
+    }
+  },
+
+  async createQuebra(payload) {
+    try {
+      const res = await fetch('/api/quebras', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao salvar registro de quebra no servidor');
+      }
+      const created = await res.json();
+      this.quebras.unshift(created);
+      localStorage.setItem('brigada_quebras', JSON.stringify(this.quebras));
+      return created;
+    } catch (err) {
+      console.error('Erro na API ao registrar quebra (usando fallback local):', err);
+      const local = {
+        id: Date.now(),
+        ...payload,
+        createdAt: new Date().toISOString()
+      };
+      this.quebras.unshift(local);
+      localStorage.setItem('brigada_quebras', JSON.stringify(this.quebras));
+      return local;
+    }
+  },
+
+  async deleteQuebra(id) {
+    try {
+      if (id > 1000000000000) {
+        this.quebras = this.quebras.filter(q => q.id !== id);
+        localStorage.setItem('brigada_quebras', JSON.stringify(this.quebras));
+        return { success: true };
+      }
+      const res = await fetch(`/api/quebras/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao excluir quebra do servidor');
+      }
+      this.quebras = this.quebras.filter(q => q.id !== id);
+      localStorage.setItem('brigada_quebras', JSON.stringify(this.quebras));
+      return { success: true };
+    } catch (err) {
+      console.error('Erro na API ao excluir quebra (usando fallback local):', err);
+      this.quebras = this.quebras.filter(q => q.id !== id);
+      localStorage.setItem('brigada_quebras', JSON.stringify(this.quebras));
       return { success: true };
     }
   }

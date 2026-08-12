@@ -657,6 +657,10 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📄</span>
               <span>Sem Nota</span>
             </a>
+            <a class="sidebar__link ${activePage === 'quebra' ? 'sidebar__link--active' : ''}" data-page="quebra" href="#">
+              <span class="sidebar__link-icon">🗑️</span>
+              <span>Quebra</span>
+            </a>
             ${window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.isGestao() || window.BrigadaAuth.currentUser?.role === 'lider' ? `
             <a class="sidebar__link ${activePage === 'resumo-mensal' ? 'sidebar__link--active' : ''}" data-page="resumo-mensal" href="#">
               <span class="sidebar__link-icon">📅</span>
@@ -1084,6 +1088,12 @@ window.BrigadaRouter = {
         window.BrigadaProdutosSemNota.render(container);
       } else {
         container.innerHTML = `<div class="empty-state">Erro ao carregar página de Produtos Sem Nota</div>`;
+      }
+    } else if (page === 'quebra') {
+      if (window.BrigadaQuebra) {
+        window.BrigadaQuebra.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar página de Quebras</div>`;
       }
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
