@@ -34,7 +34,8 @@ def get_products():
                 "signature": p.get("signature"),
                 "leaderSignature": p.get("leader_signature"),
                 "responsibleName": p.get("responsible_name"),
-                "leaderName": p.get("leader_name")
+                "leaderName": p.get("leader_name"),
+                "createdAt": p.get("created_at") or p.get("createdAt")
             })
         
         logger.info("Produtos carregados do Supabase | count={}", len(products))
@@ -123,7 +124,8 @@ def create_product():
             "signature": p.get("signature"),
             "leaderSignature": p.get("leader_signature"),
             "responsibleName": p.get("responsible_name"),
-            "leaderName": p.get("leader_name")
+            "leaderName": p.get("leader_name"),
+            "createdAt": p.get("created_at") or p.get("createdAt")
         }
         
         logger.info("Produto criado no Supabase | id={} plu={}", created["id"], created["plu"])
@@ -235,7 +237,8 @@ def update_product(product_id):
             "signature": p.get("signature"),
             "leaderSignature": p.get("leader_signature"),
             "responsibleName": p.get("responsible_name"),
-            "leaderName": p.get("leader_name")
+            "leaderName": p.get("leader_name"),
+            "createdAt": p.get("created_at") or p.get("createdAt")
         }
         
         # Registrar auditoria da edição no SQLite

@@ -82,6 +82,35 @@ window.BrigadaAuth = {
     return this.currentUser.sector === sector || this.currentUser.sector === 'todos';
   },
 
+  // Retorna rigorosamente as categorias permitidas de acordo com o setor do usuário logado e câmara
+  getAllowedCategoriesForUser(chamber = null) {
+    if (!this.currentUser) return ['aves', 'suino', 'bovino', 'pescado', 'frios', 'laticinios', 'iogurtes', 'pereciveis'];
+    const email = (this.currentUser.email || '').toLowerCase();
+    const isMaster = email === 'admin@brigada.com' || email === 'marcos@brigada.com' || this.isSuperAdmin() || this.isGestao();
+    const userSector = (this.currentUser.sector || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    const açougueCats = ['aves', 'suino', 'bovino', 'pescado'];
+    const pereciveisCats = ['laticinios', 'frios', 'iogurtes', 'pereciveis'];
+
+    let cats = [];
+    if (isMaster || userSector === 'todos') {
+      cats = [...açougueCats, ...pereciveisCats];
+    } else if (userSector === 'acougue' || userSector === 'açougue') {
+      cats = [...açougueCats];
+    } else if (userSector === 'pereciveis' || userSector === 'perecivel') {
+      cats = [...pereciveisCats];
+    } else {
+      cats = [...açougueCats];
+    }
+
+    // Ajuste contextual para Câmara Resfriada no Açougue (Pescado é congelado)
+    if (chamber === 'Câmara Resfriada' && (userSector === 'acougue' || userSector === 'açougue')) {
+      cats = cats.filter(c => c !== 'pescado');
+    }
+
+    return cats;
+  },
+
   canAddProduct() {
     return this.currentUser?.role === 'superadmin' || this.currentUser?.role === 'user' || this.currentUser?.role === 'lider' || this.currentUser?.role === 'promotor';
   },

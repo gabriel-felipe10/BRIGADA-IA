@@ -280,16 +280,23 @@ window.BrigadaUI = {
         </div>
         <div>
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">${isConciliacao ? 'DATA DA CONTAGEM' : 'DATA DE CADASTRO'}</strong>
-          <div style="color: var(--text-primary);">${window.BrigadaData.formatDate(product.startDate)}</div>
+          <div style="color: var(--text-primary);">${window.BrigadaData.formatCreatedDateAndHour(product)}</div>
         </div>
         <div>
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">${isConciliacao ? 'DATA DE VALIDADE' : 'VALIDADE'}</strong>
-          <div style="color: var(--text-primary);">${window.BrigadaData.formatDate(product.endDate)}</div>
+          <div style="color: var(--text-primary); font-weight: 600;">${window.BrigadaData.formatDate(product.endDate)}</div>
         </div>
         ${!isConciliacao ? `
-        <div>
-          <strong style="color: var(--text-secondary); font-size: 0.85rem;">STATUS</strong>
-          <div style="margin-top: 0.25rem;"><span class="badge ${status.class}">${status.icon} ${status.label}</span></div>
+        <div style="grid-column: span 2; background: rgba(255,255,255,0.03); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">STATUS / CONTAGEM REGRESSIVA</strong>
+          <div style="margin-top: 0.35rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <span class="badge ${status.class}">${status.icon} ${status.label}</span>
+            <span style="font-size: 0.85rem; color: var(--text-primary);">
+              ${status.days < 0 ? `🔴 Vencido há ${Math.abs(status.days)} ${Math.abs(status.days) === 1 ? 'dia' : 'dias'}` : 
+                status.days === 0 ? `🟠 Vence hoje!` : 
+                `⏳ Contagem regressiva: faltam exatamente <b>${status.days}</b> ${status.days === 1 ? 'dia' : 'dias'}`}
+            </span>
+          </div>
         </div>
         <div>
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">FORNECEDOR</strong>
@@ -297,9 +304,87 @@ window.BrigadaUI = {
         </div>
         ` : ''}
         <div style="grid-column: span 2;">
-          <strong style="color: var(--text-secondary); font-size: 0.85rem;">LOCALIZAÇÃO</strong>
-          <div style="color: var(--text-primary);">${window.BrigadaData.formatLocationFriendly(product)}</div>
+          <strong style="color: var(--text-secondary); font-size: 0.85rem;">LOCALIZAÇÃO DESTE LOTE</strong>
+          <div style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; margin-top: 2px;">${window.BrigadaData.formatLocationFriendly(product)}</div>
         </div>
+
+        <!-- Bloco de Relação deste Lote / Mesma Data de Validade (Câmara x Piso) -->
+        ${(() => {
+          const dist = window.BrigadaData.getProductStockDistribution(product);
+          const hasSameDateSplit = dist.sameDate.length > 1;
+          const totalSameDateQty = dist.sameDate.reduce((sum, d) => sum + (d.quantity || 0), 0);
+          
+          if (!hasSameDateSplit && dist.otherDates.length === 0) return '';
+
+          return `
+            <div style="grid-column: span 2; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.1rem; margin-top: 0.25rem;">
+              
+              ${hasSameDateSplit ? `
+                <!-- Alerta de Mesma Data Dividida (Câmara e Piso) -->
+                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 0.9rem; margin-bottom: ${dist.otherDates.length > 0 ? '1rem' : '0'};">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 1.3rem;">⚡</span>
+                      <div>
+                        <strong style="color: #38bdf8; font-size: 0.95rem;">Mesma Data de Validade (${window.BrigadaData.formatDate(product.endDate)})</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Este produto com esta MESMA data está presente em ${dist.sameDate.length} locais:</div>
+                      </div>
+                    </div>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 3px 10px; border-radius: 9999px;">
+                      Total desta Data: ${totalSameDateQty.toFixed(totalSameDateQty % 1 === 0 ? 0 : 2)} ${product.unit || 'kg'}
+                    </span>
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+                    ${dist.sameDate.map(item => `
+                      <div style="display: flex; justify-content: space-between; align-items: center; background: ${item.isCurrent ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.04)'}; border: 1px solid ${item.isCurrent ? '#10b981' : 'rgba(255,255,255,0.1)'}; padding: 0.6rem 0.85rem; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 1.1rem;">${item.isChamber ? '🥶' : item.isPiso ? '🏪' : '📍'}</span>
+                          <div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">
+                              ${item.locationDesc}
+                              ${item.isCurrent ? `<span style="font-size: 0.68rem; background: #10b981; color: #fff; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">LOTE CONSULTADO</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Cadastrado em: ${window.BrigadaData.formatDate(item.startDate)}</div>
+                          </div>
+                        </div>
+                        <div style="text-align: right;">
+                          <strong style="font-size: 1.1rem; color: var(--text-primary);">${item.quantity} ${item.unit}</strong>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : `
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.85rem;">
+                  <span>📍</span>
+                  <span>Este lote com validade <b>${window.BrigadaData.formatDate(product.endDate)}</b> está apenas em: <b>${window.BrigadaData.formatLocationFriendly(product)}</b>.</span>
+                </div>
+              `}
+
+              ${dist.otherDates.length > 0 ? `
+                <!-- Outras Validades Cadastradas do Mesmo Produto -->
+                <div style="margin-top: ${hasSameDateSplit ? '0.5rem' : '0.75rem'};">
+                  <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-tertiary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    📅 Outras Validades Cadastradas deste Produto (${dist.otherDates.length} outro${dist.otherDates.length > 1 ? 's' : ''}):
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    ${dist.otherDates.map(item => `
+                      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 0.45rem 0.75rem; border-radius: 6px;">
+                        <div>
+                          <span style="font-weight: 600; font-size: 0.82rem; color: var(--text-primary);">${item.locationDesc}</span>
+                          <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 8px;">Validade: <b style="color:var(--text-primary);">${window.BrigadaData.formatDate(item.endDate)}</b></span>
+                        </div>
+                        <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">${item.quantity} ${item.unit}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+            </div>
+          `;
+        })()}
       </div>
     `;
 
@@ -658,8 +743,8 @@ window.BrigadaRouter = {
               <span>Sem Nota</span>
             </a>
             <a class="sidebar__link ${activePage === 'quebra' ? 'sidebar__link--active' : ''}" data-page="quebra" href="#">
-              <span class="sidebar__link-icon">🗑️</span>
-              <span>Quebra</span>
+              <span class="sidebar__link-icon">📋</span>
+              <span>Formulário de Avaria</span>
             </a>
             ${window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.isGestao() || window.BrigadaAuth.currentUser?.role === 'lider' ? `
             <a class="sidebar__link ${activePage === 'resumo-mensal' ? 'sidebar__link--active' : ''}" data-page="resumo-mensal" href="#">
@@ -674,10 +759,16 @@ window.BrigadaRouter = {
             </a>
             ` : ''}
 
-            ${!window.BrigadaAuth.isPromotor() && (window.BrigadaAuth.hasSectorAccess('açougue') || window.BrigadaAuth.hasSectorAccess('pereciveis')) ? `
+            ${!window.BrigadaAuth.isPromotor() ? `
             <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
               <span class="sidebar__link-icon">❄️</span>
               <span>Câmaras Frias</span>
+            </a>
+            ` : ''}
+            ${!window.BrigadaAuth.isPromotor() ? `
+            <a class="sidebar__link ${activePage === 'piso-loja' ? 'sidebar__link--active' : ''}" data-page="piso-loja" href="#">
+              <span class="sidebar__link-icon">🏪</span>
+              <span>Piso de Loja</span>
             </a>
             ` : ''}
             ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
@@ -708,12 +799,19 @@ window.BrigadaRouter = {
             ` : ''}
           </nav>
 
-          <div class="sidebar__footer" style="flex-direction: column; align-items: stretch; gap: var(--sp-md);">
+            <div class="sidebar__footer" style="flex-direction: column; align-items: stretch; gap: var(--sp-md);">
             <div class="sidebar__user" style="width: 100%;" title="Clique para editar seu perfil">
               <div class="sidebar__avatar" id="sidebar-user-avatar" style="${hasImageAvatar ? '' : `background:${avatarColor}`}">${avatarHTML}</div>
               <div class="sidebar__user-info">
                 <p class="sidebar__user-name" id="sidebar-user-name">${user.name}</p>
-                <p class="sidebar__user-role">${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.isPromotor() ? '📋 Promotor' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}</p>
+                <div class="sidebar__user-role-wrapper" style="display: flex; flex-direction: column; gap: 2px; margin-top: 2px;">
+                  <span class="sidebar__user-role" style="font-size: 0.78rem; font-weight: 600;">
+                    ${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.isPromotor() ? '📋 Promotor' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}
+                  </span>
+                  <span class="sidebar__user-sector-badge" id="sidebar-user-sector" style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 1px 6px; border-radius: 4px; width: fit-content;">
+                    🏬 Setor: ${(user.sector || 'Açougue').toUpperCase()}
+                  </span>
+                </div>
               </div>
             </div>
             <div class="sidebar__actions">
@@ -749,41 +847,72 @@ window.BrigadaRouter = {
 
       <!-- Modal de perfil do usuário logado -->
       <div class="modal-overlay" id="profile-modal" style="display:none; z-index: 2000;">
-        <div class="modal">
+        <div class="modal" style="max-width: 520px;">
           <div class="modal-header">
             <h3 class="modal-title">👤 Meu Perfil</h3>
             <button class="modal-close" id="profile-modal-close">✕</button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="padding: 1.5rem;">
+            <!-- Header Card do Usuário -->
+            <div style="display: flex; align-items: center; gap: 14px; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 10px; padding: 12px 16px; margin-bottom: 1.25rem;">
+              <div class="user-avatar" id="profile-avatar-preview" style="width: 56px; height: 56px; border-radius: 50%; font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; justify-content: center; background: var(--glass-bg); border: 2px solid #38bdf8; overflow: hidden; flex-shrink: 0;">US</div>
+              <div style="flex: 1;">
+                <div id="profile-card-name" style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">Nome do Usuário</div>
+                <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+                  <span id="profile-card-role-badge" class="badge badge--primary" style="font-size: 0.72rem; padding: 2px 8px;">Função</span>
+                  <span id="profile-card-sector-badge" style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 6px;">🏬 Setor</span>
+                </div>
+              </div>
+            </div>
+
             <form id="profile-form">
-              <div class="form-group">
-                <label class="form-label">Nome Completo *</label>
-                <input type="text" id="profile-field-name" class="form-input" placeholder="Seu nome" required>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Nome Completo *</label>
+                  <input type="text" id="profile-field-name" class="form-input" placeholder="Seu nome" required style="width: 100%;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">E-mail</label>
+                  <input type="email" id="profile-field-email" class="form-input" disabled style="width: 100%; opacity: 0.6; cursor: not-allowed; background: rgba(255,255,255,0.02); border-color: var(--glass-border);">
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">E-mail</label>
-                <input type="email" id="profile-field-email" class="form-input" disabled style="opacity: 0.6; cursor: not-allowed; background: rgba(255,255,255,0.02); border-color: var(--glass-border);">
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Setor / Departamento *</label>
+                  <select id="profile-field-sector" class="form-input" style="width: 100%; font-weight: 600;">
+                    <option value="açougue">🥩 Açougue</option>
+                    <option value="pereciveis">🥗 Perecíveis</option>
+                    <option value="frios">🥓 Frios / Laticínios</option>
+                    <option value="hortifruti">🍎 Hortifruti</option>
+                    <option value="padaria">🥖 Padaria</option>
+                    <option value="todos">👑 Todos os Setores (Geral)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Função / Cargo</label>
+                  <input type="text" id="profile-field-role-display" class="form-input" disabled style="width: 100%; opacity: 0.7; cursor: not-allowed; background: rgba(255,255,255,0.02); font-weight: 600;">
+                </div>
               </div>
-              <div class="form-group">
+
+              <div class="form-group" style="margin-bottom: 12px;">
                 <label class="form-label">Nova Senha (deixe em branco para manter)</label>
-                <input type="password" id="profile-field-password" class="form-input" placeholder="Mínimo 6 caracteres">
+                <input type="password" id="profile-field-password" class="form-input" placeholder="Mínimo 6 caracteres" style="width: 100%;">
               </div>
+
               <input type="hidden" id="profile-field-avatar-base64">
-              <div class="form-group" style="margin-top: 1rem;">
-                <label class="form-label">Foto de Perfil</label>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div class="user-avatar" id="profile-avatar-preview" style="width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; background: var(--glass-bg); border: 1px solid var(--glass-border); overflow: hidden;">US</div>
-                  <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                    <input type="file" id="profile-field-avatar-file" class="form-input" accept="image/*" style="padding: 4px; background: transparent; border: 1px solid var(--glass-border);">
-                    <button type="button" class="btn btn--ghost" id="profile-btn-remove-avatar" style="padding: 4px 8px; font-size: 0.75rem; align-self: flex-start; display: none;">Remover Foto</button>
-                  </div>
+              <div class="form-group">
+                <label class="form-label">Alterar Foto de Perfil</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="file" id="profile-field-avatar-file" class="form-input" accept="image/*" style="flex: 1; padding: 6px; background: transparent; border: 1px solid var(--glass-border);">
+                  <button type="button" class="btn btn--ghost btn--sm" id="profile-btn-remove-avatar" style="padding: 6px 10px; font-size: 0.78rem; display: none;">Remover Foto</button>
                 </div>
               </div>
             </form>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer" style="padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 8px;">
             <button class="btn btn--ghost" id="profile-btn-cancel">Cancelar</button>
-            <button class="btn btn--primary" id="profile-btn-save">Salvar Alterações</button>
+            <button class="btn btn--primary" id="profile-btn-save" style="font-weight: 700;">✓ Salvar Alterações</button>
           </div>
         </div>
       </div>
@@ -888,6 +1017,11 @@ window.BrigadaRouter = {
 
       const nameInput = document.getElementById('profile-field-name');
       const emailInput = document.getElementById('profile-field-email');
+      const sectorSelect = document.getElementById('profile-field-sector');
+      const roleDisplay = document.getElementById('profile-field-role-display');
+      const cardName = document.getElementById('profile-card-name');
+      const cardRoleBadge = document.getElementById('profile-card-role-badge');
+      const cardSectorBadge = document.getElementById('profile-card-sector-badge');
       const pwdInput = document.getElementById('profile-field-password');
       const base64Input = document.getElementById('profile-field-avatar-base64');
       const previewEl = document.getElementById('profile-avatar-preview');
@@ -896,6 +1030,17 @@ window.BrigadaRouter = {
 
       nameInput.value = currentUser.name;
       emailInput.value = currentUser.email;
+      if (sectorSelect) sectorSelect.value = (currentUser.sector || 'açougue').toLowerCase();
+
+      const roleLabel = currentUser.role === 'superadmin' ? '🛡️ Super Admin' : 
+                        currentUser.role === 'gestao' ? '👥 Gestão' : 
+                        currentUser.role === 'promotor' ? '📋 Promotor' : 
+                        currentUser.role === 'lider' ? '👤 Usuário / Líder' : '👤 Usuário / Operador';
+      if (roleDisplay) roleDisplay.value = roleLabel;
+      if (cardName) cardName.textContent = currentUser.name;
+      if (cardRoleBadge) cardRoleBadge.textContent = roleLabel;
+      if (cardSectorBadge) cardSectorBadge.textContent = `🏬 Setor: ${(currentUser.sector || 'Açougue').toUpperCase()}`;
+
       pwdInput.value = '';
       fileInput.value = '';
 
@@ -983,6 +1128,7 @@ window.BrigadaRouter = {
 
       const name = document.getElementById('profile-field-name').value.trim();
       const password = document.getElementById('profile-field-password').value;
+      const sector = document.getElementById('profile-field-sector')?.value || currentUser.sector || 'açougue';
       const base64Avatar = document.getElementById('profile-field-avatar-base64').value;
       
       if (!name) {
@@ -1000,6 +1146,7 @@ window.BrigadaRouter = {
         name,
         email: currentUser.email,
         role: currentUser.role,
+        sector: sector,
         status: currentUser.status,
         avatar,
         ...(password ? { password } : {})
@@ -1010,11 +1157,12 @@ window.BrigadaRouter = {
         
         currentUser.name = name;
         currentUser.avatar = avatar;
+        currentUser.sector = sector;
         sessionStorage.setItem('brigada_user', JSON.stringify(currentUser));
         
         window.BrigadaRouter.updateUserInfo();
 
-        window.BrigadaUI.showToast('Perfil atualizado com sucesso!', 'success');
+        window.BrigadaUI.showToast('Perfil e Setor atualizados com sucesso!', 'success');
         closeProfileModal();
       } catch (err) {
         window.BrigadaUI.showToast(err.message || 'Erro ao salvar alterações do perfil.', 'error');
@@ -1067,11 +1215,13 @@ window.BrigadaRouter = {
       }
       window.BrigadaProductList.render(container);
     } else if (page === 'chambers') {
-      if (!window.BrigadaAuth.hasSectorAccess('açougue') && !window.BrigadaAuth.hasSectorAccess('pereciveis')) {
-        this.navigate('dashboard');
-        return;
-      }
       window.BrigadaChambers.render(container);
+    } else if (page === 'piso-loja') {
+      if (window.BrigadaPisoLoja) {
+        window.BrigadaPisoLoja.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar Piso de Loja</div>`;
+      }
     } else if (page === 'pereciveis') {
       if (!window.BrigadaAuth.hasSectorAccess('pereciveis')) {
         this.navigate('dashboard');
@@ -1295,10 +1445,13 @@ window.BrigadaRouter = {
 
   updateUserInfo() {
     const user = window.BrigadaAuth.currentUser;
+    if (!user) return;
     const elName = document.getElementById('sidebar-user-name');
-    if (elName && user) elName.textContent = user.name;
+    if (elName) elName.textContent = user.name;
+    const elSector = document.getElementById('sidebar-user-sector');
+    if (elSector) elSector.textContent = `🏬 Setor: ${(user.sector || 'Açougue').toUpperCase()}`;
     const elAvatar = document.getElementById('sidebar-user-avatar');
-    if (elAvatar && user) {
+    if (elAvatar) {
       const hasImage = user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http'));
       if (hasImage) {
         elAvatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;

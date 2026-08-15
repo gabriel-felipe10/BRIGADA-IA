@@ -104,7 +104,7 @@ window.BrigadaDashboard = {
         <div class="metric-card metric-card--warning" id="stat-soon">
           <div class="metric-card__icon">⚠️</div>
           <div class="metric-card__body">
-            <p class="metric-card__label">Vencendo em Breve</p>
+            <p class="metric-card__label">Atenção (1-3 Dias)</p>
             <p class="metric-card__value" id="stat-soon-val">—</p>
           </div>
         </div>
@@ -123,7 +123,21 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
-      <div class="dashboard-grid dashboard-grid--3" style="margin-bottom:1rem;">
+      <div class="dashboard-grid dashboard-grid--6" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-lg); margin-bottom: 1rem;">
+        <div class="metric-card" id="stat-resfriado15" style="border-left: 3px solid #0ea5e9; cursor:pointer;" title="Filtrar Alerta Resfriados (≤ 15 dias)">
+          <div class="metric-card__icon">❄️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Alerta 15 Dias (Resfriados)</p>
+            <p class="metric-card__value" id="stat-resfriado15-val" style="color: #38bdf8;">—</p>
+          </div>
+        </div>
+        <div class="metric-card" id="stat-congelado30" style="border-left: 3px solid #6366f1; cursor:pointer;" title="Filtrar Alerta Congelados (≤ 30 dias)">
+          <div class="metric-card__icon">🥶</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Alerta 30 Dias (Congelados)</p>
+            <p class="metric-card__value" id="stat-congelado30-val" style="color: #818cf8;">—</p>
+          </div>
+        </div>
         <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
           <div class="metric-card__icon">🗑️</div>
           <div class="metric-card__body">
@@ -188,7 +202,7 @@ window.BrigadaDashboard = {
         <div class="metric-card metric-card--warning" id="stat-soon">
           <div class="metric-card__icon">⚠️</div>
           <div class="metric-card__body">
-            <p class="metric-card__label">Atenção (1-3d)</p>
+            <p class="metric-card__label">Atenção (1-3 Dias)</p>
             <p class="metric-card__value" id="stat-soon-val">—</p>
           </div>
         </div>
@@ -207,7 +221,28 @@ window.BrigadaDashboard = {
           </div>
         </div>
       </div>
-      <div class="dashboard-grid dashboard-grid--4" style="margin-bottom:1rem;">
+      <div class="dashboard-grid dashboard-grid--6" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-lg); margin-bottom: 1.5rem;">
+        <div class="metric-card" id="stat-resfriado15" style="border-left: 3px solid #0ea5e9; cursor:pointer;" title="Filtrar Alerta Resfriados (≤ 15 dias)">
+          <div class="metric-card__icon">❄️</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Alerta 15 Dias (Resfriados)</p>
+            <p class="metric-card__value" id="stat-resfriado15-val" style="color: #38bdf8;">—</p>
+          </div>
+        </div>
+        <div class="metric-card" id="stat-congelado30" style="border-left: 3px solid #6366f1; cursor:pointer;" title="Filtrar Alerta Congelados (≤ 30 dias)">
+          <div class="metric-card__icon">🥶</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Alerta 30 Dias (Congelados)</p>
+            <p class="metric-card__value" id="stat-congelado30-val" style="color: #818cf8;">—</p>
+          </div>
+        </div>
+        <div class="metric-card metric-card--orange" id="stat-today">
+          <div class="metric-card__icon">🟠</div>
+          <div class="metric-card__body">
+            <p class="metric-card__label">Vence Hoje</p>
+            <p class="metric-card__value" id="stat-today-val">—</p>
+          </div>
+        </div>
         <div class="metric-card" id="stat-quebra" style="border-left: 3px solid #ef4444; cursor:pointer;">
           <div class="metric-card__icon">🗑️</div>
           <div class="metric-card__body">
@@ -227,13 +262,6 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Tratados com Sucesso</p>
             <p class="metric-card__value" id="stat-tratado-val">—</p>
-          </div>
-        </div>
-        <div class="metric-card metric-card--orange" id="stat-today">
-          <div class="metric-card__icon">🟠</div>
-          <div class="metric-card__body">
-            <p class="metric-card__label">Vence Hoje</p>
-            <p class="metric-card__value" id="stat-today-val">—</p>
           </div>
         </div>
       </div>
@@ -311,30 +339,6 @@ window.BrigadaDashboard = {
       </div>
 
       ${adminSection}
-
-      <!-- Top Quebras Widget -->
-      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1.5rem;">
-        <div class="glass-panel" id="card-top-quebra-week" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver o Top 10">
-          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Semana)</h3>
-          <div style="display:flex; align-items:center; gap: 1rem;">
-            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">🗑️</div>
-            <div>
-              <p style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);" id="top-quebra-week-name">Calculando...</p>
-              <p style="font-size:0.9rem; color:var(--error);" id="top-quebra-week-count">...</p>
-            </div>
-          </div>
-        </div>
-        <div class="glass-panel" id="card-top-quebra-month" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver o Top 10">
-          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Mês)</h3>
-          <div style="display:flex; align-items:center; gap: 1rem;">
-            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
-            <div>
-              <p style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);" id="top-quebra-month-name">Calculando...</p>
-              <p style="font-size:0.9rem; color:var(--error);" id="top-quebra-month-count">...</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div style="margin-bottom:2rem;">
         <!-- Timeline de alertas -->
@@ -420,45 +424,69 @@ window.BrigadaDashboard = {
                   <label class="form-label">Localização *</label>
                   <select id="field-location" class="form-input" required>
                     <option value="">Selecione...</option>
-                    <option value="resfriado">❄️ Resfriado</option>
-                    <option value="congelado">🥶 Congelado</option>
+                    <option value="resfriado">❄️ Câmara Resfriada</option>
+                    <option value="congelado">🥶 Câmara Congelada</option>
                     <option value="piso_loja">🏪 Piso de Loja</option>
                   </select>
                 </div>
               </div>
-              <div class="form-row">
+              <!-- Seletor de Posição da Câmara Fria -->
+              <div class="form-row" id="row-chamber-slots" style="display: none; background: rgba(56,189,248,0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.2); margin-bottom: 1rem;">
                 <div class="form-group">
-                  <label class="form-label">Coluna</label>
-                  <select id="field-column" class="form-input">
-                    <option value="">Selecione...</option>
-                    <option value="Aéreo">Aéreo</option>
-                    <option value="Piso">Piso</option>
+                  <label class="form-label" style="color: #38bdf8;">Coluna *</label>
+                  <select id="field-chamber-col" class="form-input">
+                    <option value="">Selecione a coluna...</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Número da Coluna</label>
-                  <select id="field-column-number" class="form-input">
-                    <option value="">Selecione...</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                    <option value="13">13</option>
-                    <option value="14">14</option>
-                    <option value="15">15</option>
-                    <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
-                    <option value="20">20</option>
+                  <label class="form-label" style="color: #38bdf8;">Nível *</label>
+                  <select id="field-chamber-level" class="form-input">
+                    <option value="">Selecione o nível...</option>
+                    <option value="1">📦 Nível 1 — Piso (Chão)</option>
+                    <option value="2">🏗️ Nível 2 — Aéreo</option>
+                    <option value="3">🏗️ Nível 3 — Aéreo</option>
+                    <option value="4">🏗️ Nível 4 — Aéreo (Topo)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="color: #38bdf8;">Posição *</label>
+                  <select id="field-chamber-pos" class="form-input">
+                    <option value="">Selecione o lado...</option>
+                    <option value="E">⬅️ Esquerda (E)</option>
+                    <option value="D">➡️ Direita (D)</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Seletor de Freezer do Piso de Loja -->
+              <div class="form-row" id="row-freezer-slots" style="display: none; background: rgba(16,185,129,0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 1rem;">
+                <div class="form-group">
+                  <label class="form-label" style="color: #34d399;">Freezer do Piso de Loja</label>
+                  <select id="field-freezer-num" class="form-input">
+                    <option value="">Geral / Sem freezer específico</option>
+                    <option value="FZ01">Freezer 01</option>
+                    <option value="FZ02">Freezer 02</option>
+                    <option value="FZ03">Freezer 03</option>
+                    <option value="FZ04">Freezer 04</option>
+                    <option value="FZ05">Freezer 05</option>
+                    <option value="FZ06">Freezer 06</option>
+                    <option value="FZ07">Freezer 07</option>
+                    <option value="FZ08">Freezer 08</option>
+                    <option value="FZ09">Freezer 09</option>
+                    <option value="FZ10">Freezer 10</option>
+                    <option value="FZ11">Freezer 11</option>
+                    <option value="FZ12">Freezer 12</option>
+                    <option value="FZ13">Freezer 13</option>
+                    <option value="FZ14">Freezer 14</option>
+                    <option value="FZ15">Freezer 15</option>
+                    <option value="FZ16">Freezer 16</option>
+                    <option value="FZ17">Freezer 17</option>
+                    <option value="FZ18">Freezer 18</option>
+                    <option value="FZ19">Freezer 19</option>
+                    <option value="FZ20">Freezer 20</option>
+                    <option value="FZ21">Freezer 21</option>
+                    <option value="FZ22">Freezer 22</option>
+                    <option value="FZ23">Freezer 23</option>
+                    <option value="FZ24">Freezer 24</option>
                   </select>
                 </div>
               </div>
@@ -658,6 +686,8 @@ window.BrigadaDashboard = {
     container.querySelector('#stat-total')?.addEventListener('click', (e) => setStatusFilter('all', e.currentTarget));
     container.querySelector('#stat-expired')?.addEventListener('click', (e) => setStatusFilter('expired', e.currentTarget));
     container.querySelector('#stat-soon')?.addEventListener('click', (e) => setStatusFilter('soon', e.currentTarget));
+    container.querySelector('#stat-resfriado15')?.addEventListener('click', (e) => setStatusFilter('resfriado15', e.currentTarget));
+    container.querySelector('#stat-congelado30')?.addEventListener('click', (e) => setStatusFilter('congelado30', e.currentTarget));
     container.querySelector('#stat-ok')?.addEventListener('click', (e) => setStatusFilter('ok', e.currentTarget));
     container.querySelector('#stat-today')?.addEventListener('click', (e) => setStatusFilter('today', e.currentTarget));
     container.querySelector('#stat-rebaixa')?.addEventListener('click', (e) => setStatusFilter('rebaixa', e.currentTarget));
@@ -680,21 +710,6 @@ window.BrigadaDashboard = {
 
     // Modal close
     container.querySelector('#modal-close')?.addEventListener('click', () => this.closeModal(container));
-    
-    // Top 10 Modal
-    container.querySelector('#top10-modal-close')?.addEventListener('click', () => this.closeTop10Modal(container));
-    container.querySelector('#btn-cancel-top10')?.addEventListener('click', () => this.closeTop10Modal(container));
-    container.querySelector('#top10-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'top10-modal') this.closeTop10Modal(container);
-    });
-    
-    // Top Quebra widgets
-    container.querySelector('#card-top-quebra-week')?.addEventListener('click', () => {
-      if (this.top10WeekData) this.openTop10Modal(container, this.top10WeekData, '🏆 Top 10 Quebras e Trocas (Nesta Semana)');
-    });
-    container.querySelector('#card-top-quebra-month')?.addEventListener('click', () => {
-      if (this.top10MonthData) this.openTop10Modal(container, this.top10MonthData, '🏆 Top 10 Quebras e Trocas (Neste Mês)');
-    });
     
     // Print button
     container.querySelector('#btn-print-top10')?.addEventListener('click', () => {
@@ -723,6 +738,43 @@ window.BrigadaDashboard = {
       name: '#field-name',
       category: '#field-category',
       unit: '#field-unit'
+    });
+
+    // Listener para o campo de localização alternar seletores de Câmara e Freezer
+    const locSelect = container.querySelector('#field-location');
+    const chamberSlotsRow = container.querySelector('#row-chamber-slots');
+    const freezerSlotsRow = container.querySelector('#row-freezer-slots');
+    const chamberColSelect = container.querySelector('#field-chamber-col');
+
+    const updateLocationSlots = (locVal) => {
+      if (locVal === 'resfriado' || locVal === 'congelado') {
+        if (chamberSlotsRow) chamberSlotsRow.style.display = 'flex';
+        if (freezerSlotsRow) freezerSlotsRow.style.display = 'none';
+        
+        const count = locVal === 'resfriado' ? 4 : 16;
+        const currentSelected = chamberColSelect ? chamberColSelect.value : '';
+        if (chamberColSelect) {
+          chamberColSelect.innerHTML = '<option value="">Selecione a coluna...</option>' + 
+            Array.from({ length: count }, (_, i) => {
+              const col = i + 1;
+              const pad = col.toString().padStart(2, '0');
+              return `<option value="${col}">Coluna ${pad}</option>`;
+            }).join('');
+          if (currentSelected && parseInt(currentSelected, 10) <= count) {
+            chamberColSelect.value = currentSelected;
+          }
+        }
+      } else if (locVal === 'piso_loja') {
+        if (chamberSlotsRow) chamberSlotsRow.style.display = 'none';
+        if (freezerSlotsRow) freezerSlotsRow.style.display = 'flex';
+      } else {
+        if (chamberSlotsRow) chamberSlotsRow.style.display = 'none';
+        if (freezerSlotsRow) freezerSlotsRow.style.display = 'none';
+      }
+    };
+
+    locSelect?.addEventListener('change', (e) => {
+      updateLocationSlots(e.target.value);
     });
 
     // Listener para o campo de quantidade exibir/ocultar anotação
@@ -804,6 +856,8 @@ window.BrigadaDashboard = {
     set('stat-total-val', stats.total);
     set('stat-expired-val', stats.expired);
     set('stat-soon-val', stats.expiresSoon);
+    set('stat-resfriado15-val', stats.resfriado15 || 0);
+    set('stat-congelado30-val', stats.congelado30 || 0);
     set('stat-ok-val', stats.ok);
     set('stat-today-val', stats.expiresToday);
     set('stat-users-val', stats.totalUsers);
@@ -825,45 +879,7 @@ window.BrigadaDashboard = {
       else todayCard.classList.remove('card-blink-orange');
     }
 
-    // Cálculo do Top Quebras
-    const quebraProducts = filteredProducts.filter(p => p.expiredAction === 'quebra' || p.expiredAction === 'troca');
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const calcTop10 = (items) => {
-      if (items.length === 0) return [];
-      const counts = {};
-      const productMap = {};
-      items.forEach(i => {
-        counts[i.plu] = (counts[i.plu] || 0) + (i.quantity ? parseFloat(i.quantity) : 1);
-        if (!productMap[i.plu]) productMap[i.plu] = i;
-      });
-      
-      const sorted = Object.keys(counts).map(plu => ({
-        plu,
-        name: productMap[plu].name,
-        category: productMap[plu].category,
-        action: productMap[plu].expiredAction,
-        count: counts[plu]
-      })).sort((a, b) => b.count - a.count).slice(0, 10);
-      
-      return sorted;
-    };
-
-    const weekItems = quebraProducts.filter(p => new Date(p.endDate) >= oneWeekAgo);
-    const monthItems = quebraProducts.filter(p => new Date(p.endDate) >= oneMonthAgo);
-
-    this.top10WeekData = calcTop10(weekItems);
-    this.top10MonthData = calcTop10(monthItems);
-
-    const topWeek = this.top10WeekData.length > 0 ? this.top10WeekData[0] : { name: 'Nenhum registro', count: '-' };
-    const topMonth = this.top10MonthData.length > 0 ? this.top10MonthData[0] : { name: 'Nenhum registro', count: '-' };
-
-    set('top-quebra-week-name', topWeek.name);
-    set('top-quebra-week-count', topWeek.count !== '-' ? `Quantidade: ${topWeek.count}` : '');
-    set('top-quebra-month-name', topMonth.name);
-    set('top-quebra-month-count', topMonth.count !== '-' ? `Quantidade: ${topMonth.count}` : '');
   },
 
   renderAlertsTimeline(container) {
@@ -911,16 +927,23 @@ window.BrigadaDashboard = {
     if (this.currentStatusFilter && this.currentStatusFilter !== 'all') {
       products = products.filter(p => {
         const s = window.BrigadaData.getProductStatus(p);
-        if (this.currentStatusFilter === 'expired') return s.days < 0 && !p.expiredAction;
-        if (this.currentStatusFilter === 'today') return s.days === 0 && !p.expiredAction;
-        if (this.currentStatusFilter === 'soon') return s.days > 0 && s.days <= 3 && !p.expiredAction;
-        if (this.currentStatusFilter === 'ok') return s.days > 3 && !p.expiredAction;
-        if (this.currentStatusFilter === 'rebaixa') return !!p.isAwaitingReduction;
+        if (this.currentStatusFilter === 'tratado') return p.expiredAction === 'tratado';
         if (this.currentStatusFilter === 'quebra') return p.expiredAction === 'quebra';
         if (this.currentStatusFilter === 'troca') return p.expiredAction === 'troca';
-        if (this.currentStatusFilter === 'tratado') return p.expiredAction === 'tratado';
+
+        if (p.expiredAction) return false;
+
+        if (this.currentStatusFilter === 'expired') return s.days < 0;
+        if (this.currentStatusFilter === 'today') return s.days === 0;
+        if (this.currentStatusFilter === 'soon') return s.days > 0 && s.days <= 3;
+        if (this.currentStatusFilter === 'congelado30') return window.BrigadaData.isCongelado(p) && s.days >= 0 && s.days <= 30;
+        if (this.currentStatusFilter === 'resfriado15') return window.BrigadaData.isResfriado(p) && s.days >= 0 && s.days <= 15;
+        if (this.currentStatusFilter === 'ok') return s.days > 3;
+        if (this.currentStatusFilter === 'rebaixa') return !!p.isAwaitingReduction;
         return true;
       });
+    } else {
+      products = products.filter(p => !p.expiredAction);
     }
 
     // Sort: expired first, then by days remaining
@@ -1095,10 +1118,12 @@ window.BrigadaDashboard = {
     });
 
     const labels = {
-      all: '📦 Todos os Produtos',
+      all: '📦 Todos os Produtos Ativos',
       expired: '🔴 Produtos Vencidos',
       today: '🟠 Vencendo Hoje',
-      soon: '⚠️ Atenção (1-3 dias)',
+      soon: '⚠️ Atenção (1-3 Dias)',
+      congelado30: '🥶 Alerta 30 Dias (Congelados)',
+      resfriado15: '❄️ Alerta 15 Dias (Resfriados)',
       ok: '✅ Produtos OK',
       rebaixa: '📉 Aguardando Rebaixa',
       quebra: '🗑️ Produtos em Quebra',
@@ -1149,14 +1174,21 @@ window.BrigadaDashboard = {
     // Filter by status
     products = products.filter(p => {
       const s = window.BrigadaData.getProductStatus(p);
-      if (status === 'expired') return s.days < 0 && !p.expiredAction;
-      if (status === 'today') return s.days === 0 && !p.expiredAction;
-      if (status === 'soon') return s.days > 0 && s.days <= 3 && !p.expiredAction;
-      if (status === 'ok') return s.days > 3 && !p.expiredAction;
-      if (status === 'rebaixa') return !!p.isAwaitingReduction;
+      if (status === 'tratado') return p.expiredAction === 'tratado';
       if (status === 'quebra') return p.expiredAction === 'quebra';
       if (status === 'troca') return p.expiredAction === 'troca';
-      if (status === 'tratado') return p.expiredAction === 'tratado';
+
+      // Se já foi tratado/quebra/troca, NÃO deve aparecer em outros filtros ou na lista geral
+      if (p.expiredAction) return false;
+
+      if (status === 'all') return true;
+      if (status === 'expired') return s.days < 0;
+      if (status === 'today') return s.days === 0;
+      if (status === 'soon') return s.days > 0 && s.days <= 3;
+      if (status === 'congelado30') return window.BrigadaData.isCongelado(p) && s.days >= 0 && s.days <= 30;
+      if (status === 'resfriado15') return window.BrigadaData.isResfriado(p) && s.days >= 0 && s.days <= 15;
+      if (status === 'ok') return s.days > 3;
+      if (status === 'rebaixa') return !!p.isAwaitingReduction;
       return true;
     });
 
@@ -1267,9 +1299,58 @@ window.BrigadaDashboard = {
     container.querySelector('#field-startDate').value = product.startDate || '';
     container.querySelector('#field-endDate').value = product.endDate;
     container.querySelector('#field-supplier').value = product.supplier || '';
-    container.querySelector('#field-location').value = product.location || '';
-    container.querySelector('#field-column').value = product.column || '';
-    container.querySelector('#field-column-number').value = product.columnNumber || '';
+    
+    // Parse location format
+    const loc = product.location || '';
+    const chamberMatch = loc.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
+    const freezerMatch = loc.match(/^piso_loja:(FZ\d+)$/);
+
+    if (chamberMatch) {
+      container.querySelector('#field-location').value = chamberMatch[1];
+      const count = chamberMatch[1] === 'resfriado' ? 4 : 16;
+      const colSelect = container.querySelector('#field-chamber-col');
+      if (colSelect) {
+        colSelect.innerHTML = '<option value="">Selecione a coluna...</option>' + 
+          Array.from({ length: count }, (_, i) => {
+            const col = i + 1;
+            const pad = col.toString().padStart(2, '0');
+            return `<option value="${col}">Coluna ${pad}</option>`;
+          }).join('');
+        colSelect.value = chamberMatch[2];
+      }
+      if (container.querySelector('#field-chamber-level')) container.querySelector('#field-chamber-level').value = chamberMatch[3];
+      if (container.querySelector('#field-chamber-pos')) container.querySelector('#field-chamber-pos').value = chamberMatch[4];
+      if (container.querySelector('#row-chamber-slots')) container.querySelector('#row-chamber-slots').style.display = 'flex';
+      if (container.querySelector('#row-freezer-slots')) container.querySelector('#row-freezer-slots').style.display = 'none';
+    } else if (freezerMatch) {
+      container.querySelector('#field-location').value = 'piso_loja';
+      if (container.querySelector('#field-freezer-num')) container.querySelector('#field-freezer-num').value = freezerMatch[1];
+      if (container.querySelector('#row-chamber-slots')) container.querySelector('#row-chamber-slots').style.display = 'none';
+      if (container.querySelector('#row-freezer-slots')) container.querySelector('#row-freezer-slots').style.display = 'flex';
+    } else {
+      container.querySelector('#field-location').value = loc;
+      if (loc === 'resfriado' || loc === 'congelado') {
+        const count = loc === 'resfriado' ? 4 : 16;
+        const colSelect = container.querySelector('#field-chamber-col');
+        if (colSelect) {
+          colSelect.innerHTML = '<option value="">Selecione a coluna...</option>' + 
+            Array.from({ length: count }, (_, i) => {
+              const col = i + 1;
+              const pad = col.toString().padStart(2, '0');
+              return `<option value="${col}">Coluna ${pad}</option>`;
+            }).join('');
+        }
+        if (container.querySelector('#row-chamber-slots')) container.querySelector('#row-chamber-slots').style.display = 'flex';
+        if (container.querySelector('#row-freezer-slots')) container.querySelector('#row-freezer-slots').style.display = 'none';
+      } else if (loc === 'piso_loja') {
+        if (container.querySelector('#row-chamber-slots')) container.querySelector('#row-chamber-slots').style.display = 'none';
+        if (container.querySelector('#row-freezer-slots')) container.querySelector('#row-freezer-slots').style.display = 'flex';
+      } else {
+        if (container.querySelector('#row-chamber-slots')) container.querySelector('#row-chamber-slots').style.display = 'none';
+        if (container.querySelector('#row-freezer-slots')) container.querySelector('#row-freezer-slots').style.display = 'none';
+      }
+    }
+
     container.querySelector('#field-unit').value = product.unit || 'kg';
     container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
     
@@ -1351,13 +1432,31 @@ window.BrigadaDashboard = {
     const startDate = container.querySelector('#field-startDate').value;
     const endDate = container.querySelector('#field-endDate').value;
     const supplier = container.querySelector('#field-supplier').value.trim();
-    const location = container.querySelector('#field-location').value;
+    const locationType = container.querySelector('#field-location').value;
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
-    const column = container.querySelector('#field-column').value.trim() || null;
-    const colNumVal = container.querySelector('#field-column-number').value;
-    const columnNumber = colNumVal !== '' ? parseInt(colNumVal) : null;
+    
+    let location = locationType;
+    let column = null;
+    let columnNumber = null;
+
+    if (locationType === 'resfriado' || locationType === 'congelado') {
+      const col = container.querySelector('#field-chamber-col')?.value;
+      const level = container.querySelector('#field-chamber-level')?.value;
+      const pos = container.querySelector('#field-chamber-pos')?.value;
+
+      if (col && level && pos) {
+        location = `${locationType}:C${col}-N${level}-${pos}`;
+        column = level === '1' ? 'Piso' : 'Aéreo';
+        columnNumber = parseInt(col, 10);
+      }
+    } else if (locationType === 'piso_loja') {
+      const fz = container.querySelector('#field-freezer-num')?.value;
+      if (fz) {
+        location = `piso_loja:${fz}`;
+      }
+    }
 
     const selectVal = container.querySelector('#field-annotation').value;
     const textVal = container.querySelector('#field-annotation-text')?.value.trim() || '';
@@ -1644,28 +1743,6 @@ window.BrigadaDashboard = {
           <div class="metric-card__body">
             <p class="metric-card__label">Vence Hoje</p>
             <p class="metric-card__value" style="font-size: 0.85rem; color: var(--error); font-weight: 600; white-space: nowrap; margin-top: 5px;">⚠️ Informação não autorizada</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Top Quebras Widget -->
-      <div class="dashboard-grid dashboard-grid--2" style="margin-bottom:1.5rem;">
-        <div class="glass-panel" style="padding: 1.5rem;">
-          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Semana)</h3>
-          <div style="display:flex; align-items:center; gap: 1rem;">
-            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">🗑️</div>
-            <div>
-              <p style="font-size:0.95rem; font-weight:bold; color:var(--error);">⚠️ Informação não autorizada</p>
-            </div>
-          </div>
-        </div>
-        <div class="glass-panel" style="padding: 1.5rem;">
-          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Mês)</h3>
-          <div style="display:flex; align-items:center; gap: 1rem;">
-            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
-            <div>
-              <p style="font-size:0.95rem; font-weight:bold; color:var(--error);">⚠️ Informação não autorizada</p>
-            </div>
           </div>
         </div>
       </div>

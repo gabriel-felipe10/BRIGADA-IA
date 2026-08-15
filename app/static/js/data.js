@@ -347,6 +347,26 @@ window.BrigadaData = {
     }
   },
 
+  // Helper para verificar se é congelado
+  isCongelado(product) {
+    if (!product) return false;
+    const loc = (product.location || '').toLowerCase();
+    if (loc.includes('congelado')) return true;
+    const name = (product.name || '').toUpperCase();
+    if (/\b(CONG|CONGELADO|CONGELADA|CONGELADOS|CONGELADAS)\b/.test(name)) return true;
+    return false;
+  },
+
+  // Helper para verificar se é resfriado
+  isResfriado(product) {
+    if (!product) return false;
+    const loc = (product.location || '').toLowerCase();
+    if (loc.includes('resfriado')) return true;
+    const name = (product.name || '').toUpperCase();
+    if (/\b(RESF|RESFRIADO|RESFRIADA|RESFRIADOS|RESFRIADAS)\b/.test(name)) return true;
+    return false;
+  },
+
   // Calcula status de validade de um produto
   getProductStatus(product, ignoreAction = false) {
     const today = new Date();
@@ -370,10 +390,26 @@ window.BrigadaData = {
     }
 
     if (diffDays < 0) {
-      return { label: 'Vencido', class: 'badge--expired', icon: '🔴', days: diffDays };
+      return { label: `Vencido (${Math.abs(diffDays)}d)`, class: 'badge--expired', icon: '🔴', days: diffDays };
     }
     if (diffDays === 0) return { label: 'Vence Hoje', class: 'badge--today', icon: '🟠', days: 0 };
-    if (diffDays <= 3) return { label: `${diffDays}d restantes`, class: 'badge--warning', icon: '🟡', days: diffDays };
+    if (diffDays <= 3) {
+      const diasText = diffDays === 1 ? '1 dia' : `${diffDays} dias`;
+      return { label: `Faltam ${diasText}`, class: 'badge--warning', icon: '🟡', days: diffDays };
+    }
+
+    // Alerta de 15 dias para Itens Resfriados (4 a 15 dias)
+    if (this.isResfriado(product) && diffDays <= 15) {
+      const diasText = diffDays === 1 ? '1 dia' : `${diffDays} dias`;
+      return { label: `Faltam ${diasText} (Alerta 15d)`, class: 'badge--resfriado-alert', icon: '❄️', days: diffDays, isResfriadoAlert: true };
+    }
+
+    // Alerta de 30 dias para Itens Congelados (4 a 30 dias)
+    if (this.isCongelado(product) && diffDays <= 30) {
+      const diasText = diffDays === 1 ? '1 dia' : `${diffDays} dias`;
+      return { label: `Faltam ${diasText} (Alerta 30d)`, class: 'badge--congelado-alert', icon: '🥶', days: diffDays, isCongeladoAlert: true };
+    }
+
     return { label: 'OK', class: 'badge--ok', icon: '🟢', days: diffDays };
   },
 
@@ -449,7 +485,7 @@ window.BrigadaData = {
       }
     }
 
-    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0, quebra = 0, troca = 0, tratado = 0;
+    let expired = 0, expiresToday = 0, expiresSoon = 0, ok = 0, awaitingReduction = 0, quebra = 0, troca = 0, tratado = 0, congelado30 = 0, resfriado15 = 0;
     allowedProducts.forEach(p => {
       if (p.isAwaitingReduction) awaitingReduction++;
       if (p.expiredAction === 'quebra') quebra++;
@@ -459,13 +495,29 @@ window.BrigadaData = {
       if (s.days < 0) {
         if (!p.expiredAction) expired++;
       }
-      else if (s.days === 0) expiresToday++;
-      else if (s.days <= 3) expiresSoon++;
-      else ok++;
+      else if (s.days === 0) {
+        if (!p.expiredAction) expiresToday++;
+      }
+      else if (s.days <= 3) {
+        if (!p.expiredAction) expiresSoon++;
+      }
+      else {
+        if (!p.expiredAction) ok++;
+      }
+
+      if (this.isCongelado(p) && s.days >= 0 && s.days <= 30 && !p.expiredAction) {
+        congelado30++;
+      }
+      if (this.isResfriado(p) && s.days >= 0 && s.days <= 15 && !p.expiredAction) {
+        resfriado15++;
+      }
     });
 
+    const activeProducts = allowedProducts.filter(p => !p.expiredAction);
+
     return {
-      total: allowedProducts.length,
+      total: activeProducts.length,
+      allTotal: allowedProducts.length,
       expired,
       expiresToday,
       expiresSoon,
@@ -474,6 +526,8 @@ window.BrigadaData = {
       quebra,
       troca,
       tratado,
+      congelado30,
+      resfriado15,
       totalUsers: this.users.length,
       activeUsers: this.users.filter(u => u.status === 'active').length,
     };
@@ -488,6 +542,7 @@ window.BrigadaData = {
   },
 
   // Formata data para exibição
+  // Formata data para exibição
   formatDate(dateStr) {
     if (!dateStr) return '—';
     const [y, m, d] = dateStr.split('-');
@@ -501,26 +556,162 @@ window.BrigadaData = {
     return d.toLocaleString('pt-BR');
   },
 
+  // Formata data e hora de cadastro do produto
+  formatCreatedDateAndHour(p) {
+    if (!p) return '—';
+    // Se tiver createdAt com timestamp completo
+    if (p.createdAt) {
+      const d = new Date(p.createdAt);
+      if (!isNaN(d.getTime())) {
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const ano = d.getFullYear();
+        const hora = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        return `<div style="font-weight: 500;">${dia}/${mes}/${ano}</div><div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1px;">🕒 ${hora}:${min}</div>`;
+      }
+    }
+    // Se startDate tiver horário
+    if (p.startDate && (p.startDate.includes('T') || p.startDate.includes(' '))) {
+      const d = new Date(p.startDate);
+      if (!isNaN(d.getTime())) {
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const ano = d.getFullYear();
+        const hora = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        return `<div style="font-weight: 500;">${dia}/${mes}/${ano}</div><div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1px;">🕒 ${hora}:${min}</div>`;
+      }
+    }
+    if (p.startDate) {
+      return `<div style="font-weight: 500;">${this.formatDate(p.startDate)}</div>`;
+    }
+    return '—';
+  },
+
   // Formata localização de produto de forma amigável
   formatLocationFriendly(p) {
     if (!p) return '—';
-    const loc = p.location;
+    const loc = typeof p === 'string' ? p : p.location;
     if (!loc) return '—';
-    if (loc === 'resfriado') return '❄️ Resfriado';
-    if (loc === 'congelado') return '🥶 Congelado';
+    if (loc === 'resfriado') return '❄️ Câmara Resfriada';
+    if (loc === 'congelado') return '🥶 Câmara Congelada';
     if (loc === 'piso_loja') return '🏪 Piso de Loja';
     
-    // Testa se é coordenada de câmara fria
-    const match = loc.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
-    if (match) {
-      const chamber = match[1] === 'resfriado' ? '❄️ Resf' : '🥶 Cong';
-      const pos = match[4] === 'E' ? 'E' : 'D';
-      return `${chamber}: C${match[2]}-N${match[3]}-${pos}`;
+    // Testa se é coordenada de câmara fria: resfriado:C01-N01-E
+    const matchChamber = loc.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
+    if (matchChamber) {
+      const chamber = matchChamber[1] === 'resfriado' ? '❄️ Resf' : '🥶 Cong';
+      const pos = matchChamber[4] === 'E' ? 'E' : 'D';
+      return `${chamber}: C${matchChamber[2]}-N${matchChamber[3]}-${pos}`;
+    }
+
+    // Testa se é freezer do piso de loja: piso_loja:FZ01
+    const matchFreezer = loc.match(/^piso_loja:(FZ\d+|\d+)$/);
+    if (matchFreezer) {
+      const fz = matchFreezer[1].replace('FZ', '');
+      return `🏪 Freezer ${fz.padStart(2, '0')}`;
     }
     
     // Fallback genérico
-    const colInfo = p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : '';
+    const colInfo = p && p.column ? ` (Col. ${p.column}${p.columnNumber ? ` - Nº ${p.columnNumber}` : ''})` : '';
     return `${loc}${colInfo}`;
+  },
+
+  // Retorna relação do produto: itens com a MESMA data de validade em outros locais e lotes com outras datas
+  getProductStockDistribution(productOrPlu) {
+    if (!productOrPlu) return { sameDate: [], otherDates: [], all: [], hasSameDateInOtherLocation: false, length: 0, map: () => [], filter: () => [], reduce: () => 0 };
+    const plu = typeof productOrPlu === 'object' ? productOrPlu.plu : productOrPlu;
+    const name = typeof productOrPlu === 'object' ? productOrPlu.name : null;
+    const currentId = typeof productOrPlu === 'object' ? productOrPlu.id : null;
+    const targetEndDate = typeof productOrPlu === 'object' ? productOrPlu.endDate : null;
+    
+    const matching = (this.products || []).filter(p => {
+      if (plu && p.plu && String(p.plu).trim() === String(plu).trim()) return true;
+      if (name && p.name && p.name.trim().toUpperCase() === name.trim().toUpperCase()) return true;
+      return false;
+    });
+
+    const formatItem = (item) => {
+      let locationDesc = 'Não Alocado';
+      let shortLoc = 'Sem local';
+      let isChamber = false;
+      let isPiso = false;
+      let locType = 'outro';
+
+      if (item.location) {
+        const chamberMatch = item.location.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
+        const freezerMatch = item.location.match(/^piso_loja:(FZ\d+|\d+)$/);
+        
+        if (chamberMatch) {
+          isChamber = true;
+          locType = 'camara';
+          const type = chamberMatch[1] === 'resfriado' ? '❄️ Câmara Resfriada' : '🥶 Câmara Congelada';
+          const pos = chamberMatch[4] === 'E' ? 'Esquerda' : 'Direita';
+          locationDesc = `${type} (Coluna ${chamberMatch[2]}, Nível ${chamberMatch[3]} - ${pos})`;
+          shortLoc = `${chamberMatch[1] === 'resfriado' ? '❄️ Resf' : '🥶 Cong'} C${chamberMatch[2]}`;
+        } else if (freezerMatch) {
+          isPiso = true;
+          locType = 'piso';
+          const fzNum = freezerMatch[1].replace('FZ', '').padStart(2, '0');
+          locationDesc = `🏪 Piso de Loja (Freezer ${fzNum})`;
+          shortLoc = `Freezer ${fzNum}`;
+        } else if (item.location === 'resfriado') {
+          isChamber = true;
+          locType = 'camara';
+          locationDesc = '❄️ Câmara Resfriada';
+          shortLoc = '❄️ Câmara';
+        } else if (item.location === 'congelado') {
+          isChamber = true;
+          locType = 'camara';
+          locationDesc = '🥶 Câmara Congelada';
+          shortLoc = '🥶 Câmara';
+        } else if (item.location === 'piso_loja') {
+          isPiso = true;
+          locType = 'piso';
+          locationDesc = '🏪 Piso de Loja';
+          shortLoc = '🏪 Piso';
+        } else {
+          locationDesc = item.location;
+          shortLoc = item.location;
+        }
+      }
+
+      return {
+        id: item.id,
+        isCurrent: currentId ? item.id === currentId : false,
+        plu: item.plu,
+        name: item.name,
+        quantity: item.quantity !== undefined ? parseFloat(item.quantity) : 0,
+        unit: item.unit || 'kg',
+        startDate: item.startDate,
+        endDate: item.endDate,
+        createdAt: item.createdAt,
+        location: item.location,
+        locationDesc,
+        shortLoc,
+        locType,
+        isChamber,
+        isPiso,
+        status: this.getProductStatus(item)
+      };
+    };
+
+    const all = matching.map(formatItem);
+    const sameDate = targetEndDate ? all.filter(i => i.endDate === targetEndDate) : all;
+    const otherDates = targetEndDate ? all.filter(i => i.endDate !== targetEndDate) : [];
+    const hasSameDateInOtherLocation = sameDate.length > 1;
+
+    return {
+      all,
+      sameDate,
+      otherDates,
+      hasSameDateInOtherLocation,
+      length: all.length,
+      map: (fn) => all.map(fn),
+      filter: (fn) => all.filter(fn),
+      reduce: (fn, init) => all.reduce(fn, init)
+    };
   },
 
   // ── Configurações ──────────────────────────────────────────────────────────

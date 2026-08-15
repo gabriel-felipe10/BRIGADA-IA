@@ -100,9 +100,50 @@ window.BrigadaResumoMensal = {
         <!-- Injetado dinamicamente -->
       </div>
 
+      <!-- Top Quebras e Trocas Widget -->
+      <div class="dashboard-grid dashboard-grid--2" style="margin-top: 1.5rem; margin-bottom:1.5rem;">
+        <div class="glass-panel" id="card-top-quebra-week" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver o Top 10">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Semana)</h3>
+          <div style="display:flex; align-items:center; gap: 1rem;">
+            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">🗑️</div>
+            <div>
+              <p style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);" id="top-quebra-week-name">Calculando...</p>
+              <p style="font-size:0.9rem; color:var(--error);" id="top-quebra-week-count">...</p>
+            </div>
+          </div>
+        </div>
+        <div class="glass-panel" id="card-top-quebra-month" style="display:flex; flex-direction:column; justify-content:center; padding: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver o Top 10">
+          <h3 class="glass-panel__title" style="margin-bottom:1rem;">🏆 Top Quebras e Trocas (Mês)</h3>
+          <div style="display:flex; align-items:center; gap: 1rem;">
+            <div style="font-size:2.5rem; background:rgba(239,68,68,0.1); border-radius:50%; padding:0.5rem; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
+            <div>
+              <p style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);" id="top-quebra-month-name">Calculando...</p>
+              <p style="font-size:0.9rem; color:var(--error);" id="top-quebra-month-count">...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Relatório Detalhado por Setor -->
       <div class="sectors-report-container" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 2rem;" id="resumo-sectors-list">
         <!-- Injetado dinamicamente -->
+      </div>
+
+      <!-- Modal Top 10 -->
+      <div class="modal-overlay" id="top10-modal" style="display:none; z-index: 2000;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 class="modal-title" id="top10-modal-title">🏆 Top 10</h3>
+            <button class="modal-close" id="top10-modal-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <div id="top10-list" class="table-scroll"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn--ghost" id="btn-cancel-top10">Fechar</button>
+            <button class="btn btn--primary" id="btn-print-top10">🖨️ Imprimir</button>
+          </div>
+        </div>
       </div>
     `;
   },
@@ -147,6 +188,26 @@ window.BrigadaResumoMensal = {
 
     printBtn?.addEventListener('click', () => {
       this.printResumo();
+    });
+
+    // Top 10 Modal Events
+    container.querySelector('#top10-modal-close')?.addEventListener('click', () => this.closeTop10Modal(container));
+    container.querySelector('#btn-cancel-top10')?.addEventListener('click', () => this.closeTop10Modal(container));
+    container.querySelector('#top10-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'top10-modal') this.closeTop10Modal(container);
+    });
+
+    // Top Quebra Widgets click
+    container.querySelector('#card-top-quebra-week')?.addEventListener('click', () => {
+      if (this.top10WeekData) this.openTop10Modal(container, this.top10WeekData, '🏆 Top 10 Quebras e Trocas (Nesta Semana)');
+    });
+    container.querySelector('#card-top-quebra-month')?.addEventListener('click', () => {
+      if (this.top10MonthData) this.openTop10Modal(container, this.top10MonthData, `🏆 Top 10 Quebras e Trocas (${this.currentMonth}/${this.currentYear})`);
+    });
+
+    // Print button Top 10
+    container.querySelector('#btn-print-top10')?.addEventListener('click', () => {
+      this.printTop10(container.querySelector('#top10-modal-title').textContent, this.currentTop10Data);
     });
   },
 
@@ -348,6 +409,47 @@ window.BrigadaResumoMensal = {
         </div>
       `;
     }
+
+    // Cálculo do Top Quebras (Semana e Mês)
+    const quebraProducts = monthlyProducts.filter(p => p.expiredAction === 'quebra' || p.expiredAction === 'troca');
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const calcTop10 = (items) => {
+      if (items.length === 0) return [];
+      const counts = {};
+      const productMap = {};
+      items.forEach(i => {
+        counts[i.plu] = (counts[i.plu] || 0) + (i.quantity ? parseFloat(i.quantity) : 1);
+        if (!productMap[i.plu]) productMap[i.plu] = i;
+      });
+      
+      return Object.keys(counts).map(plu => ({
+        plu,
+        name: productMap[plu].name,
+        category: productMap[plu].category,
+        action: productMap[plu].expiredAction,
+        unit: productMap[plu].unit || 'kg',
+        count: counts[plu]
+      })).sort((a, b) => b.count - a.count).slice(0, 10);
+    };
+
+    const weekItems = quebraProducts.filter(p => new Date(p.endDate) >= oneWeekAgo);
+    this.top10WeekData = calcTop10(weekItems);
+    this.top10MonthData = calcTop10(quebraProducts);
+
+    const topWeek = this.top10WeekData.length > 0 ? this.top10WeekData[0] : { name: 'Nenhum registro', count: '-' };
+    const topMonth = this.top10MonthData.length > 0 ? this.top10MonthData[0] : { name: 'Nenhum registro', count: '-' };
+
+    const set = (id, val) => {
+      const el = container.querySelector(`#${id}`);
+      if (el) el.textContent = val;
+    };
+
+    set('top-quebra-week-name', topWeek.name);
+    set('top-quebra-week-count', topWeek.count !== '-' ? `Quantidade: ${topWeek.count} ${topWeek.unit || ''}` : '');
+    set('top-quebra-month-name', topMonth.name);
+    set('top-quebra-month-count', topMonth.count !== '-' ? `Quantidade: ${topMonth.count} ${topMonth.unit || ''}` : '');
 
     // Atualiza a lista de relatórios por setor
     const listContainer = container.querySelector('#resumo-sectors-list');
@@ -884,5 +986,98 @@ window.BrigadaResumoMensal = {
     } else {
       window.print();
     }
+  },
+
+  openTop10Modal(container, dataList, title) {
+    this.currentTop10Data = dataList;
+    container.querySelector('#top10-modal-title').textContent = title;
+    const listContainer = container.querySelector('#top10-list');
+    
+    if (!dataList || dataList.length === 0) {
+      listContainer.innerHTML = '<div class="empty-state" style="padding:2rem;"><p>Nenhum dado encontrado para o período.</p></div>';
+    } else {
+      listContainer.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>PLU</th>
+              <th>Produto</th>
+              <th>Ação</th>
+              <th>Qtd. Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dataList.map((item, index) => `
+              <tr>
+                <td style="font-weight:bold; color:var(--primary);">${index + 1}º</td>
+                <td><span class="plu-badge">${item.plu}</span></td>
+                <td>${item.name}</td>
+                <td><span class="badge ${item.action === 'quebra' ? 'badge--expired' : 'badge--info'}">${item.action === 'quebra' ? '🗑️ Quebra' : '🔄 Troca'}</span></td>
+                <td style="font-weight:bold; font-size:1.1rem;">${item.count} ${item.unit || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+    
+    const modal = container.querySelector('#top10-modal');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+  },
+
+  closeTop10Modal(container) {
+    const modal = container.querySelector('#top10-modal');
+    if (modal) {
+      modal.classList.remove('modal-overlay--visible');
+      setTimeout(() => modal.style.display = 'none', 250);
+    }
+  },
+
+  printTop10(title, dataList) {
+    if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para imprimir.', 'error');
+    
+    const dateStr = new Date().toLocaleString('pt-BR');
+    
+    const printContent = `
+      <div class="print-container">
+        <style>
+          .print-container { font-family: system-ui, -apple-system, sans-serif; color: #111; padding: 20px; background: #ffffff; }
+          .print-container h1 { font-size: 1.5rem; margin-bottom: 5px; border-bottom: 2px solid #ccc; padding-bottom: 10px; color: #111; }
+          .print-container p { color: #555; margin-bottom: 20px; }
+          .print-container table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          .print-container th, .print-container td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; color: #111; }
+          .print-container th { background-color: #f4f4f5; font-weight: 600; color: #333; }
+          .print-container td { font-size: 0.95rem; }
+          .print-container .pos { font-weight: bold; }
+        </style>
+        <h1>${title}</h1>
+        <p>Gerado em: ${dateStr}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>PLU</th>
+              <th>Produto</th>
+              <th>Ação</th>
+              <th>Qtd. Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dataList.map((item, index) => `
+              <tr>
+                <td class="pos">${index + 1}º</td>
+                <td>${item.plu}</td>
+                <td>${item.name}</td>
+                <td>${item.action === 'quebra' ? 'Quebra' : 'Troca'}</td>
+                <td><strong>${item.count} ${item.unit || ''}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    window.BrigadaUI.printContent(printContent);
   }
 };
