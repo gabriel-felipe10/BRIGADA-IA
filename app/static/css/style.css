@@ -519,22 +519,60 @@ body::before {
 .cat-pill--pescado { background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); }
 
 /* ── Action Buttons ─────────────────────────────────────────────────────────── */
-.actions-cell { white-space:nowrap; display:flex; align-items:flex-start; gap:6px; flex-wrap:wrap; }
+.actions-cell { white-space:nowrap; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .btn-icon {
-  background:none; border:1px solid var(--glass-border); border-radius:var(--r-sm);
-  min-width:56px; width:auto; min-height:38px; cursor:pointer;
-  font-size:0.85rem; transition:all var(--t-fast);
-  display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:2px; padding:4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  min-width: 52px; width: auto; min-height: 38px;
+  cursor: pointer; font-size: 0.85rem;
+  transition: all var(--t-fast);
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 4px 8px;
+  color: var(--text-primary);
+  user-select: none;
 }
 .btn-icon .btn-label {
-  font-size:0.65rem; font-weight:600; line-height:1;
-  color:var(--text-secondary); white-space:nowrap;
-  letter-spacing:0.02em;
+  font-size: 0.65rem; font-weight: 600; line-height: 1;
+  color: var(--text-secondary); white-space: nowrap;
+  letter-spacing: 0.02em;
 }
-.btn-icon:hover .btn-label { color:var(--text-primary); }
-.btn-icon--edit:hover { background:var(--accent-subtle); border-color:var(--accent-border); }
-.btn-icon--delete:hover { background:var(--error-bg); border-color:var(--error-border); }
+.btn-icon:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+.btn-icon:hover .btn-label { color: var(--text-primary); }
+.btn-icon--edit:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+  color: #818cf8;
+}
+.btn-icon--edit:hover .btn-label { color: #a5b4fc; }
+.btn-icon--quebra:hover, .btn-icon--delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+.btn-icon--quebra:hover .btn-label, .btn-icon--delete:hover .btn-label { color: #fca5a5; }
+.btn-icon--troca:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #3b82f6;
+}
+.btn-icon--troca:hover .btn-label { color: #93c5fd; }
+.btn-icon--tratado:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+.btn-icon--tratado:hover .btn-label { color: #6ee7b7; }
+.btn-icon--print:hover {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: rgba(14, 165, 233, 0.4);
+  color: #0ea5e9;
+}
+.btn-icon--print:hover .btn-label { color: #7dd3fc; }
 
 /* ── Buttons ────────────────────────────────────────────────────────────────── */
 .btn {

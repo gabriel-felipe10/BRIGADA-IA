@@ -599,31 +599,30 @@ window.BrigadaPereciveis = {
             </div>
           </td>
           <td data-label="Ações" style="white-space: nowrap; text-align: right;">
-            <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
+            <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
               ${p.isAwaitingReduction && canEditThis ? `
-                <button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}" style="padding: 4px 6px; border-radius: 6px;">
+                <button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}">
                   ${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}
+                  <span class="btn-label">${p.rebaixaStatus === 'ok' ? 'Voltar' : 'Rebaixa'}</span>
                 </button>
               ` : ''}
-              ${status.days <= 3 && canEditThis ? `
-                ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra" style="padding: 4px 6px; border-radius: 6px;">🗑️</button>` : ''}
-                ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca" style="padding: 4px 6px; border-radius: 6px;">🔄</button>` : ''}
-                ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Marcar Tratado com Sucesso" style="padding: 4px 6px; border-radius: 6px;">✔️</button>` : ''}
-                ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação" style="padding: 4px 6px; border-radius: 6px;">↩️</button>` : ''}
-              ` : ''}
               ${canEditThis ? `
-                <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar Produto" style="padding: 4px 6px; border-radius: 6px;">
-                  ✏️
+                ${p.expiredAction !== 'quebra' ? `<button class="btn-icon btn-icon--quebra" data-action="set-quebra" data-id="${p.id}" title="Registrar Quebra / Avaria">🗑️<span class="btn-label">Quebra</span></button>` : ''}
+                ${p.expiredAction !== 'troca' ? `<button class="btn-icon btn-icon--troca" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                ${p.expiredAction !== 'tratado' ? `<button class="btn-icon btn-icon--tratado" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
+                ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
+                <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar Produto">
+                  ✏️<span class="btn-label">Editar</span>
                 </button>
               ` : ''}
               ${(locChamberMatch || locFreezerMatch) && canEditThis ? `
-                <button class="btn-icon" data-action="${locChamberMatch ? 'deallocate-chamber' : 'deallocate-freezer'}" data-id="${p.id}" title="Desalocar da posição" style="padding: 4px 6px; border-radius: 6px; color: #f87171;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background=''">
-                  📦↩️
+                <button class="btn-icon" data-action="${locChamberMatch ? 'deallocate-chamber' : 'deallocate-freezer'}" data-id="${p.id}" title="Desalocar da posição">
+                  📦↩️<span class="btn-label">Desalocar</span>
                 </button>
               ` : ''}
               ${canDeleteThis ? `
-                <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir Produto" style="padding: 4px 6px; border-radius: 6px;">
-                  🗑️
+                <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir Produto">
+                  🗑️<span class="btn-label">Excluir</span>
                 </button>
               ` : ''}
             </div>
@@ -743,7 +742,7 @@ window.BrigadaPereciveis = {
           });
         }
         if (action === 'set-quebra') {
-          window.BrigadaData.setExpiredAction(id, 'quebra').then(() => this.renderTable(container));
+          window.BrigadaUI.showQuebraModal(id, () => this.renderTable(container));
         }
         if (action === 'set-troca') {
           window.BrigadaData.setExpiredAction(id, 'troca').then(() => this.renderTable(container));

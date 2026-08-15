@@ -308,13 +308,13 @@ window.BrigadaHortifruti = {
               <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-right: 8px;">Ações:</span>
               <span class="badge ${baseStatus.class}" style="font-size: 0.7rem; padding: 4px 10px;">${baseStatus.icon} ${baseStatus.label}</span>
               ${p.expiredAction && status ? `<span class="badge ${status.class}" style="font-size: 0.7rem; padding: 4px 10px;">${status.icon} ${status.label}</span>` : ''}
-              ${status.days <= 3 && canEditThis ? `
-                ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
-                ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
-                ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
+              ${canEditThis ? `
+                ${p.expiredAction !== 'quebra' ? `<button class="btn-icon btn-icon--quebra" data-action="set-quebra" data-id="${p.id}" title="Registrar Quebra / Avaria">🗑️<span class="btn-label">Quebra</span></button>` : ''}
+                ${p.expiredAction !== 'troca' ? `<button class="btn-icon btn-icon--troca" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                ${p.expiredAction !== 'tratado' ? `<button class="btn-icon btn-icon--tratado" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
                 ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
+                <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>
               ` : ''}
-              ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
               ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
             </div>
           </td>
@@ -398,7 +398,7 @@ window.BrigadaHortifruti = {
       } else if (action === 'delete') {
         this.openDeleteModal(container, id);
       } else if (action === 'set-quebra') {
-        window.BrigadaData.setExpiredAction(id, 'quebra').then(() => this.renderTable(container));
+        window.BrigadaUI.showQuebraModal(id, () => this.renderTable(container));
       } else if (action === 'set-troca') {
         window.BrigadaData.setExpiredAction(id, 'troca').then(() => this.renderTable(container));
       } else if (action === 'set-tratado') {

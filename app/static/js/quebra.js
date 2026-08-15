@@ -790,8 +790,8 @@ window.BrigadaQuebra = {
           <td data-label="Motivo"><span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #818cf8;">${item.reason || 'Qualidade'}</span></td>
           <td data-label="Responsável">${item.responsibleName || '—'}</td>
           <td data-label="Ações" style="text-align: right;">
-            <button class="btn btn--sm btn--ghost btn-delete-quebra" data-id="${item.id}" title="Excluir Registro" style="color: #ef4444; padding: 6px 12px; font-size: 0.9rem;">
-              🗑️ Excluir
+            <button class="btn-icon btn-icon--delete btn-delete-quebra" data-id="${item.id}" title="Excluir Registro">
+              🗑️<span class="btn-label">Excluir</span>
             </button>
           </td>
         </tr>

@@ -150,6 +150,315 @@ window.BrigadaUI = {
       }, 100);
     }
   },
+
+  // ── Modal de Seleção de Quantidade de Quebra / Avaria ─────────────────────
+  showQuebraModal(productOrId, onComplete) {
+    const product = (typeof productOrId === 'object' && productOrId !== null)
+      ? productOrId 
+      : window.BrigadaData.products.find(p => p.id === parseInt(productOrId, 10));
+
+    if (!product) {
+      this.showToast('Produto não encontrado para registro de quebra.', 'error');
+      return;
+    }
+
+    const currentQty = parseFloat(product.quantity) || 0;
+    const unit = (product.unit || 'un').toLowerCase();
+    const isWeight = unit === 'kg' || unit === 'g' || unit === 'l';
+    const step = isWeight ? '0.001' : '1';
+    const minVal = isWeight ? 0.001 : 1;
+
+    let overlay = document.getElementById('global-quebra-modal-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'global-quebra-modal-overlay';
+      overlay.className = 'modal-overlay';
+      overlay.style.zIndex = '3000';
+      document.body.appendChild(overlay);
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const user = window.BrigadaAuth?.currentUser || {};
+    const defaultRespName = user.name || 'Felipe Santos';
+
+    overlay.innerHTML = `
+      <div class="modal" style="max-width: 520px; width: 95%; max-height: 92vh; overflow-y: auto;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; position: sticky; top: 0; background: var(--bg-card); z-index: 10;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 1.5rem; background: rgba(239, 68, 68, 0.15); border-radius: 8px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(239,68,68,0.3);">
+              🗑️
+            </div>
+            <div>
+              <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; color: #fff;">Registrar Quebra / Avaria</h3>
+              <p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">Defina a quantidade a baixar do estoque</p>
+            </div>
+          </div>
+          <button class="modal-close" id="g-quebra-modal-close" style="cursor: pointer;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1.25rem 0; display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Card Resumo do Produto -->
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+            <div style="font-size: 0.72rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+              ${product.category ? product.category.toUpperCase() : 'PRODUTO'} • PLU: ${product.plu || 'S/N'}
+            </div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+              ${product.name}
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.82rem; color: var(--text-secondary);">
+              <div>📦 Estoque Atual: <strong style="color: #38bdf8; font-size: 0.95rem;">${currentQty} ${unit}</strong></div>
+              <div>📅 Validade: <strong>${window.BrigadaData.formatDate(product.endDate)}</strong></div>
+              ${product.location ? `<div>📍 Local: <strong>${window.BrigadaData.formatLocationFriendly(product)}</strong></div>` : ''}
+            </div>
+          </div>
+
+          <!-- Seleção de Quantidade -->
+          <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px; padding: 14px 16px;">
+            <label style="display: block; font-size: 0.88rem; font-weight: 700; color: #fca5a5; margin-bottom: 4px;">
+              Quanto deste lote quebrou / avariou?
+            </label>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 10px 0;">
+              Total disponível: <strong style="color: #38bdf8;">${currentQty} ${unit}</strong>
+            </p>
+
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+              <button type="button" id="g-quebra-step-minus" class="btn btn--outline" style="width: 44px; height: 44px; padding: 0; font-size: 1.3rem; font-weight: bold; border-radius: 8px; flex-shrink: 0;">-</button>
+              
+              <div style="position: relative; flex: 1;">
+                <input 
+                  type="number" 
+                  id="g-quebra-input-qty" 
+                  value="${currentQty}" 
+                  min="${minVal}" 
+                  max="${currentQty}" 
+                  step="${step}"
+                  style="width: 100%; height: 44px; font-size: 1.25rem; font-weight: bold; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; color: #fff; padding-right: 48px;"
+                />
+                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; pointer-events: none;">
+                  ${unit}
+                </span>
+              </div>
+
+              <button type="button" id="g-quebra-step-plus" class="btn btn--outline" style="width: 44px; height: 44px; padding: 0; font-size: 1.3rem; font-weight: bold; border-radius: 8px; flex-shrink: 0;">+</button>
+            </div>
+
+            <!-- Botões de Atalho Rápido -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="g-quebra-quick-btn" data-ratio="1" style="flex: 1; min-width: 85px; padding: 6px 8px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; cursor: pointer;">
+                Tudo (${currentQty})
+              </button>
+              ${currentQty > 1 ? `
+                <button type="button" class="g-quebra-quick-btn" data-ratio="0.5" style="flex: 1; min-width: 85px; padding: 6px 8px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer;">
+                  Metade (${isWeight ? (currentQty / 2).toFixed(3) : Math.floor(currentQty / 2)})
+                </button>
+              ` : ''}
+              ${currentQty > 3 ? `
+                <button type="button" class="g-quebra-quick-btn" data-ratio="0.25" style="flex: 1; min-width: 85px; padding: 6px 8px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer;">
+                  25% (${isWeight ? (currentQty * 0.25).toFixed(3) : Math.floor(currentQty * 0.25)})
+                </button>
+              ` : ''}
+              <button type="button" class="g-quebra-quick-btn" data-val="1" style="flex: 1; min-width: 65px; padding: 6px 8px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer;">
+                1 ${unit}
+              </button>
+            </div>
+
+            <!-- Pré-visualização do Impacto no Estoque -->
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(239,68,68,0.25); display: flex; justify-content: space-between; font-size: 0.84rem;">
+              <span>Quebra: <strong id="g-quebra-calc-break" style="color: #ef4444;">${currentQty} ${unit}</strong></span>
+              <span>Restará em estoque: <strong id="g-quebra-calc-remain" style="color: #10b981;">0 ${unit}</strong></span>
+            </div>
+          </div>
+
+          <!-- Informações de Registro de Quebra (Ocorrência / Motivo) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Ocorrência</label>
+              <select id="g-quebra-field-occurrence" class="form-control" style="width: 100%; height: 38px; font-size: 0.82rem; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; padding: 0 8px;">
+                <option value="VENCIMENTO" selected>VENCIMENTO</option>
+                <option value="DETERIORAÇÃO NATURAL">DETERIORAÇÃO NATURAL</option>
+                <option value="AVARIA">AVARIA / QUEBRADO</option>
+                <option value="VIOLADO">EMBALAGEM VIOLADA</option>
+                <option value="DESCONGELADO">DESCONGELADO</option>
+                <option value="SEM VÁCUO/GÁS">SEM VÁCUO/GÁS</option>
+                <option value="DEGUSTAÇÃO">DEGUSTAÇÃO</option>
+                <option value="OUTROS">OUTROS</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Origem</label>
+              <select id="g-quebra-field-origin" class="form-control" style="width: 100%; height: 38px; font-size: 0.82rem; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; padding: 0 8px;">
+                <option value="SALÃO DE VENDAS" selected>SALÃO DE VENDAS</option>
+                <option value="DEPÓSITO">DEPÓSITO</option>
+                <option value="CÂMARA FRIA">CÂMARA FRIA</option>
+                <option value="FRENTE DE CAIXA">FRENTE DE CAIXA</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Motivo / Causa</label>
+            <select id="g-quebra-field-reason" class="form-control" style="width: 100%; height: 38px; font-size: 0.82rem; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; padding: 0 8px;">
+              <option value="DE OLHO NA VALIDADE" selected>DE OLHO NA VALIDADE</option>
+              <option value="PVPS LOJA">PVPS LOJA</option>
+              <option value="QUALIDADE DO PRODUTO">QUALIDADE DO PRODUTO</option>
+              <option value="FALHA NA EXPOSIÇÃO">FALHA NA EXPOSIÇÃO</option>
+              <option value="ARMAZENAGEM INADEQUADA">ARMAZENAGEM INADEQUADA</option>
+              <option value="ACIDENTE POR CLIENTE">ACIDENTE POR CLIENTE</option>
+              <option value="ACIDENTE POR FUNCIONÁRIO">ACIDENTE POR FUNCIONÁRIO</option>
+              <option value="REBAIXA NÃO REALIZADA">REBAIXA NÃO REALIZADA</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Observações (Opcional)</label>
+            <input type="text" id="g-quebra-field-notes" placeholder="Ex: Baixa por validade ou avaria no manuseio" style="width: 100%; height: 38px; font-size: 0.82rem; background: var(--bg-card); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; padding: 0 10px;" />
+          </div>
+        </div>
+
+        <div class="modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: var(--bg-card); z-index: 10;">
+          <button type="button" class="btn btn--outline" id="g-quebra-btn-cancel" style="padding: 8px 16px;">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn--danger" id="g-quebra-btn-confirm" style="padding: 8px 20px; display: inline-flex; align-items: center; gap: 6px; background: #ef4444; border-color: #dc2626;">
+            <span>🗑️ Confirmar Quebra</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    const inputQty = overlay.querySelector('#g-quebra-input-qty');
+    const calcBreak = overlay.querySelector('#g-quebra-calc-break');
+    const calcRemain = overlay.querySelector('#g-quebra-calc-remain');
+    const btnMinus = overlay.querySelector('#g-quebra-step-minus');
+    const btnPlus = overlay.querySelector('#g-quebra-step-plus');
+    const btnClose = overlay.querySelector('#g-quebra-modal-close');
+    const btnCancel = overlay.querySelector('#g-quebra-btn-cancel');
+    const btnConfirm = overlay.querySelector('#g-quebra-btn-confirm');
+
+    const updateCalc = () => {
+      let val = parseFloat(inputQty.value) || 0;
+      if (val > currentQty) {
+        val = currentQty;
+        inputQty.value = val;
+      }
+      if (val < minVal && currentQty >= minVal) {
+        val = minVal;
+      }
+      const remain = Math.max(0, currentQty - val);
+      calcBreak.textContent = `${isWeight ? val.toFixed(3) : val} ${unit}`;
+      calcRemain.textContent = `${isWeight ? remain.toFixed(3) : remain} ${unit}`;
+    };
+
+    inputQty.addEventListener('input', updateCalc);
+
+    btnMinus.addEventListener('click', () => {
+      let val = parseFloat(inputQty.value) || 0;
+      val = Math.max(minVal, isWeight ? val - 1 : val - 1);
+      inputQty.value = isWeight ? parseFloat(val.toFixed(3)) : val;
+      updateCalc();
+    });
+
+    btnPlus.addEventListener('click', () => {
+      let val = parseFloat(inputQty.value) || 0;
+      val = Math.min(currentQty, isWeight ? val + 1 : val + 1);
+      inputQty.value = isWeight ? parseFloat(val.toFixed(3)) : val;
+      updateCalc();
+    });
+
+    overlay.querySelectorAll('.g-quebra-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.ratio) {
+          const ratio = parseFloat(btn.dataset.ratio);
+          let val = currentQty * ratio;
+          if (!isWeight) val = Math.max(1, Math.round(val));
+          inputQty.value = isWeight ? parseFloat(val.toFixed(3)) : val;
+        } else if (btn.dataset.val) {
+          let val = Math.min(currentQty, parseFloat(btn.dataset.val));
+          inputQty.value = val;
+        }
+        updateCalc();
+      });
+    });
+
+    const closeModal = () => {
+      overlay.classList.remove('modal-overlay--visible');
+      setTimeout(() => { overlay.style.display = 'none'; }, 250);
+    };
+
+    btnClose.addEventListener('click', closeModal);
+    btnCancel.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+
+    btnConfirm.addEventListener('click', async () => {
+      let val = parseFloat(inputQty.value) || 0;
+      if (val <= 0) {
+        window.BrigadaUI.showToast('Informe uma quantidade válida para quebra.', 'error');
+        return;
+      }
+      if (val > currentQty) {
+        val = currentQty;
+      }
+
+      const occurrence = overlay.querySelector('#g-quebra-field-occurrence').value;
+      const origin = overlay.querySelector('#g-quebra-field-origin').value;
+      const reason = overlay.querySelector('#g-quebra-field-reason').value;
+      const notes = overlay.querySelector('#g-quebra-field-notes').value.trim();
+
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = '<span>Gravando...</span>';
+
+      try {
+        // Cria o registro na tabela de quebras/avarias
+        const quebraPayload = {
+          plu: product.plu || '',
+          productName: product.name,
+          quantity: val,
+          unit: unit,
+          supplier: product.supplier || '',
+          origin: origin,
+          occurrence: occurrence,
+          reason: reason,
+          sector: product.category || 'Geral',
+          occurrenceDate: todayStr,
+          responsibleName: defaultRespName,
+          createdBy: user.email || 'sistema',
+          notes: notes
+        };
+
+        if (window.BrigadaData.createQuebra) {
+          await window.BrigadaData.createQuebra(quebraPayload);
+        }
+
+        const remain = Math.max(0, currentQty - val);
+
+        if (val >= currentQty) {
+          // Quebra total do lote
+          await window.BrigadaData.setExpiredAction(product.id, 'quebra');
+          window.BrigadaUI.showToast(`Quebra total de ${val} ${unit} registrada com sucesso!`, 'success');
+        } else {
+          // Quebra parcial: reduz a quantidade do produto em estoque
+          await window.BrigadaData.updateProduct(product.id, { quantity: remain });
+          window.BrigadaUI.showToast(`Quebra de ${val} ${unit} registrada! Restam ${remain} ${unit} em estoque.`, 'success');
+        }
+
+        closeModal();
+        if (typeof onComplete === 'function') {
+          onComplete();
+        }
+      } catch (err) {
+        console.error('Erro ao processar quebra:', err);
+        window.BrigadaUI.showToast('Erro ao salvar quebra: ' + (err.message || 'Falha na requisição'), 'error');
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = '<span>🗑️ Confirmar Quebra</span>';
+      }
+    });
+
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => overlay.classList.add('modal-overlay--visible'));
+    updateCalc();
+  },
   
   // ── Scanner ─────────────────────────────────────────────────────────────
   scannerInstance: null,

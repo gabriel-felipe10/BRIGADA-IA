@@ -1011,13 +1011,13 @@ window.BrigadaDashboard = {
                     </span>
                   ` : ''}
                   ${p.isAwaitingReduction && canEditThis ? `<button class="btn-icon" data-action="toggle-rebaixa" data-id="${p.id}" title="${p.rebaixaStatus === 'ok' ? 'Voltar para Aguardando' : 'Marcar Rebaixa OK'}">${p.rebaixaStatus === 'ok' ? '↩️' : '✅'}<span class="btn-label">${p.rebaixaStatus === 'ok' ? 'Voltar' : 'Rebaixa'}</span></button>` : ''}
-                  ${p._status.days <= 3 && canEditThis ? `
-                    ${p.expiredAction !== 'quebra' ? `<button class="btn-icon" data-action="set-quebra" data-id="${p.id}" title="Marcar como Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
-                    ${p.expiredAction !== 'troca' ? `<button class="btn-icon" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
-                    ${p.expiredAction !== 'tratado' ? `<button class="btn-icon" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
+                  ${canEditThis ? `
+                    ${p.expiredAction !== 'quebra' ? `<button class="btn-icon btn-icon--quebra" data-action="set-quebra" data-id="${p.id}" title="Registrar Quebra">🗑️<span class="btn-label">Quebra</span></button>` : ''}
+                    ${p.expiredAction !== 'troca' ? `<button class="btn-icon btn-icon--troca" data-action="set-troca" data-id="${p.id}" title="Marcar como Troca">🔄<span class="btn-label">Troca</span></button>` : ''}
+                    ${p.expiredAction !== 'tratado' ? `<button class="btn-icon btn-icon--tratado" data-action="set-tratado" data-id="${p.id}" title="Tratado com Sucesso">✔️<span class="btn-label">Tratado</span></button>` : ''}
                     ${p.expiredAction ? `<button class="btn-icon" data-action="clear-expired" data-id="${p.id}" title="Desfazer Ação">↩️<span class="btn-label">Desfazer</span></button>` : ''}
+                    <button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>
                   ` : ''}
-                  ${canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Editar">✏️<span class="btn-label">Editar</span></button>` : ''}
                   ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
                 </div>
               </td>
@@ -1043,7 +1043,7 @@ window.BrigadaDashboard = {
           });
         }
         if (action === 'set-quebra') {
-          window.BrigadaData.setExpiredAction(id, 'quebra').then(() => {
+          window.BrigadaUI.showQuebraModal(id, () => {
             this.renderDashProducts(container, this.currentFilter);
             this.renderStats(container);
           });
@@ -1221,11 +1221,11 @@ window.BrigadaDashboard = {
       const icon = catMap[p.category] || '📦';
 
       let actionsHtml = '';
-      if (p._status.days <= 3 && canEditThis) {
-        if (p.expiredAction !== 'quebra') actionsHtml += `<button class="btn-icon" data-panel-action="set-quebra" data-id="${p.id}" title="Quebra">🗑️ Quebra</button>`;
-        if (p.expiredAction !== 'troca') actionsHtml += `<button class="btn-icon" data-panel-action="set-troca" data-id="${p.id}" title="Troca">🔄 Troca</button>`;
-        if (p.expiredAction !== 'tratado') actionsHtml += `<button class="btn-icon" data-panel-action="set-tratado" data-id="${p.id}" title="Tratado">✔️ Tratado</button>`;
-        if (p.expiredAction) actionsHtml += `<button class="btn-icon" data-panel-action="clear-expired" data-id="${p.id}" title="Desfazer">↩️</button>`;
+      if (canEditThis) {
+        if (p.expiredAction !== 'quebra') actionsHtml += `<button class="btn-icon btn-icon--quebra" data-panel-action="set-quebra" data-id="${p.id}" title="Quebra">🗑️<span class="btn-label">Quebra</span></button>`;
+        if (p.expiredAction !== 'troca') actionsHtml += `<button class="btn-icon btn-icon--troca" data-panel-action="set-troca" data-id="${p.id}" title="Troca">🔄<span class="btn-label">Troca</span></button>`;
+        if (p.expiredAction !== 'tratado') actionsHtml += `<button class="btn-icon btn-icon--tratado" data-panel-action="set-tratado" data-id="${p.id}" title="Tratado">✔️<span class="btn-label">Tratado</span></button>`;
+        if (p.expiredAction) actionsHtml += `<button class="btn-icon" data-panel-action="clear-expired" data-id="${p.id}" title="Desfazer">↩️<span class="btn-label">Desfazer</span></button>`;
       }
 
       return `
@@ -1268,6 +1268,15 @@ window.BrigadaDashboard = {
         e.stopPropagation();
         const action = btn.dataset.panelAction;
         const id = parseInt(btn.dataset.id);
+
+        if (action === 'set-quebra') {
+          window.BrigadaUI.showQuebraModal(id, () => {
+            this.renderStatusPanelProducts(container, status);
+            this.renderDashProducts(container, this.currentFilter);
+            this.renderStats(container);
+          });
+          return;
+        }
 
         const doAction = (actionType) => {
           const promise = actionType === 'clear-expired'

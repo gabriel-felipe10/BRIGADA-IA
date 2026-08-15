@@ -553,13 +553,11 @@ window.BrigadaProdutosSemNota = {
         <td data-label="Responsável" style="padding: 12px 16px; color: var(--text-primary); font-weight: 500;">${item.responsibleName || '—'}</td>
         <td data-label="Assinatura" class="hide-mobile" style="padding: 12px 16px; font-size: 0.9rem;">${sigIndicator}</td>
         <td data-label="Registrado Por" class="hide-mobile" style="padding: 12px 16px; color: var(--text-secondary); font-size: 0.9rem;">${window.BrigadaData.getUserNameByEmail(item.createdBy)}</td>
-        <td style="padding: 12px 16px; text-align: center; display: flex; gap: 8px; justify-content: center;">
-          <button class="btn btn--primary btn-print-sn" data-id="${item.id}" style="padding: 4px 8px; font-size: 0.8rem; min-width: auto; background: rgba(99, 102, 241, 0.1); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 4px; cursor: pointer;">
-            Imprimir
-          </button>
-          <button class="btn btn--danger btn-delete-sn" data-id="${item.id}" style="padding: 4px 8px; font-size: 0.8rem; min-width: auto; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 4px; cursor: pointer;">
-            Excluir
-          </button>
+        <td style="padding: 6px 12px; text-align: center;">
+          <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: center;">
+            <button class="btn-icon btn-print-sn" data-id="${item.id}" title="Imprimir Comprovante">🖨️<span class="btn-label">Imprimir</span></button>
+            <button class="btn-icon btn-icon--delete btn-delete-sn" data-id="${item.id}" title="Excluir Registro">🗑️<span class="btn-label">Excluir</span></button>
+          </div>
         </td>
       `;
 

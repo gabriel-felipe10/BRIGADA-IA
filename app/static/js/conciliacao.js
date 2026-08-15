@@ -554,10 +554,10 @@ window.BrigadaConciliacao = {
           <td data-label="Físico" style="font-weight: 600; color: var(--text-primary);">${physical.toFixed(2)} ${unit}</td>
           <td data-label="Localização">${p.location || '—'}</td>
           <td data-label="Ações" class="actions-cell">
-            <button class="btn-icon btn-icon--print" data-action="print-item" data-id="${p.id}" title="Imprimir Comprovante">🖨️</button>
-            ${isSigned ? `<span class="btn-icon" style="opacity:0.5; cursor:default;" title="Documento Assinado (Inalterável)">🔒</span>` : ''}
-            ${!isSigned && canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Assinar Contagem">✏️</button>` : ''}
-            ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️</button>` : ''}
+            <button class="btn-icon btn-icon--print" data-action="print-item" data-id="${p.id}" title="Imprimir Comprovante">🖨️<span class="btn-label">Imprimir</span></button>
+            ${isSigned ? `<span class="btn-icon" style="opacity:0.5; cursor:default;" title="Documento Assinado (Inalterável)">🔒<span class="btn-label">Assinado</span></span>` : ''}
+            ${!isSigned && canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Assinar Contagem">✏️<span class="btn-label">Assinar</span></button>` : ''}
+            ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
           </td>
         </tr>
       `;
