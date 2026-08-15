@@ -1573,6 +1573,7 @@ window.BrigadaChambers = {
 
   renderRegisterForm(product) {
     const today = new Date().toISOString().split('T')[0];
+    const defaultSupplier = product.supplier || (window.BrigadaData ? window.BrigadaData.detectSupplierFromName(product.name) : '') || '';
     
     return `
       <div class="alloc-register-form animate-fade-in" style="display: flex; flex-direction: column; gap: 14px;">
@@ -1617,7 +1618,7 @@ window.BrigadaChambers = {
 
         <div class="form-group">
           <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Fornecedor / Marca</label>
-          <input type="text" id="alloc-field-supplier" class="form-input" placeholder="Ex: Friboi, Seara, Sadia..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+          <input type="text" id="alloc-field-supplier" class="form-input" value="${defaultSupplier}" placeholder="Ex: Friboi, Seara, Sadia..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">

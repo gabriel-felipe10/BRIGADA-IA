@@ -86,6 +86,171 @@ window.BrigadaData = {
     return user ? user.name : email.split('@')[0];
   },
 
+  // Base canônica de marcas / fornecedores mapeados
+  knownBrandsList: [
+    { name: 'Seara', sector: 'açougue', category: 'Aves / Suíno / Frios', icon: '🍗' },
+    { name: 'Friboi', sector: 'açougue', category: 'Bovino', icon: '🥩' },
+    { name: 'Sadia', sector: 'açougue', category: 'Aves / Suíno / Frios', icon: '🍗' },
+    { name: 'Guibon', sector: 'açougue', category: 'Aves', icon: '🐔' },
+    { name: 'Natto', sector: 'açougue', category: 'Aves', icon: '🐔' },
+    { name: 'Mauricéa', sector: 'açougue', category: 'Aves', icon: '🐔' },
+    { name: 'Perdigão', sector: 'açougue', category: 'Aves / Suíno / Frios', icon: '🌭' },
+    { name: 'Aurora', sector: 'açougue', category: 'Aves / Suíno / Frios', icon: '🥩' },
+    { name: 'Pif Paf', sector: 'açougue', category: 'Aves / Suíno', icon: '🍗' },
+    { name: 'Swift', sector: 'açougue', category: 'Bovino / Suíno', icon: '🥩' },
+    { name: 'Marfrig', sector: 'açougue', category: 'Bovino', icon: '🥩' },
+    { name: 'Minerva Foods', sector: 'açougue', category: 'Bovino', icon: '🥩' },
+    { name: 'Masterboi', sector: 'açougue', category: 'Bovino / Suíno', icon: '🥩' },
+    { name: 'Frimesa', sector: 'açougue', category: 'Suíno / Laticínios', icon: '🥓' },
+    { name: 'Maturatta', sector: 'açougue', category: 'Bovino Especial', icon: '🥩' },
+    { name: 'Bassit', sector: 'açougue', category: 'Bovino', icon: '🥩' },
+    { name: 'Frescatto', sector: 'açougue', category: 'Pescado', icon: '🐟' },
+    { name: 'Costa Sul', sector: 'açougue', category: 'Pescado', icon: '🐟' },
+    { name: 'Damm', sector: 'açougue', category: 'Pescado', icon: '🐟' },
+    { name: 'Komdelli', sector: 'açougue', category: 'Pescado', icon: '🐟' },
+    { name: 'Leall Carnes', sector: 'açougue', category: 'Bovino', icon: '🥩' },
+    
+    // Laticínios e Perecíveis
+    { name: 'Betânia', sector: 'pereciveis', category: 'Laticínios / Iogurtes', icon: '🥛' },
+    { name: 'Nestlé', sector: 'pereciveis', category: 'Laticínios / Iogurtes', icon: '🍫' },
+    { name: 'Danone', sector: 'pereciveis', category: 'Iogurtes / Sobremesas', icon: '🍦' },
+    { name: 'Elegê', sector: 'pereciveis', category: 'Laticínios', icon: '🧀' },
+    { name: 'Itambé', sector: 'pereciveis', category: 'Laticínios / Iogurtes', icon: '🥛' },
+    { name: 'Vigor', sector: 'pereciveis', category: 'Iogurtes / Queijos', icon: '🧀' },
+    { name: 'Piracanjuba', sector: 'pereciveis', category: 'Laticínios', icon: '🥛' },
+    { name: 'Parmalat', sector: 'pereciveis', category: 'Laticínios', icon: '🥛' },
+    { name: 'Batavo', sector: 'pereciveis', category: 'Iogurtes / Laticínios', icon: '🍦' },
+    { name: 'Ipojuca', sector: 'pereciveis', category: 'Iogurtes / Bebidas Lácteas', icon: '🥛' },
+    { name: 'Tirolez', sector: 'pereciveis', category: 'Queijos / Frios', icon: '🧀' },
+    { name: 'Polenghi', sector: 'pereciveis', category: 'Queijos / Laticínios', icon: '🧀' },
+    { name: 'President', sector: 'pereciveis', category: 'Manteigas / Queijos', icon: '🧈' },
+    { name: 'Catupiry', sector: 'pereciveis', category: 'Requeijão / Queijos', icon: '🧀' },
+    { name: 'Danubio', sector: 'pereciveis', category: 'Queijos / Requeijão', icon: '🧀' },
+    { name: 'Yakult', sector: 'pereciveis', category: 'Leites Fermentados', icon: '🥛' },
+    { name: 'Frimesa Lácteos', sector: 'pereciveis', category: 'Laticínios', icon: '🧀' },
+    { name: 'Ceratti', sector: 'pereciveis', category: 'Frios / Embutidos', icon: '🥓' },
+    { name: 'Coamo', sector: 'pereciveis', category: 'Margarinas / Alimentos', icon: '🧈' },
+    { name: 'Doriana', sector: 'pereciveis', category: 'Margarinas', icon: '🧈' },
+    { name: 'Qualy', sector: 'pereciveis', category: 'Margarinas', icon: '🧈' },
+    { name: 'Claybom', sector: 'pereciveis', category: 'Margarinas', icon: '🧈' },
+    { name: 'Becel', sector: 'pereciveis', category: 'Margarinas', icon: '🧈' },
+    { name: 'Pullman', sector: 'pereciveis', category: 'Pães / Perecíveis', icon: '🍞' },
+    { name: 'Wickbold', sector: 'pereciveis', category: 'Pães / Perecíveis', icon: '🍞' },
+    { name: 'Bauducco', sector: 'pereciveis', category: 'Bolos / Biscoitos', icon: '🍪' },
+    { name: 'Massa Leve', sector: 'pereciveis', category: 'Massas Frescas', icon: '🥟' },
+    { name: 'Forno de Minas', sector: 'pereciveis', category: 'Pão de Queijo / Congelados', icon: '🧀' }
+  ],
+
+  detectSupplierFromName(name) {
+    if (!name) return '';
+    const norm = name.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // Testa marcas com correspondência direta no nome
+    const brandMatches = [
+      { trigger: 'SEARA', brand: 'Seara' },
+      { trigger: 'FRIBOI', brand: 'Friboi' },
+      { trigger: 'SADIA', brand: 'Sadia' },
+      { trigger: 'GUIBON', brand: 'Guibon' },
+      { trigger: 'NATTO', brand: 'Natto' },
+      { trigger: 'MAURICEA', brand: 'Mauricéa' },
+      { trigger: 'MAURICE', brand: 'Mauricéa' },
+      { trigger: 'PERDIGAO', brand: 'Perdigão' },
+      { trigger: 'AURORA', brand: 'Aurora' },
+      { trigger: 'PIF PAF', brand: 'Pif Paf' },
+      { trigger: 'PIFPAF', brand: 'Pif Paf' },
+      { trigger: 'SWIFT', brand: 'Swift' },
+      { trigger: 'MARFRIG', brand: 'Marfrig' },
+      { trigger: 'MINERVA', brand: 'Minerva Foods' },
+      { trigger: 'MASTERBOI', brand: 'Masterboi' },
+      { trigger: 'FRIMESA', brand: 'Frimesa' },
+      { trigger: 'MATURATTA', brand: 'Maturatta' },
+      { trigger: 'FRESCATTO', brand: 'Frescatto' },
+      { trigger: 'COSTA SUL', brand: 'Costa Sul' },
+      { trigger: 'DAMM', brand: 'Damm' },
+      { trigger: 'KOMDELLI', brand: 'Komdelli' },
+      { trigger: 'BETANIA', brand: 'Betânia' },
+      { trigger: 'NESTLE', brand: 'Nestlé' },
+      { trigger: 'DANONE', brand: 'Danone' },
+      { trigger: 'ELEGE', brand: 'Elegê' },
+      { trigger: 'ITAMBE', brand: 'Itambé' },
+      { trigger: 'VIGOR', brand: 'Vigor' },
+      { trigger: 'PIRACANJUBA', brand: 'Piracanjuba' },
+      { trigger: 'PARMALAT', brand: 'Parmalat' },
+      { trigger: 'BATAVO', brand: 'Batavo' },
+      { trigger: 'IPOJUCA', brand: 'Ipojuca' },
+      { trigger: 'TIROLEZ', brand: 'Tirolez' },
+      { trigger: 'POLENGHI', brand: 'Polenghi' },
+      { trigger: 'PRESIDENT', brand: 'President' },
+      { trigger: 'CATUPIRY', brand: 'Catupiry' },
+      { trigger: 'DANUBIO', brand: 'Danubio' },
+      { trigger: 'YAKULT', brand: 'Yakult' },
+      { trigger: 'CERATTI', brand: 'Ceratti' },
+      { trigger: 'QUALY', brand: 'Qualy' },
+      { trigger: 'DORIANA', brand: 'Doriana' },
+      { trigger: 'CLAYBOM', brand: 'Claybom' },
+      { trigger: 'BECEL', brand: 'Becel' },
+      { trigger: 'BAUDUCCO', brand: 'Bauducco' },
+      { trigger: 'WICKBOLD', brand: 'Wickbold' },
+      { trigger: 'PULLMAN', brand: 'Pullman' },
+      { trigger: 'FORNO DE MINAS', brand: 'Forno de Minas' },
+      { trigger: 'MASSA LEVE', brand: 'Massa Leve' }
+    ];
+
+    for (const bm of brandMatches) {
+      if (norm.includes(bm.trigger)) {
+        return bm.brand;
+      }
+    }
+    return '';
+  },
+
+  getSuppliersList(sectorFilter) {
+    const catalog = this.catalog || [];
+    const products = this.products || [];
+    const allItems = [...catalog, ...products];
+
+    // Contagem de ocorrências por fornecedor / marca
+    const countMap = {};
+    allItems.forEach(item => {
+      let supp = item.supplier;
+      if (!supp && item.name) {
+        supp = this.detectSupplierFromName(item.name);
+      }
+      if (supp) {
+        supp = supp.trim();
+        countMap[supp] = (countMap[supp] || 0) + 1;
+      }
+    });
+
+    // Mescla fornecedores cadastrados na base canônica
+    const result = this.knownBrandsList.map(b => {
+      const count = countMap[b.name] || 0;
+      return {
+        name: b.name,
+        sector: b.sector,
+        category: b.category,
+        icon: b.icon,
+        productCount: count
+      };
+    });
+
+    // Adiciona fornecedores que estão nos produtos mas não na lista canônica
+    Object.keys(countMap).forEach(suppName => {
+      if (!result.some(r => r.name.toLowerCase() === suppName.toLowerCase()) && suppName !== '—' && !suppName.startsWith('[Criado')) {
+        result.push({
+          name: suppName,
+          sector: 'geral',
+          category: 'Cadastrado no Sistema',
+          icon: '🏢',
+          productCount: countMap[suppName]
+        });
+      }
+    });
+
+    // Ordena pelo número de produtos (mais frequentes primeiro) e depois por ordem alfabética
+    return result.sort((a, b) => b.productCount - a.productCount || a.name.localeCompare(b.name));
+  },
+
   // Carrega todos os produtos e usuários do Supabase via backend Flask
   async load() {
     try {

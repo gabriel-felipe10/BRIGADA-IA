@@ -275,8 +275,16 @@ window.BrigadaPereciveis = {
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Fornecedor</label>
-                    <input type="text" id="field-supplier-pereciveis" class="form-input" placeholder="Nome do fornecedor">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                      <label class="form-label" style="margin-bottom: 0;">Fornecedor</label>
+                      <button type="button" class="btn btn--ghost btn--sm" id="btn-open-supplier-modal-pereciveis" style="font-size: 0.72rem; padding: 2px 6px; color: #38bdf8;">
+                        🏢 Selecionar da Lista
+                      </button>
+                    </div>
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <input type="text" id="field-supplier-pereciveis" class="form-input" placeholder="Ex: Betânia, Nestlé, Danone..." autocomplete="off">
+                      <button type="button" id="btn-quick-supplier-picker-pereciveis" class="btn btn--ghost" style="position: absolute; right: 4px; padding: 4px 8px; font-size: 0.9rem;" title="Abrir Lista de Fornecedores">🏢</button>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label class="form-label">Localização *</label>
@@ -368,6 +376,57 @@ window.BrigadaPereciveis = {
           <div class="modal-footer" id="product-modal-footer-pereciveis" style="display: none;">
             <button class="btn btn--ghost" id="btn-cancel-modal-pereciveis">Cancelar</button>
             <button class="btn btn--primary" id="btn-save-product-pereciveis" style="font-weight: 700;">✓ Salvar Produto</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Seletor de Fornecedores / Marcas (Perecíveis) -->
+      <div class="modal-overlay" id="supplier-modal-pereciveis" style="display:none; z-index: 10050;">
+        <div class="modal" style="max-width: 540px;">
+          <div class="modal-header">
+            <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>🏢 Fornecedores & Marcas</span>
+            </h3>
+            <button class="modal-close" id="supplier-modal-close-pereciveis">✕</button>
+          </div>
+          <div class="modal-body" style="padding: 1.25rem;">
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 12px;">
+              Selecione o fornecedor/marca abaixo para preenchimento rápido:
+            </p>
+
+            <div class="search-box" style="width: 100%; margin-bottom: 0.75rem; display: flex; align-items: center;">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="supplier-modal-search-pereciveis" class="search-input" placeholder="Buscar por fornecedor ou marca..." autocomplete="off">
+              <button type="button" id="supplier-modal-voice-btn-pereciveis" class="search-mic-btn" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:6px 10px;" title="Buscar por voz">🎙️</button>
+            </div>
+
+            <div class="cat-quick-tabs" id="supplier-modal-tabs-pereciveis" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button type="button" class="cat-tab cat-tab--sm cat-tab--active" data-sfilter="all">Todos</button>
+              <button type="button" class="cat-tab cat-tab--sm" data-sfilter="pereciveis">🥛 Laticínios & Frios</button>
+              <button type="button" class="cat-tab cat-tab--sm" data-sfilter="açougue">🥩 Carnes & Aves</button>
+            </div>
+
+            <div class="table-scroll" style="max-height: 260px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px;">
+              <table class="data-table" style="margin: 0;">
+                <thead>
+                  <tr>
+                    <th>FORNECEDOR / MARCA</th>
+                    <th>SEGMENTO</th>
+                    <th style="width: 95px; text-align: right;">AÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="supplier-modal-tbody-pereciveis">
+                  <!-- Gerado dinamicamente -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px;">
+              <span id="supplier-modal-count-pereciveis" style="font-size: 0.8rem; color: var(--text-secondary);">0 fornecedores disponíveis</span>
+              <button type="button" class="btn btn--ghost btn--sm" id="btn-supplier-modal-cancel-pereciveis">
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -916,6 +975,9 @@ window.BrigadaPereciveis = {
         annotationInput.value = btn.dataset.value;
         subGroup.style.display = 'block';
         subInput.required = true;
+      });
+    });
+
     // Eventos do seletor inteligente de catálogo no modal de Novo Produto Perecível
     const catSearchInput = container.querySelector('#catalog-modal-search-pereciveis');
     const catVoiceBtn = container.querySelector('#catalog-modal-voice-btn-pereciveis');
@@ -969,6 +1031,141 @@ window.BrigadaPereciveis = {
       container.querySelector('#product-modal-step-form-pereciveis').style.display = 'none';
       container.querySelector('#product-modal-footer-pereciveis').style.display = 'none';
       this.renderCatalogSelectorInModal(container);
+    });
+
+    // Eventos do Modal Seletor de Fornecedores (Perecíveis)
+    container.querySelector('#btn-open-supplier-modal-pereciveis')?.addEventListener('click', () => this.openSupplierModal(container));
+    container.querySelector('#btn-quick-supplier-picker-pereciveis')?.addEventListener('click', () => this.openSupplierModal(container));
+    container.querySelector('#supplier-modal-close-pereciveis')?.addEventListener('click', () => this.closeSupplierModal(container));
+    container.querySelector('#btn-supplier-modal-cancel-pereciveis')?.addEventListener('click', () => this.closeSupplierModal(container));
+
+    const suppSearch = container.querySelector('#supplier-modal-search-pereciveis');
+    const suppVoiceBtn = container.querySelector('#supplier-modal-voice-btn-pereciveis');
+    const suppTabs = container.querySelectorAll('#supplier-modal-tabs-pereciveis .cat-tab');
+
+    suppSearch?.addEventListener('input', (e) => {
+      this.supplierModalSearch = e.target.value;
+      this.renderSupplierListInModal(container);
+    });
+
+    suppVoiceBtn?.addEventListener('click', () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        window.BrigadaUI.showToast('Reconhecimento de voz não suportado.', 'warning');
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.start();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (suppSearch) suppSearch.value = transcript;
+        this.supplierModalSearch = transcript;
+        this.renderSupplierListInModal(container);
+      };
+    });
+
+    suppTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        suppTabs.forEach(t => t.classList.remove('cat-tab--active'));
+        tab.classList.add('cat-tab--active');
+        this.supplierModalFilter = tab.dataset.sfilter || 'all';
+        this.renderSupplierListInModal(container);
+      });
+    });
+  },
+
+  supplierModalSearch: '',
+  supplierModalFilter: 'all',
+
+  openSupplierModal(container) {
+    const modal = container.querySelector('#supplier-modal-pereciveis');
+    if (!modal) return;
+    this.supplierModalSearch = '';
+    this.supplierModalFilter = 'all';
+    
+    container.querySelectorAll('#supplier-modal-tabs-pereciveis .cat-tab').forEach(t => {
+      if (t.dataset.sfilter === 'all') t.classList.add('cat-tab--active');
+      else t.classList.remove('cat-tab--active');
+    });
+    if (container.querySelector('#supplier-modal-search-pereciveis')) {
+      container.querySelector('#supplier-modal-search-pereciveis').value = '';
+    }
+
+    this.renderSupplierListInModal(container);
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('modal-overlay--visible'));
+  },
+
+  closeSupplierModal(container) {
+    const modal = container.querySelector('#supplier-modal-pereciveis');
+    if (!modal) return;
+    modal.classList.remove('modal-overlay--visible');
+    setTimeout(() => { modal.style.display = 'none'; }, 200);
+  },
+
+  renderSupplierListInModal(container) {
+    const tbody = container.querySelector('#supplier-modal-tbody-pereciveis');
+    const countEl = container.querySelector('#supplier-modal-count-pereciveis');
+    if (!tbody) return;
+
+    const query = (this.supplierModalSearch || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const filter = this.supplierModalFilter || 'all';
+
+    const suppliers = window.BrigadaData.getSuppliersList();
+    const filtered = suppliers.filter(s => {
+      if (filter !== 'all' && s.sector !== filter && s.sector !== 'geral') return false;
+      if (query) {
+        const full = `${s.name.toLowerCase()} ${s.category.toLowerCase()}`;
+        return query.split(/\s+/).every(t => full.includes(t));
+      }
+      return true;
+    });
+
+    if (countEl) {
+      countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'fornecedor disponível' : 'fornecedores disponíveis'}`;
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+            Nenhum fornecedor encontrado com este termo.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(s => `
+      <tr>
+        <td>
+          <div style="font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; font-size: 0.92rem;">
+            <span>${s.icon || '🏢'}</span>
+            <span>${s.name}</span>
+          </div>
+          ${s.productCount > 0 ? `<div style="font-size: 0.72rem; color: #38bdf8; margin-top: 1px;">📦 ${s.productCount} produtos vinculados</div>` : ''}
+        </td>
+        <td>
+          <span style="font-size: 0.78rem; color: var(--text-secondary); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px;">
+            ${s.category}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <button type="button" class="btn btn--primary btn--sm" data-action="select-supplier-item-pereciveis" data-name="${s.name.replace(/"/g, '&quot;')}" style="padding: 4px 10px; font-weight: 600; cursor: pointer;">
+            Selecionar
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('[data-action="select-supplier-item-pereciveis"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.name;
+        const suppInput = container.querySelector('#field-supplier-pereciveis');
+        if (suppInput) suppInput.value = name;
+        this.closeSupplierModal(container);
+      });
     });
   },
 
@@ -1039,6 +1236,12 @@ window.BrigadaPereciveis = {
         container.querySelector('#field-plu-pereciveis').value = plu;
         container.querySelector('#field-name-pereciveis').value = name;
         container.querySelector('#field-category-pereciveis').value = cat;
+
+        // Auto-detecção do fornecedor pelo nome
+        const detectedSupp = window.BrigadaData.detectSupplierFromName(name);
+        if (detectedSupp) {
+          container.querySelector('#field-supplier-pereciveis').value = detectedSupp;
+        }
 
         container.querySelector('#selected-catalog-name-pereciveis').textContent = name;
         container.querySelector('#selected-catalog-plu-pereciveis').textContent = plu;
