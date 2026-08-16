@@ -12,7 +12,48 @@ window.BrigadaPisoLoja = {
   allocatingSearch: '',
   allocatingCategory: 'all',
   
-  FREEZER_COUNT: 24,
+  // Configuração dos freezers com categorias
+  FREEZERS: [
+    { num: 17, category: 'aves' },
+    { num: 18, category: 'aves' },
+    { num: 19, category: 'aves' },
+    { num: 20, category: 'aves' },
+    { num: 21, category: 'aves' },
+    { num: 22, category: 'aves' },
+    { num: 23, category: 'aves' },
+    { num: 24, category: 'aves' },
+    { num: 25, category: 'aves' },
+    { num: 26, category: 'bovino' },
+    { num: 27, category: 'bovino' },
+    { num: 28, category: 'bovino' },
+    { num: 29, category: 'aves' },
+    { num: 30, category: 'aves' },
+    { num: 31, category: 'aves' },
+    { num: 32, category: 'aves' },
+    { num: 34, category: 'suino' },
+    { num: 35, category: 'suino' },
+    { num: 36, category: 'misto' },
+    { num: 37, category: 'misto' },
+    { num: 38, category: 'misto' },
+    { num: 39, category: 'misto' },
+    { num: 40, category: 'bovino' },
+    { num: 41, category: 'bovino' },
+    { num: 42, category: 'pescado' },
+    { num: 43, category: 'pescado' },
+    { num: 44, category: 'pescado' },
+    { num: 45, category: 'pescado' },
+    { num: 46, category: 'pescado' },
+    { num: 47, category: 'pescado' },
+    { num: 48, category: 'pescado' },
+  ],
+
+  FREEZER_CATEGORY_LABELS: {
+    aves: '🐔 Aves',
+    bovino: '🐮 Bovino',
+    suino: '🐷 Suínos',
+    misto: '🥩 Bovino / Suíno / Aves',
+    pescado: '🐟 Pescado',
+  },
 
   // Simple inline icons matching the emoji/SVG pattern
   icons: {
@@ -125,6 +166,48 @@ window.BrigadaPisoLoja = {
     });
   },
 
+  getFreezerAlerts(freezerNum) {
+    const products = this.getProductsInFreezer(freezerNum);
+    const expired = [];
+    const today = [];
+    const atencao = [];
+    const resfriado15 = [];
+    const congelado30 = [];
+
+    products.forEach(p => {
+      const s = window.BrigadaData.getProductStatus(p);
+      if (s.days < 0 || s.class === 'badge--expired') {
+        expired.push({ product: p, status: s });
+      } else if (s.days === 0 || s.class === 'badge--today') {
+        today.push({ product: p, status: s });
+      } else if (s.days >= 1 && s.days <= 3) {
+        atencao.push({ product: p, status: s });
+      } else if (window.BrigadaData.isResfriado && window.BrigadaData.isResfriado(p) && s.days <= 15) {
+        resfriado15.push({ product: p, status: s });
+      } else if (window.BrigadaData.isCongelado && window.BrigadaData.isCongelado(p) && s.days <= 30) {
+        congelado30.push({ product: p, status: s });
+      }
+    });
+
+    const totalAlerts = expired.length + today.length + atencao.length + resfriado15.length + congelado30.length;
+
+    return {
+      totalAlerts,
+      expired,
+      today,
+      atencao,
+      resfriado15,
+      congelado30,
+      hasExpired: expired.length > 0,
+      hasToday: today.length > 0,
+      hasAtencao: atencao.length > 0,
+      hasResfriado15: resfriado15.length > 0,
+      hasCongelado30: congelado30.length > 0,
+      hasCritical: expired.length > 0 || today.length > 0,
+      hasAny: totalAlerts > 0
+    };
+  },
+
   getProductsInPisoLoja() {
     return this.getAllProducts().filter(p => this.parseLocation(p.location) !== null);
   },
@@ -174,8 +257,14 @@ window.BrigadaPisoLoja = {
       const stockDist = window.BrigadaData.getProductStockDistribution(p);
       const otherLots = stockDist.filter(d => d.id !== p.id);
 
+      const isCritical = status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today';
+      const isWarning = status.days > 0 && status.days <= 3;
+      const isAlert = isCritical || isWarning || status.isResfriadoAlert || status.isCongeladoAlert;
+      const rowStyle = isCritical ? 'background: rgba(239, 68, 68, 0.08);' : isWarning ? 'background: rgba(245, 158, 11, 0.08);' : '';
+      const blinkBadgeClass = isAlert ? 'badge--blinking-alert' : '';
+
       return `
-        <tr>
+        <tr style="${rowStyle}">
           <td data-label="Freezer #"><strong style="color:#10b981; font-family:monospace; font-size:1rem;">${freezerStr}</strong></td>
           <td data-label="Produto" class="product-name">
             <div onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; font-weight: 600; color: var(--text-primary);" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-primary)'" title="Ver detalhes">${p.name}</div>
@@ -188,8 +277,8 @@ window.BrigadaPisoLoja = {
           </td>
           <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
           <td data-label="Estoque"><strong>${p.quantity}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${p.unit || 'kg'}</span></td>
-          <td data-label="Validade">${window.BrigadaData.formatDate(p.endDate)}</td>
-          <td data-label="Status"><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
+          <td data-label="Validade"><strong>${window.BrigadaData.formatDate(p.endDate)}</strong></td>
+          <td data-label="Status"><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
           <td data-label="Ações" class="actions-cell">
             <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;">
               🗑️ Desalocar
@@ -246,46 +335,201 @@ window.BrigadaPisoLoja = {
       // ── Main Overview Page ──
       const productsInPiso = this.getProductsInPisoLoja();
       
-      const freezerCardsHTML = Array.from({ length: this.FREEZER_COUNT }, (_, i) => {
-        const freezerNum = i + 1;
+      // Group freezers by category
+      const freezersByCategory = {};
+      this.FREEZERS.forEach(fz => {
+        if (!freezersByCategory[fz.category]) freezersByCategory[fz.category] = [];
+        freezersByCategory[fz.category].push(fz);
+      });
+
+      let freezerSectionsHTML = '';
+      let displayCounter = 0;
+      Object.entries(freezersByCategory).forEach(([cat, freezers]) => {
+        const catLabel = this.FREEZER_CATEGORY_LABELS[cat] || cat;
+        const sectionCards = freezers.map(fz => {
+          displayCounter++;
+          const freezerNum = fz.num;
+          const displayNum = displayCounter;
         const productsInThisFreezer = this.getProductsInFreezer(freezerNum).length;
         const hasProducts = productsInThisFreezer > 0;
+        const catColor = {pescado:'#38bdf8',aves:'#f59e0b',bovino:'#ef4444',suino:'#a855f7',misto:'#f97316'}[cat] || '#10b981';
         
-        return `
-          <div class="chamber-card-outer" data-action="view-freezer" data-num="${freezerNum}" style="cursor: pointer;">
-            <div class="chamber-card-header-glow" style="background: #10b981;"></div>
-            <div class="chamber-card-body" style="padding: 1.2rem; text-align: center;">
-              <div style="font-size: 2.5rem; font-weight: 800; color: #10b981; margin-bottom: 0.5rem; font-family: monospace;">
-                ${freezerNum.toString().padStart(2, '0')}
+          const alerts = this.getFreezerAlerts(freezerNum);
+          let alertClass = '';
+          const alertBadges = [];
+
+          if (alerts.hasExpired) {
+            alertClass = 'freezer-card--critical';
+            alertBadges.push(`
+              <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.83rem; font-weight: 800; box-shadow: 0 4px 12px rgba(239,68,68,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span style="font-size: 1rem;">🔴</span> <span>VENCIDOS: ${alerts.expired.length} ${alerts.expired.length === 1 ? 'item' : 'itens'}</span>
               </div>
-              <h2 class="chamber-card-name" style="font-size: 1.2rem; margin-bottom: 0.5rem;">Freezer ${freezerNum.toString().padStart(2, '0')}</h2>
-              
-              <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem;">
-                <span class="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${hasProducts ? '#10b981' : '#9ca3af'};"></span>
-                <span style="font-size: 0.9rem; color: var(--text-secondary);">${productsInThisFreezer} produtos</span>
+            `);
+          }
+          if (alerts.hasToday) {
+            if (!alertClass) alertClass = 'freezer-card--critical';
+            alertBadges.push(`
+              <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #ea580c, #c2410c); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.83rem; font-weight: 800; box-shadow: 0 4px 12px rgba(234,88,12,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span style="font-size: 1rem;">🟠</span> <span>VENCE HOJE: ${alerts.today.length} ${alerts.today.length === 1 ? 'item' : 'itens'}</span>
               </div>
-              
-              <div class="chamber-card-footer" style="justify-content: center;">
-                <span class="enter-text">Acessar</span>
-                ${this.icons.ChevronRight}
+            `);
+          }
+          if (alerts.hasAtencao) {
+            if (!alertClass) alertClass = 'freezer-card--warning';
+            alertBadges.push(`
+              <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.83rem; font-weight: 800; box-shadow: 0 4px 12px rgba(245,158,11,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span style="font-size: 1rem;">⚠️</span> <span>ATENÇÃO (1 A 3 DIAS): ${alerts.atencao.length} ${alerts.atencao.length === 1 ? 'item' : 'itens'}</span>
               </div>
+            `);
+          }
+          if (alerts.hasResfriado15) {
+            if (!alertClass) alertClass = 'freezer-card--resfriado15';
+            alertBadges.push(`
+              <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(6,182,212,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span style="font-size: 1rem;">❄️</span> <span>ALERTA 15 DIAS (RESFRIADOS): ${alerts.resfriado15.length}</span>
+              </div>
+            `);
+          }
+          if (alerts.hasCongelado30) {
+            if (!alertClass) alertClass = 'freezer-card--congelado30';
+            alertBadges.push(`
+              <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(99,102,241,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span style="font-size: 1rem;">🥶</span> <span>ALERTA 30 DIAS (CONGELADOS): ${alerts.congelado30.length}</span>
+              </div>
+            `);
+          }
+
+          const alertBadgesHTML = alertBadges.length > 0 ? `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0.6rem 0 0.9rem 0; width: 100%;">
+              ${alertBadges.join('')}
+            </div>
+          ` : '';
+
+          const glowColor = alerts.hasExpired || alerts.hasToday ? '#ef4444' : alerts.hasAtencao ? '#f59e0b' : alerts.hasResfriado15 ? '#06b6d4' : alerts.hasCongelado30 ? '#6366f1' : catColor;
+          
+          return `
+            <div class="chamber-card-outer ${alertClass}" data-action="view-freezer" data-num="${freezerNum}" style="cursor: pointer; position: relative;">
+              <div class="chamber-card-header-glow" style="background: ${glowColor};"></div>
+              <div class="chamber-card-body" style="padding: 1.2rem; text-align: center;">
+                <h2 class="chamber-card-name" style="font-size: 1.35rem; font-weight: 800; color: ${catColor}; margin-bottom: 0.35rem; letter-spacing: -0.3px;">Freezer ${freezerNum.toString().padStart(2, '0')}</h2>
+                <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Freezer ${displayNum.toString().padStart(2, '0')} de 31</div>
+                
+                ${alertBadgesHTML}
+                
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem;">
+                  <span class="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${glowColor};"></span>
+                  <span style="font-size: 0.9rem; color: var(--text-secondary);">${productsInThisFreezer} produtos</span>
+                </div>
+                
+                <div class="chamber-card-footer" style="justify-content: center;">
+                  <span class="enter-text">Acessar</span>
+                  ${this.icons.ChevronRight}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        freezerSectionsHTML += `
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid ${{pescado:'rgba(56,189,248,0.3)',aves:'rgba(245,158,11,0.3)',bovino:'rgba(239,68,68,0.3)',suino:'rgba(168,85,247,0.3)',misto:'rgba(249,115,22,0.3)'}[cat] || 'rgba(16,185,129,0.3)'};"> 
+              ${catLabel}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem;">
+              ${sectionCards}
             </div>
           </div>
         `;
-      }).join('');
+      });
+
+      const animationStyles = `
+        <style>
+          @keyframes pulseAlertCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), 0 8px 24px rgba(239, 68, 68, 0.25);
+              border-color: rgba(239, 68, 68, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(239, 68, 68, 0), 0 12px 32px rgba(239, 68, 68, 0.5);
+              border-color: #ef4444;
+            }
+          }
+          @keyframes pulseWarningCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7), 0 8px 24px rgba(245, 158, 11, 0.25);
+              border-color: rgba(245, 158, 11, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(245, 158, 11, 0), 0 12px 32px rgba(245, 158, 11, 0.5);
+              border-color: #f59e0b;
+            }
+          }
+          @keyframes pulseCyanCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7), 0 8px 24px rgba(6, 182, 212, 0.25);
+              border-color: rgba(6, 182, 212, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(6, 182, 212, 0), 0 12px 32px rgba(6, 182, 212, 0.5);
+              border-color: #06b6d4;
+            }
+          }
+          @keyframes pulseBlueCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7), 0 8px 24px rgba(99, 102, 241, 0.25);
+              border-color: rgba(99, 102, 241, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(99, 102, 241, 0), 0 12px 32px rgba(99, 102, 241, 0.5);
+              border-color: #6366f1;
+            }
+          }
+          @keyframes blinkAlertBadge {
+            0%, 100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.6;
+              transform: scale(1.04);
+            }
+          }
+          .freezer-card--critical {
+            animation: pulseAlertCard 1.8s infinite ease-in-out !important;
+            border: 2px solid #ef4444 !important;
+          }
+          .freezer-card--warning {
+            animation: pulseWarningCard 2s infinite ease-in-out !important;
+            border: 2px solid #f59e0b !important;
+          }
+          .freezer-card--resfriado15 {
+            animation: pulseCyanCard 2.2s infinite ease-in-out !important;
+            border: 2px solid #06b6d4 !important;
+          }
+          .freezer-card--congelado30 {
+            animation: pulseBlueCard 2.4s infinite ease-in-out !important;
+            border: 2px solid #6366f1 !important;
+          }
+          .badge--blinking-alert {
+            animation: blinkAlertBadge 1.2s infinite ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+          }
+        </style>
+      `;
 
       return `
         <div class="chambers-page">
+          ${animationStyles}
           <div class="panel-header">
             <div class="panel-header__left">
               <h2 class="panel-title">🏪 Piso de Loja</h2>
-              <p class="panel-subtitle">Mapa dos freezers do piso de loja — 24 unidades</p>
+              <p class="panel-subtitle">Mapa dos freezers do piso de loja — ${this.FREEZERS.length} unidades</p>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-            ${freezerCardsHTML}
-          </div>
+          ${freezerSectionsHTML}
 
           ${this.buildDirectoryHTML(productsInPiso)}
         </div>
@@ -293,7 +537,25 @@ window.BrigadaPisoLoja = {
     } else {
       // ── Freezer Detail Page ──
       const products = this.getProductsInFreezer(this.selectedFreezer);
+      const alerts = this.getFreezerAlerts(this.selectedFreezer);
       const freezerStr = `Freezer ${this.selectedFreezer.toString().padStart(2, '0')}`;
+
+      const alertBannerHTML = alerts.hasAny ? `
+        <div class="badge--blinking-alert" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-left: 5px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.6rem;">🚨</span>
+            <div>
+              <div style="font-weight: 700; color: #ef4444; font-size: 0.98rem;">ALERTA DE VALIDADE ATIVO NESTE FREEZER!</div>
+              <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">
+                Existem <strong>${alerts.totalAlerts} produto(s)</strong> exigindo atenção de validade (vencidos, vencendo hoje ou nos próximos dias).
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 0.8rem; font-weight: 600; color: #ef4444; background: rgba(239,68,68,0.15); padding: 4px 10px; border-radius: 6px; white-space: nowrap;">
+            ⚠️ Atenção Prioritária
+          </div>
+        </div>
+      ` : '';
 
       return `
         <div class="chambers-page animate-fade-in">
@@ -303,10 +565,12 @@ window.BrigadaPisoLoja = {
               Voltar aos Freezers
             </button>
             <div class="chamber-active-info" style="display: flex; align-items: center; gap: 8px;">
-              <span class="status-dot" style="width:10px; height:10px; border-radius:50%; background-color:#10b981; display:inline-block;"></span>
+              <span class="status-dot" style="width:10px; height:10px; border-radius:50%; background-color:${alerts.hasCritical ? '#ef4444' : alerts.hasWarning ? '#f59e0b' : '#10b981'}; display:inline-block;"></span>
               <h2 class="chamber-title" style="margin: 0; font-size: 1.5rem; font-weight: 700;">${freezerStr}</h2>
             </div>
           </div>
+
+          ${alertBannerHTML}
 
           <div class="glass-panel" style="padding: 1.5rem;">
             <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
@@ -343,16 +607,22 @@ window.BrigadaPisoLoja = {
                     </tr>
                   ` : products.map(p => {
                     const status = window.BrigadaData.getProductStatus(p);
+                    const isCritical = status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today';
+                    const isWarning = status.days > 0 && status.days <= 3;
+                    const isAlert = isCritical || isWarning || status.isResfriadoAlert || status.isCongeladoAlert;
+                    const rowStyle = isCritical ? 'background: rgba(239, 68, 68, 0.08);' : isWarning ? 'background: rgba(245, 158, 11, 0.08);' : '';
+                    const blinkBadgeClass = isAlert ? 'badge--blinking-alert' : '';
+
                     return `
-                      <tr>
+                      <tr style="${rowStyle}">
                         <td><span class="plu-badge">${p.plu}</span></td>
                         <td style="font-weight: 500;">
                           <div>${p.name}</div>
                           <div style="font-size:0.7rem; color:var(--text-tertiary);">${this.catMap[p.category] || p.category || ''}</div>
                         </td>
                         <td><strong>${p.quantity}</strong> ${p.unit || 'kg'}</td>
-                        <td>${window.BrigadaData.formatDate(p.endDate)}</td>
-                        <td><span class="badge ${status.class}">${status.icon} ${status.label}</span></td>
+                        <td><strong>${window.BrigadaData.formatDate(p.endDate)}</strong></td>
+                        <td><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
                         <td>
                           <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="cursor: pointer;">
                             🗑️ Desalocar

@@ -1033,6 +1033,14 @@ window.BrigadaRouter = {
 
           <nav class="sidebar__nav">
             <div class="sidebar__section-label">Principal</div>
+            ${window.BrigadaAuth.canAddProduct() ? `
+            <div style="padding: 0 var(--sp-xs); margin-bottom: 0.65rem;">
+              <button class="btn btn--primary" id="sidebar-btn-add-product" style="width: 100%; border-radius: var(--r-full); padding: 0.6rem 1rem; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(56,189,248,0.35); letter-spacing: -0.2px; cursor: pointer;">
+                <span style="font-size: 1.1rem; font-weight: 800;">＋</span>
+                <span>Novo Produto</span>
+              </button>
+            </div>
+            ` : ''}
             <a class="sidebar__link ${activePage === 'dashboard' ? 'sidebar__link--active' : ''}" data-page="dashboard" href="#">
               <span class="sidebar__link-icon">📊</span>
               <span>Dashboard</span>
@@ -1247,6 +1255,40 @@ window.BrigadaRouter = {
             closeSidebar();
           }
         });
+      });
+
+      // Sidebar Add Product Button
+      document.getElementById('sidebar-btn-add-product')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const user = window.BrigadaAuth.currentUser;
+        const sector = (user?.sector || 'açougue').toLowerCase();
+
+        let targetPage = 'products';
+        if (sector === 'pereciveis') targetPage = 'pereciveis';
+        else if (sector === 'padaria') targetPage = 'padaria';
+        else if (sector === 'hortifruti') targetPage = 'hortifruti';
+        else if (sector === 'mercearia') targetPage = 'mercearia';
+
+        await this.navigate(targetPage);
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+
+        setTimeout(() => {
+          const pageContainer = document.getElementById('page-container');
+          if (!pageContainer) return;
+          if (targetPage === 'products' && window.BrigadaProducts) {
+            window.BrigadaProducts.openAddModal(pageContainer);
+          } else if (targetPage === 'pereciveis' && window.BrigadaPereciveis) {
+            window.BrigadaPereciveis.openAddModal(pageContainer);
+          } else if (targetPage === 'padaria' && window.BrigadaPadaria) {
+            window.BrigadaPadaria.openAddModal(pageContainer);
+          } else if (targetPage === 'hortifruti' && window.BrigadaHortifruti) {
+            window.BrigadaHortifruti.openAddModal(pageContainer);
+          } else if (targetPage === 'mercearia' && window.BrigadaMercearia) {
+            window.BrigadaMercearia.openAddModal(pageContainer);
+          }
+        }, 50);
       });
 
       // Toggle Sidebar events

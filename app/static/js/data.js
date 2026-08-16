@@ -55,7 +55,73 @@ function daysAgo(days) {
   return daysFromNow(-days);
 }
 
-const PRODUCTS_DB = [];
+const PRODUCTS_DB = [
+  {
+    id: 9901,
+    name: 'Peito de Frango Sadia 1kg',
+    plu: '1001',
+    category: 'aves',
+    quantity: 8.0,
+    unit: 'kg',
+    startDate: daysAgo(20),
+    endDate: daysAgo(1), // Vencido há 1 dia (🔴 VENCIDO)
+    location: 'piso_loja:FZ17',
+    supplier: 'Sadia',
+    barcode: '789123456001'
+  },
+  {
+    id: 9902,
+    name: 'Filé de Peito Copacol',
+    plu: '1002',
+    category: 'aves',
+    quantity: 14.0,
+    unit: 'kg',
+    startDate: daysAgo(10),
+    endDate: daysFromNow(0), // Vence Hoje (🟠 VENCE HOJE)
+    location: 'piso_loja:FZ18',
+    supplier: 'Copacol',
+    barcode: '789123456002'
+  },
+  {
+    id: 9903,
+    name: 'Frango Resfriado Mauricéa KG',
+    plu: '1003',
+    category: 'aves',
+    quantity: 25.0,
+    unit: 'kg',
+    startDate: daysAgo(5),
+    endDate: daysFromNow(10), // Faltam 10 dias (❄️ ALERTA 15 DIAS RESFRIADO)
+    location: 'piso_loja:FZ20',
+    supplier: 'Mauricéa',
+    barcode: '789123456003'
+  },
+  {
+    id: 9904,
+    name: 'Picanha Bovina Friboi',
+    plu: '2001',
+    category: 'bovino',
+    quantity: 12.0,
+    unit: 'kg',
+    startDate: daysAgo(15),
+    endDate: daysFromNow(2), // Faltam 2 dias (⚠️ ATENÇÃO 1-3 DIAS)
+    location: 'piso_loja:FZ26',
+    supplier: 'Friboi',
+    barcode: '789123456004'
+  },
+  {
+    id: 9905,
+    name: 'Filé de Tilápia Congelada Frescatto 500g',
+    plu: '3001',
+    category: 'pescado',
+    quantity: 30,
+    unit: 'un',
+    startDate: daysAgo(10),
+    endDate: daysFromNow(22), // Faltam 22 dias (🥶 ALERTA 30 DIAS CONGELADO)
+    location: 'piso_loja:FZ42',
+    supplier: 'Frescatto',
+    barcode: '789123456005'
+  }
+];
 
 // ── Helpers de Estado e Sincronização ─────────────────────────────────────────
 window.BrigadaData = {
