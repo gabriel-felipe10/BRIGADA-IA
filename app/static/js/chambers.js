@@ -205,6 +205,158 @@ window.BrigadaChambers = {
     return stats;
   },
 
+  calculateAlerts(products) {
+    const expired = [];
+    const today = [];
+    const atencao = [];
+    const resfriado15 = [];
+    const congelado30 = [];
+
+    products.forEach(p => {
+      const s = window.BrigadaData.getProductStatus(p);
+      if (s.days < 0 || s.class === 'badge--expired') {
+        expired.push({ product: p, status: s });
+      } else if (s.days === 0 || s.class === 'badge--today') {
+        today.push({ product: p, status: s });
+      } else if (s.days >= 1 && s.days <= 3) {
+        atencao.push({ product: p, status: s });
+      } else if (window.BrigadaData.isResfriado && window.BrigadaData.isResfriado(p) && s.days <= 15) {
+        resfriado15.push({ product: p, status: s });
+      } else if (window.BrigadaData.isCongelado && window.BrigadaData.isCongelado(p) && s.days <= 30) {
+        congelado30.push({ product: p, status: s });
+      }
+    });
+
+    const totalAlerts = expired.length + today.length + atencao.length + resfriado15.length + congelado30.length;
+
+    return {
+      totalAlerts,
+      expired,
+      today,
+      atencao,
+      resfriado15,
+      congelado30,
+      hasExpired: expired.length > 0,
+      hasToday: today.length > 0,
+      hasAtencao: atencao.length > 0,
+      hasResfriado15: resfriado15.length > 0,
+      hasCongelado30: congelado30.length > 0,
+      hasCritical: expired.length > 0 || today.length > 0,
+      hasAny: totalAlerts > 0
+    };
+  },
+
+  getColumnAlerts(chamberName, colNum) {
+    const products = this.getAllChamberProducts().filter(p => {
+      const parsed = this.parseLocation(p.location);
+      return parsed && parsed.chamber === chamberName && parsed.column === colNum;
+    });
+    return this.calculateAlerts(products);
+  },
+
+  getChamberAlerts(chamberName) {
+    const products = this.getAllChamberProducts().filter(p => {
+      const parsed = this.parseLocation(p.location);
+      return parsed && parsed.chamber === chamberName;
+    });
+    return this.calculateAlerts(products);
+  },
+
+  renderColumnCard(chamberName, colNum, totalCols, chamberThemeColor, chamberTag) {
+    const products = this.getAllChamberProducts();
+    const occupiedSlots = new Set();
+    let totalItemsInCol = 0;
+
+    products.forEach(p => {
+      const parsed = this.parseLocation(p.location);
+      if (parsed && parsed.chamber === chamberName && parsed.column === colNum) {
+        occupiedSlots.add(`N${parsed.level}-${parsed.position}`);
+        totalItemsInCol++;
+      }
+    });
+
+    const colOccupiedCount = occupiedSlots.size;
+    const alerts = this.getColumnAlerts(chamberName, colNum);
+
+    let alertClass = '';
+    const alertBadges = [];
+
+    if (alerts.hasExpired) {
+      alertClass = 'freezer-card--critical';
+      alertBadges.push(`
+        <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(239,68,68,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span style="font-size: 1rem;">🔴</span> <span>VENCIDOS: ${alerts.expired.length} ${alerts.expired.length === 1 ? 'item' : 'itens'}</span>
+        </div>
+      `);
+    }
+    if (alerts.hasToday) {
+      if (!alertClass) alertClass = 'freezer-card--critical';
+      alertBadges.push(`
+        <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #ea580c, #c2410c); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(234,88,12,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span style="font-size: 1rem;">🟠</span> <span>VENCE HOJE: ${alerts.today.length} ${alerts.today.length === 1 ? 'item' : 'itens'}</span>
+        </div>
+      `);
+    }
+    if (alerts.hasAtencao) {
+      if (!alertClass) alertClass = 'freezer-card--warning';
+      alertBadges.push(`
+        <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(245,158,11,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span style="font-size: 1rem;">⚠️</span> <span>ATENÇÃO (1 A 3 DIAS): ${alerts.atencao.length} ${alerts.atencao.length === 1 ? 'item' : 'itens'}</span>
+        </div>
+      `);
+    }
+    if (alerts.hasResfriado15) {
+      if (!alertClass) alertClass = 'freezer-card--resfriado15';
+      alertBadges.push(`
+        <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(6,182,212,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span style="font-size: 1rem;">❄️</span> <span>ALERTA 15 DIAS: ${alerts.resfriado15.length}</span>
+        </div>
+      `);
+    }
+    if (alerts.hasCongelado30) {
+      if (!alertClass) alertClass = 'freezer-card--congelado30';
+      alertBadges.push(`
+        <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 7px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(99,102,241,0.45); letter-spacing: 0.2px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span style="font-size: 1rem;">🥶</span> <span>ALERTA 30 DIAS: ${alerts.congelado30.length}</span>
+        </div>
+      `);
+    }
+
+    const alertBadgesHTML = alertBadges.length > 0 ? `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0.6rem 0 0.9rem 0; width: 100%;">
+        ${alertBadges.join('')}
+      </div>
+    ` : '';
+
+    const glowColor = alerts.hasExpired || alerts.hasToday ? '#ef4444' : alerts.hasAtencao ? '#f59e0b' : alerts.hasResfriado15 ? '#06b6d4' : alerts.hasCongelado30 ? '#6366f1' : (colOccupiedCount > 0 ? '#10b981' : chamberThemeColor);
+
+    return `
+      <div class="chamber-card-outer ${alertClass}" data-action="view-column" data-chamber="${chamberName}" data-col="${colNum}" style="cursor: pointer; position: relative;">
+        <div class="chamber-card-header-glow" style="background: ${glowColor};"></div>
+        <div class="chamber-card-body" style="padding: 1.2rem; text-align: center;">
+          <h2 class="chamber-card-name" style="font-size: 1.35rem; font-weight: 800; color: ${chamberThemeColor}; margin-bottom: 0.35rem; letter-spacing: -0.3px;">Coluna ${colNum.toString().padStart(2, '0')}</h2>
+          <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Rack ${colNum.toString().padStart(2, '0')} de ${totalCols.toString().padStart(2, '0')} • ${chamberTag}</div>
+          
+          ${alertBadgesHTML}
+          
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 0.35rem;">
+            <span class="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${glowColor};"></span>
+            <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">${colOccupiedCount} / 8 Paletes</span>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.8rem;">
+            ${totalItemsInCol} ${totalItemsInCol === 1 ? 'item alocado' : 'itens alocados'}
+          </div>
+          
+          <div class="chamber-card-footer" style="justify-content: center;">
+            <span class="enter-text">Acessar Rack</span>
+            ${this.icons.ChevronRight}
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
   renderDirCategoryTabsHTML() {
     const allowed = window.BrigadaAuth.getAllowedCategoriesForUser(this.selectedChamber);
     const catLabels = {
@@ -347,7 +499,7 @@ window.BrigadaChambers = {
   buildColumnsGridHTML() {
     const config = this.CHAMBER_CONFIGS[this.selectedChamber];
     const isResfriada = this.selectedChamber === 'Câmara Resfriada';
-    const themeColor = isResfriada ? '#3b82f6' : '#6366f1';
+    const themeColor = isResfriada ? '#38bdf8' : '#818cf8';
     const chamberIcon = isResfriada ? '❄️' : '🥶';
     const products = this.getAllChamberProducts();
     const stats = this.getChamberStats();
@@ -356,47 +508,7 @@ window.BrigadaChambers = {
 
     const columnCardsHTML = Array.from({ length: config.columnsCount }, (_, i) => {
       const colNum = i + 1;
-      const occupiedSlots = new Set();
-      let totalItemsInCol = 0;
-
-      products.forEach(p => {
-        const parsed = this.parseLocation(p.location);
-        if (parsed && parsed.chamber === this.selectedChamber && parsed.column === colNum) {
-          occupiedSlots.add(`N${parsed.level}-${parsed.position}`);
-          totalItemsInCol++;
-        }
-      });
-      
-      const colOccupiedCount = occupiedSlots.size;
-      const hasProducts = colOccupiedCount > 0;
-      const isFull = colOccupiedCount === 8;
-      const statusColor = isFull ? '#ef4444' : hasProducts ? '#10b981' : '#9ca3af';
-
-      return `
-        <div class="chamber-card-outer" data-action="view-column" data-col="${colNum}" style="cursor: pointer;">
-          <div class="chamber-card-header-glow" style="background: ${themeColor};"></div>
-          <div class="chamber-card-body" style="padding: 1.2rem; text-align: center;">
-            <div style="font-size: 2.5rem; font-weight: 800; color: ${themeColor}; margin-bottom: 0.5rem; font-family: monospace;">
-              ${colNum.toString().padStart(2, '0')}
-            </div>
-            <h2 class="chamber-card-name" style="font-size: 1.2rem; margin-bottom: 0.5rem;">Coluna ${colNum.toString().padStart(2, '0')}</h2>
-            
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 0.4rem;">
-              <span class="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor};"></span>
-              <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">${colOccupiedCount} / 8 Paletes</span>
-            </div>
-            
-            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 1rem;">
-              ${totalItemsInCol} ${totalItemsInCol === 1 ? 'item alocado' : 'itens alocados'}
-            </div>
-            
-            <div class="chamber-card-footer" style="justify-content: center;">
-              <span class="enter-text">Acessar Rack</span>
-              ${this.icons.ChevronRight}
-            </div>
-          </div>
-        </div>
-      `;
+      return this.renderColumnCard(this.selectedChamber, colNum, config.columnsCount, themeColor, isResfriada ? 'Resfriada' : 'Congelada');
     }).join('');
 
     const chamberProducts = products.filter(p => {
@@ -404,13 +516,91 @@ window.BrigadaChambers = {
       return parsed && parsed.chamber === this.selectedChamber;
     });
 
+    const animationStyles = `
+      <style>
+        @keyframes pulseAlertCard {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), 0 8px 24px rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.9);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0), 0 12px 32px rgba(239, 68, 68, 0.5);
+            border-color: #ef4444;
+          }
+        }
+        @keyframes pulseWarningCard {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7), 0 8px 24px rgba(245, 158, 11, 0.25);
+            border-color: rgba(245, 158, 11, 0.9);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(245, 158, 11, 0), 0 12px 32px rgba(245, 158, 11, 0.5);
+            border-color: #f59e0b;
+          }
+        }
+        @keyframes pulseCyanCard {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7), 0 8px 24px rgba(6, 182, 212, 0.25);
+            border-color: rgba(6, 182, 212, 0.9);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(6, 182, 212, 0), 0 12px 32px rgba(6, 182, 212, 0.5);
+            border-color: #06b6d4;
+          }
+        }
+        @keyframes pulseBlueCard {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7), 0 8px 24px rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.9);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(99, 102, 241, 0), 0 12px 32px rgba(99, 102, 241, 0.5);
+            border-color: #6366f1;
+          }
+        }
+        @keyframes blinkAlertBadge {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.04);
+          }
+        }
+        .freezer-card--critical {
+          animation: pulseAlertCard 1.8s infinite ease-in-out !important;
+          border: 2px solid #ef4444 !important;
+        }
+        .freezer-card--warning {
+          animation: pulseWarningCard 2s infinite ease-in-out !important;
+          border: 2px solid #f59e0b !important;
+        }
+        .freezer-card--resfriado15 {
+          animation: pulseCyanCard 2.2s infinite ease-in-out !important;
+          border: 2px solid #06b6d4 !important;
+        }
+        .freezer-card--congelado30 {
+          animation: pulseBlueCard 2.4s infinite ease-in-out !important;
+          border: 2px solid #6366f1 !important;
+        }
+        .badge--blinking-alert {
+          animation: blinkAlertBadge 1.2s infinite ease-in-out;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+      </style>
+    `;
+
     return `
       <div class="chambers-page">
+        ${animationStyles}
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div class="panel-header__left" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <button class="btn btn--ghost" id="btn-back-to-chambers" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-weight: 600;">
+            <button class="btn btn--ghost" id="btn-back-to-chambers" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-weight: 600; cursor: pointer;">
               ${this.icons.ArrowLeft}
-              <span>Voltar para Câmaras</span>
+              <span>Voltar ao Mapa Geral</span>
             </button>
             <div>
               <h2 class="panel-title" style="margin: 0;">${chamberIcon} ${this.selectedChamber}</h2>
@@ -419,7 +609,7 @@ window.BrigadaChambers = {
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           ${columnCardsHTML}
         </div>
 
@@ -435,6 +625,24 @@ window.BrigadaChambers = {
     const chamberIcon = isResfriada ? '❄️' : '🥶';
     const colNum = this.selectedColumn;
     const colStr = colNum.toString().padStart(2, '0');
+    const alerts = this.getColumnAlerts(this.selectedChamber, colNum);
+
+    const alertBannerHTML = alerts.hasAny ? `
+      <div class="badge--blinking-alert" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-left: 5px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.6rem;">🚨</span>
+          <div>
+            <div style="font-weight: 700; color: #ef4444; font-size: 0.98rem;">ALERTA DE VALIDADE ATIVO NESTA COLUNA!</div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">
+              Existem <strong>${alerts.totalAlerts} produto(s)</strong> exigindo atenção de validade (vencidos, vencendo hoje ou em alerta de dias).
+            </div>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; font-weight: 600; color: #ef4444; background: rgba(239,68,68,0.15); padding: 4px 10px; border-radius: 6px; white-space: nowrap;">
+          ⚠️ Atenção Prioritária
+        </div>
+      </div>
+    ` : '';
 
     // Graphical Rack Level Rows
     const rackRowsHTML = Array.from({ length: 4 }, (_, i) => {
@@ -563,9 +771,9 @@ window.BrigadaChambers = {
       <div class="chambers-page">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <button class="btn btn--ghost" id="btn-back-to-columns" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-weight: 600;">
+            <button class="btn btn--ghost" id="btn-back-to-columns" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-weight: 600; cursor: pointer;">
               ${this.icons.ArrowLeft}
-              <span>Voltar para Colunas</span>
+              <span>Voltar ao Mapa Geral</span>
             </button>
             <div>
               <h2 class="panel-title" style="margin: 0;">${chamberIcon} ${this.selectedChamber} — Coluna ${colStr}</h2>
@@ -590,6 +798,8 @@ window.BrigadaChambers = {
           </div>
         </div>
 
+        ${alertBannerHTML}
+
         <div class="glass-panel" style="padding: 1.5rem; max-width: 920px; margin: 0 auto 2rem auto;">
           <div class="rack-container">
             ${rackRowsHTML}
@@ -609,18 +819,152 @@ window.BrigadaChambers = {
     const stats = this.getChamberStats();
     const allProducts = this.getAllChamberProducts();
 
-    // 1. Visão Geral das Câmaras
+    // 1. Visão Geral das Câmaras (Padrão Completo e Rico do Piso de Loja)
     if (!this.selectedChamber) {
       const resfriadaCapacity = this.CHAMBER_CONFIGS['Câmara Resfriada'].capacity;
       const resfriadaOccupied = stats['Câmara Resfriada'].occupied;
       const resfriadaPercent = Math.round((resfriadaOccupied / resfriadaCapacity) * 100);
+      const resfriadaAlerts = this.getChamberAlerts('Câmara Resfriada');
 
       const congeladaCapacity = this.CHAMBER_CONFIGS['Câmara Congelada'].capacity;
       const congeladaOccupied = stats['Câmara Congelada'].occupied;
       const congeladaPercent = Math.round((congeladaOccupied / congeladaCapacity) * 100);
+      const congeladaAlerts = this.getChamberAlerts('Câmara Congelada');
+
+      // Badges de alerta das câmaras
+      const buildChamberAlertBadges = (alerts) => {
+        const badges = [];
+        if (alerts.hasExpired) {
+          badges.push(`
+            <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; box-shadow: 0 4px 12px rgba(239,68,68,0.4);">
+              <span>🔴</span> <span>VENCIDOS: ${alerts.expired.length}</span>
+            </div>
+          `);
+        }
+        if (alerts.hasToday) {
+          badges.push(`
+            <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #ea580c, #c2410c); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; box-shadow: 0 4px 12px rgba(234,88,12,0.4);">
+              <span>🟠</span> <span>VENCE HOJE: ${alerts.today.length}</span>
+            </div>
+          `);
+        }
+        if (alerts.hasAtencao) {
+          badges.push(`
+            <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; box-shadow: 0 4px 12px rgba(245,158,11,0.4);">
+              <span>⚠️</span> <span>ATENÇÃO (1 A 3 DIAS): ${alerts.atencao.length}</span>
+            </div>
+          `);
+        }
+        if (alerts.hasResfriado15) {
+          badges.push(`
+            <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; box-shadow: 0 4px 12px rgba(6,182,212,0.4);">
+              <span>❄️</span> <span>ALERTA 15 DIAS: ${alerts.resfriado15.length}</span>
+            </div>
+          `);
+        }
+        if (alerts.hasCongelado30) {
+          badges.push(`
+            <div class="badge--blinking-alert" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; box-shadow: 0 4px 12px rgba(99,102,241,0.4);">
+              <span>🥶</span> <span>ALERTA 30 DIAS: ${alerts.congelado30.length}</span>
+            </div>
+          `);
+        }
+        return badges.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:6px; margin: 0.6rem 0 0.8rem 0;">${badges.join('')}</div>` : '';
+      };
+
+      const resfriadaGlow = resfriadaAlerts.hasExpired || resfriadaAlerts.hasToday ? '#ef4444' : resfriadaAlerts.hasAtencao ? '#f59e0b' : '#38bdf8';
+      const congeladaGlow = congeladaAlerts.hasExpired || congeladaAlerts.hasToday ? '#ef4444' : congeladaAlerts.hasAtencao ? '#f59e0b' : '#818cf8';
+
+      // Gerar cards das 4 colunas da Resfriada
+      const resfriadaColsCards = Array.from({ length: 4 }, (_, i) => {
+        return this.renderColumnCard('Câmara Resfriada', i + 1, 4, '#38bdf8', 'Resfriada');
+      }).join('');
+
+      // Gerar cards das 16 colunas da Congelada
+      const congeladaColsCards = Array.from({ length: 16 }, (_, i) => {
+        return this.renderColumnCard('Câmara Congelada', i + 1, 16, '#f59e0b', 'Congelada');
+      }).join('');
+
+      const animationStyles = `
+        <style>
+          @keyframes pulseAlertCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), 0 8px 24px rgba(239, 68, 68, 0.25);
+              border-color: rgba(239, 68, 68, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(239, 68, 68, 0), 0 12px 32px rgba(239, 68, 68, 0.5);
+              border-color: #ef4444;
+            }
+          }
+          @keyframes pulseWarningCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7), 0 8px 24px rgba(245, 158, 11, 0.25);
+              border-color: rgba(245, 158, 11, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(245, 158, 11, 0), 0 12px 32px rgba(245, 158, 11, 0.5);
+              border-color: #f59e0b;
+            }
+          }
+          @keyframes pulseCyanCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7), 0 8px 24px rgba(6, 182, 212, 0.25);
+              border-color: rgba(6, 182, 212, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(6, 182, 212, 0), 0 12px 32px rgba(6, 182, 212, 0.5);
+              border-color: #06b6d4;
+            }
+          }
+          @keyframes pulseBlueCard {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7), 0 8px 24px rgba(99, 102, 241, 0.25);
+              border-color: rgba(99, 102, 241, 0.9);
+            }
+            50% {
+              box-shadow: 0 0 0 10px rgba(99, 102, 241, 0), 0 12px 32px rgba(99, 102, 241, 0.5);
+              border-color: #6366f1;
+            }
+          }
+          @keyframes blinkAlertBadge {
+            0%, 100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.6;
+              transform: scale(1.04);
+            }
+          }
+          .freezer-card--critical {
+            animation: pulseAlertCard 1.8s infinite ease-in-out !important;
+            border: 2px solid #ef4444 !important;
+          }
+          .freezer-card--warning {
+            animation: pulseWarningCard 2s infinite ease-in-out !important;
+            border: 2px solid #f59e0b !important;
+          }
+          .freezer-card--resfriado15 {
+            animation: pulseCyanCard 2.2s infinite ease-in-out !important;
+            border: 2px solid #06b6d4 !important;
+          }
+          .freezer-card--congelado30 {
+            animation: pulseBlueCard 2.4s infinite ease-in-out !important;
+            border: 2px solid #6366f1 !important;
+          }
+          .badge--blinking-alert {
+            animation: blinkAlertBadge 1.2s infinite ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+          }
+        </style>
+      `;
 
       return `
         <div class="chambers-page">
+          ${animationStyles}
           <div class="panel-header">
             <div class="panel-header__left">
               <h2 class="panel-title">❄️ Mapa das Câmaras Frias</h2>
@@ -628,100 +972,140 @@ window.BrigadaChambers = {
             </div>
           </div>
 
-          <div class="chambers-grid-container">
+          <!-- Cards de Resumo das Câmaras -->
+          <div class="chambers-grid-container" style="margin-bottom: 2.5rem;">
             <div class="chambers-side-by-side">
               <!-- Câmara Resfriada -->
-              <div class="chamber-card-outer chamber-resfriada" id="card-chamber-resfriada" style="cursor: pointer;">
-                <div class="chamber-card-header-glow" style="background: #3B82F6;"></div>
-                <div class="chamber-card-body">
+              <div class="chamber-card-outer chamber-resfriada ${resfriadaAlerts.hasCritical ? 'freezer-card--critical' : resfriadaAlerts.hasAtencao ? 'freezer-card--warning' : ''}" id="card-chamber-resfriada" style="cursor: pointer;">
+                <div class="chamber-card-header-glow" style="background: ${resfriadaGlow};"></div>
+                <div class="chamber-card-body" style="padding: 1.5rem;">
                   <div class="chamber-badge-container">
-                    <span class="chamber-type-badge" style="color: #3b82f6; background-color: rgba(59, 130, 246, 0.15)">
+                    <span class="chamber-type-badge" style="color: #38bdf8; background-color: rgba(56, 189, 248, 0.15)">
                       ${this.icons.Snowflake}
                       Resfriada
                     </span>
-                    <div class="chamber-temp-indicator" style="color: #3b82f6; display: flex; align-items: center; gap: 4px;">
+                    <div class="chamber-temp-indicator" style="color: #38bdf8; display: flex; align-items: center; gap: 4px;">
                       ${this.icons.Thermometer}
                       <span>2.5 °C</span>
                     </div>
                   </div>
 
-                  <h2 class="chamber-card-name">Câmara Resfriada</h2>
-                  <p class="chamber-card-desc">Destinada a carnes resfriadas, laticínios, frios e perecíveis (4 Colunas).</p>
+                  <h2 class="chamber-card-name" style="color: #38bdf8; font-weight: 800; font-size: 1.4rem;">Câmara Resfriada</h2>
+                  <p class="chamber-card-desc" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.6rem;">Destinada a carnes resfriadas, laticínios, frios e perecíveis (4 Colunas / 32 Paletes).</p>
+
+                  ${buildChamberAlertBadges(resfriadaAlerts)}
 
                   <div class="chamber-capacity-info">
                     <div class="capacity-labels">
-                      <span>Ocupação</span>
-                      <span class="capacity-fraction">${resfriadaOccupied} / ${resfriadaCapacity} Paletes</span>
+                      <span style="font-weight: 600;">Ocupação</span>
+                      <span class="capacity-fraction" style="font-weight: 700; color: #38bdf8;">${resfriadaOccupied} / ${resfriadaCapacity} Paletes</span>
                     </div>
-                    <div class="capacity-bar-bg">
-                      <div class="capacity-bar-fill" style="width: ${resfriadaPercent}%; background: linear-gradient(90deg, #3B82F6, #3B82F6cc);"></div>
+                    <div class="capacity-bar-bg" style="background: rgba(255,255,255,0.08); border-radius: 6px; height: 8px; overflow: hidden; margin: 6px 0;">
+                      <div class="capacity-bar-fill" style="width: ${resfriadaPercent}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #0284c7); border-radius: 6px;"></div>
                     </div>
-                    <div class="capacity-percentage-label">
+                    <div class="capacity-percentage-label" style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-tertiary);">
                       <span>${resfriadaPercent}% capacidade utilizada</span>
+                      <span>4 Racks Verticais</span>
                     </div>
                   </div>
 
-                  <div class="chamber-card-footer">
-                    <span class="enter-text">Explorar Colunas</span>
+                  <div class="chamber-card-footer" style="margin-top: 1rem;">
+                    <span class="enter-text" style="color: #38bdf8; font-weight: 700;">Ver Racks Resfriada</span>
                     ${this.icons.ChevronRight}
                   </div>
                 </div>
               </div>
 
               <!-- Câmara Congelada -->
-              <div class="chamber-card-outer chamber-congelada" id="card-chamber-congelada" style="cursor: pointer;">
-                <div class="chamber-card-header-glow" style="background: #6366F1;"></div>
-                <div class="chamber-card-body">
+              <div class="chamber-card-outer chamber-congelada ${congeladaAlerts.hasCritical ? 'freezer-card--critical' : congeladaAlerts.hasAtencao ? 'freezer-card--warning' : ''}" id="card-chamber-congelada" style="cursor: pointer;">
+                <div class="chamber-card-header-glow" style="background: ${congeladaGlow};"></div>
+                <div class="chamber-card-body" style="padding: 1.5rem;">
                   <div class="chamber-badge-container">
-                    <span class="chamber-type-badge" style="color: #6366f1; background-color: rgba(99, 102, 241, 0.15)">
+                    <span class="chamber-type-badge" style="color: #818cf8; background-color: rgba(129, 140, 248, 0.15)">
                       ${this.icons.Warehouse}
                       Congelada
                     </span>
-                    <div class="chamber-temp-indicator" style="color: #6366F1; display: flex; align-items: center; gap: 4px;">
+                    <div class="chamber-temp-indicator" style="color: #818cf8; display: flex; align-items: center; gap: 4px;">
                       ${this.icons.Thermometer}
                       <span>-18.5 °C</span>
                     </div>
                   </div>
 
-                  <h2 class="chamber-card-name">Câmara Congelada</h2>
-                  <p class="chamber-card-desc">Destinada a carnes congeladas, aves, pescados e congelados em geral (16 Colunas).</p>
+                  <h2 class="chamber-card-name" style="color: #818cf8; font-weight: 800; font-size: 1.4rem;">Câmara Congelada</h2>
+                  <p class="chamber-card-desc" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.6rem;">Destinada a carnes congeladas, aves, pescados e congelados em geral (16 Colunas / 128 Paletes).</p>
+
+                  ${buildChamberAlertBadges(congeladaAlerts)}
 
                   <div class="chamber-capacity-info">
                     <div class="capacity-labels">
-                      <span>Ocupação</span>
-                      <span class="capacity-fraction">${congeladaOccupied} / ${congeladaCapacity} Paletes</span>
+                      <span style="font-weight: 600;">Ocupação</span>
+                      <span class="capacity-fraction" style="font-weight: 700; color: #818cf8;">${congeladaOccupied} / ${congeladaCapacity} Paletes</span>
                     </div>
-                    <div class="capacity-bar-bg">
-                      <div class="capacity-bar-fill" style="width: ${congeladaPercent}%; background: linear-gradient(90deg, #6366F1, #6366F1cc);"></div>
+                    <div class="capacity-bar-bg" style="background: rgba(255,255,255,0.08); border-radius: 6px; height: 8px; overflow: hidden; margin: 6px 0;">
+                      <div class="capacity-bar-fill" style="width: ${congeladaPercent}%; height: 100%; background: linear-gradient(90deg, #818cf8, #6366f1); border-radius: 6px;"></div>
                     </div>
-                    <div class="capacity-percentage-label">
+                    <div class="capacity-percentage-label" style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-tertiary);">
                       <span>${congeladaPercent}% capacidade utilizada</span>
+                      <span>16 Racks Verticais</span>
                     </div>
                   </div>
 
-                  <div class="chamber-card-footer">
-                    <span class="enter-text">Explorar Colunas</span>
+                  <div class="chamber-card-footer" style="margin-top: 1rem;">
+                    <span class="enter-text" style="color: #818cf8; font-weight: 700;">Ver Racks Congelada</span>
                     ${this.icons.ChevronRight}
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            ${this.buildDirectoryHTML(allProducts)}
+          <!-- Seção 1: Colunas da Câmara Resfriada -->
+          <div style="margin-bottom: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 2px solid rgba(56,189,248,0.35);">
+              <div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>❄️</span> Câmara Resfriada — 4 Colunas (Racks)
+                </h3>
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 3px 0 0 0;">Cada coluna possui 4 níveis de altura e 2 paletes por nível (8 posições por rack)</p>
+              </div>
+              <span style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 4px 10px; border-radius: 6px;">4 Colunas</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem;">
+              ${resfriadaColsCards}
+            </div>
+          </div>
 
-            <!-- Caixa Explicativa -->
-            <div class="chambers-quick-info" style="margin-top: 1.5rem;">
-              <div class="info-card">
-                <div class="info-icon-wrapper" style="color: #6366F1; flex-shrink: 0; margin-top: 3px;">
-                  ${this.icons.Info}
-                </div>
-                <div>
-                  <h4 style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Como funciona a alocação de posições e paletes?</h4>
-                  <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">
-                    A Câmara Resfriada possui <strong>4 Colunas</strong> e a Câmara Congelada possui <strong>16 Colunas</strong>. Cada coluna representa uma estrutura vertical (Rack) com <strong>4 níveis de altura</strong> e <strong>2 paletes por nível (Esquerda e Direita)</strong>.
-                    Cada palete pode conter <strong>1 ou múltiplos itens</strong> (palete misto). Você pode adicionar novos itens a qualquer momento clicando no botão <strong>+ Item</strong> ou abrindo o palete.
-                  </p>
-                </div>
+          <!-- Seção 2: Colunas da Câmara Congelada -->
+          <div style="margin-bottom: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 2px solid rgba(245,158,11,0.35);">
+              <div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #f59e0b; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>🥶</span> Câmara Congelada — 16 Colunas (Racks)
+                </h3>
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 3px 0 0 0;">Cada coluna possui 4 níveis de altura e 2 paletes por nível (8 posições por rack)</p>
+              </div>
+              <span style="font-size: 0.78rem; font-weight: 700; color: #f59e0b; background: rgba(245,158,11,0.12); padding: 4px 10px; border-radius: 6px;">16 Colunas</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem;">
+              ${congeladaColsCards}
+            </div>
+          </div>
+
+          <!-- Diretório de Paletes Alocados -->
+          ${this.buildDirectoryHTML(allProducts)}
+
+          <!-- Caixa Explicativa -->
+          <div class="chambers-quick-info" style="margin-top: 1.5rem;">
+            <div class="info-card" style="display: flex; gap: 1rem; padding: 1.25rem; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--r-lg);">
+              <div class="info-icon-wrapper" style="color: #38bdf8; font-size: 1.5rem; flex-shrink: 0; margin-top: 2px;">
+                💡
+              </div>
+              <div>
+                <h4 style="font-weight: 700; margin-bottom: 4px; color: var(--text-primary); font-size: 0.95rem;">Como funciona o mapa WMS das Câmaras Frias?</h4>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin: 0;">
+                  A Câmara Resfriada possui <strong>4 Colunas</strong> e a Câmara Congelada possui <strong>16 Colunas</strong>. Cada coluna é um Rack vertical com <strong>4 níveis de altura</strong> (Nível 1 Piso e Níveis 2, 3 e 4 Aéreos) e <strong>2 paletes por nível (Esquerda e Direita)</strong>.
+                  Clique em qualquer coluna acima para visualizar a estrutura detalhada e alocar ou retirar paletes.
+                </p>
               </div>
             </div>
           </div>
@@ -771,7 +1155,7 @@ window.BrigadaChambers = {
       });
     }
 
-    // Voltar para Grid de Colunas
+    // Voltar para Grid de Colunas / Visão Geral
     const backToColumnsBtn = this.container.querySelector('#btn-back-to-columns');
     if (backToColumnsBtn) {
       backToColumnsBtn.addEventListener('click', () => {
@@ -780,9 +1164,12 @@ window.BrigadaChambers = {
       });
     }
 
-    // Clique no Card de uma Coluna (no Grid)
-    this.container.querySelectorAll('[data-action="view-column"][data-col]').forEach(card => {
+    // Clique no Card de uma Coluna (no Grid ou na Visão Geral)
+    this.container.querySelectorAll('[data-action="view-column"]').forEach(card => {
       card.addEventListener('click', () => {
+        if (card.dataset.chamber) {
+          this.selectedChamber = card.dataset.chamber;
+        }
         this.selectedColumn = parseInt(card.dataset.col, 10);
         this.render(this.container);
       });

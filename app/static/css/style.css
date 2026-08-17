@@ -145,61 +145,131 @@ body::before {
 .sidebar__sub { font-size:0.7rem; color:var(--text-tertiary); margin-top:-2px; }
 
 .sidebar__nav { flex:1; padding: 0 var(--sp-sm); }
+.sidebar__action-wrap {
+  padding: 0 var(--sp-xs);
+  margin-bottom: 0.85rem;
+}
+.sidebar__btn-add-product {
+  width: 100%;
+  border-radius: var(--r-full);
+  padding: 0.72rem 1.1rem;
+  font-size: 1.02rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 45%, #059669 100%);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45), 0 0 1px 1px rgba(255,255,255,0.2) inset;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.sidebar__btn-add-product:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.6);
+  filter: brightness(1.1);
+}
+.sidebar__btn-add-product:active {
+  transform: translateY(0);
+}
+.sidebar-btn-add-icon {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.sidebar-btn-add-text {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
 .sidebar__section-label {
-  font-size:0.65rem; font-weight:700; color:var(--text-tertiary);
-  text-transform:uppercase; letter-spacing:0.1em;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   padding: var(--sp-md) var(--sp-md) var(--sp-xs);
 }
 .sidebar__link {
-  display:flex; align-items:center; gap:var(--sp-sm);
-  padding: var(--sp-sm) var(--sp-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.62rem 0.95rem;
   border-radius: var(--r-md);
   color: var(--text-secondary);
-  text-decoration:none; font-size:0.875rem; font-weight:500;
+  text-decoration: none;
+  font-size: 0.98rem;
+  font-weight: 600;
   transition: all var(--t-fast);
-  cursor:pointer; margin-bottom:2px;
+  cursor: pointer;
+  margin-bottom: 3px;
 }
 .sidebar__link:hover {
-  color:var(--text-primary); background:var(--accent-subtle);
-  transform:translateX(2px);
+  color: var(--text-primary);
+  background: var(--accent-subtle);
+  transform: translateX(3px);
 }
 .sidebar__link--active {
-  color:var(--text-primary); background:var(--accent-subtle);
-  border-left:3px solid var(--accent);
-  padding-left:calc(var(--sp-md) - 3px);
+  color: var(--text-primary);
+  background: var(--accent-subtle);
+  border-left: 4px solid var(--accent);
+  padding-left: calc(0.95rem - 4px);
+  font-weight: 750;
   box-shadow: inset 0 0 0 1px var(--accent-border);
 }
-.sidebar__link-icon { font-size:1rem; width:20px; text-align:center; }
+.sidebar__link-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
 .sidebar__footer {
-  padding: var(--sp-lg);
+  padding: var(--sp-md) var(--sp-lg);
   border-top: 1px solid var(--glass-border);
   display:flex; align-items:center; gap:var(--sp-sm);
   margin-top: auto;
 }
+.sidebar__user-box {
+  padding: 0 var(--sp-sm);
+  margin-bottom: var(--sp-xs);
+}
 .sidebar__avatar {
-  width:36px; height:36px; border-radius:50%;
+  width:38px; height:38px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  font-size:0.75rem; font-weight:700; color:#fff; flex-shrink:0;
+  font-size:0.85rem; font-weight:700; color:#fff; flex-shrink:0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .sidebar__user {
   display: flex;
   align-items: center;
   gap: var(--sp-sm);
-  padding: 8px;
+  padding: 8px 10px;
   border-radius: var(--r-md);
-  transition: background 0.2s ease, transform 0.1s ease;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  transition: background 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
   cursor: pointer;
 }
 .sidebar__user:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-hover);
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
 }
 .sidebar__user:active {
   transform: scale(0.98);
 }
 .sidebar__user-info { flex:1; min-width:0; }
-.sidebar__user-name { font-size:0.8rem; font-weight:600; truncate:ellipsis; white-space:nowrap; overflow:hidden; }
-.sidebar__user-role { font-size:0.7rem; color:var(--text-tertiary); }
+.sidebar__user-name { font-size:0.9rem; font-weight:700; color:var(--text-primary); text-overflow:ellipsis; white-space:nowrap; overflow:hidden; }
+.sidebar__user-role { font-size:0.74rem; color:var(--text-secondary); }
 
 .btn-logout {
   background: rgba(239, 68, 68, 0.1);
@@ -1561,9 +1631,29 @@ input[type="checkbox"]:focus-visible {
     margin-right: 0 !important;
   }
 
-  /* Esconde rótulos de seção */
+  /* Esconde rótulos de seção e texto do botão */
   .app-shell.sidebar-collapsed .sidebar__section-label {
     display: none;
+  }
+  .app-shell.sidebar-collapsed .sidebar__action-wrap {
+    padding: 0 8px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: center;
+  }
+  .app-shell.sidebar-collapsed .sidebar__btn-add-product {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  .app-shell.sidebar-collapsed .sidebar-btn-add-text {
+    display: none;
+  }
+  .app-shell.sidebar-collapsed .sidebar-btn-add-icon {
+    font-size: 1.4rem;
+    margin: 0;
   }
 
   /* Links: ícone centralizado em "pílula" arredondada */

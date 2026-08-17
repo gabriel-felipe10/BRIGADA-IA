@@ -1031,13 +1031,30 @@ window.BrigadaRouter = {
             </div>
           </div>
 
+          <div class="sidebar__user-box">
+            <div class="sidebar__user" title="Clique para editar seu perfil">
+              <div class="sidebar__avatar" id="sidebar-user-avatar" style="${hasImageAvatar ? '' : `background:${avatarColor}`}">${avatarHTML}</div>
+              <div class="sidebar__user-info">
+                <p class="sidebar__user-name" id="sidebar-user-name">${user.name}</p>
+                <div class="sidebar__user-role-wrapper" style="display: flex; flex-direction: column; gap: 2px; margin-top: 2px;">
+                  <span class="sidebar__user-role" style="font-size: 0.78rem; font-weight: 600;">
+                    ${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.isPromotor() ? '📋 Promotor' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}
+                  </span>
+                  <span class="sidebar__user-sector-badge" id="sidebar-user-sector" style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 1px 6px; border-radius: 4px; width: fit-content;">
+                    🏬 Setor: ${(user.sector || 'Açougue').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <nav class="sidebar__nav">
             <div class="sidebar__section-label">Principal</div>
             ${window.BrigadaAuth.canAddProduct() ? `
-            <div style="padding: 0 var(--sp-xs); margin-bottom: 0.65rem;">
-              <button class="btn btn--primary" id="sidebar-btn-add-product" style="width: 100%; border-radius: var(--r-full); padding: 0.6rem 1rem; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(56,189,248,0.35); letter-spacing: -0.2px; cursor: pointer;">
-                <span style="font-size: 1.1rem; font-weight: 800;">＋</span>
-                <span>Novo Produto</span>
+            <div class="sidebar__action-wrap">
+              <button class="sidebar__btn-add-product" id="sidebar-btn-add-product">
+                <span class="sidebar-btn-add-icon">＋</span>
+                <span class="sidebar-btn-add-text">Novo Produto</span>
               </button>
             </div>
             ` : ''}
@@ -1045,10 +1062,40 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📊</span>
               <span>Dashboard</span>
             </a>
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
+            <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
+              <span class="sidebar__link-icon">🥩</span>
+              <span>Açougue</span>
+            </a>
+            ` : ''}
+            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
+              <span class="sidebar__link-icon">🍎</span>
+              <span>Perecíveis</span>
+            </a>
+            ` : ''}
+            ${!window.BrigadaAuth.isPromotor() ? `
+            <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
+              <span class="sidebar__link-icon">❄️</span>
+              <span>Câmaras Frias</span>
+            </a>
+            ` : ''}
+            ${!window.BrigadaAuth.isPromotor() ? `
+            <a class="sidebar__link ${activePage === 'piso-loja' ? 'sidebar__link--active' : ''}" data-page="piso-loja" href="#">
+              <span class="sidebar__link-icon">🏪</span>
+              <span>Piso de Loja</span>
+            </a>
+            ` : ''}
             ${!window.BrigadaAuth.isPromotor() ? `
             <a class="sidebar__link ${activePage === 'catalog' ? 'sidebar__link--active' : ''}" data-page="catalog" href="#">
               <span class="sidebar__link-icon">📖</span>
               <span>Catálogo</span>
+            </a>
+            ` : ''}
+            ${window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.isGestao() || window.BrigadaAuth.currentUser?.role === 'lider' ? `
+            <a class="sidebar__link ${activePage === 'resumo-mensal' ? 'sidebar__link--active' : ''}" data-page="resumo-mensal" href="#">
+              <span class="sidebar__link-icon">📅</span>
+              <span>Resumo Mensal</span>
             </a>
             ` : ''}
             <a class="sidebar__link ${activePage === 'conciliacao' ? 'sidebar__link--active' : ''}" data-page="conciliacao" href="#">
@@ -1063,37 +1110,6 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">📋</span>
               <span>Formulário de Avaria</span>
             </a>
-            ${window.BrigadaAuth.isSuperAdmin() || window.BrigadaAuth.isGestao() || window.BrigadaAuth.currentUser?.role === 'lider' ? `
-            <a class="sidebar__link ${activePage === 'resumo-mensal' ? 'sidebar__link--active' : ''}" data-page="resumo-mensal" href="#">
-              <span class="sidebar__link-icon">📅</span>
-              <span>Resumo Mensal</span>
-            </a>
-            ` : ''}
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('açougue') ? `
-            <a class="sidebar__link ${activePage === 'products' ? 'sidebar__link--active' : ''}" data-page="products" href="#">
-              <span class="sidebar__link-icon">🥩</span>
-              <span>Açougue</span>
-            </a>
-            ` : ''}
-
-            ${!window.BrigadaAuth.isPromotor() ? `
-            <a class="sidebar__link ${activePage === 'chambers' ? 'sidebar__link--active' : ''}" data-page="chambers" href="#">
-              <span class="sidebar__link-icon">❄️</span>
-              <span>Câmaras Frias</span>
-            </a>
-            ` : ''}
-            ${!window.BrigadaAuth.isPromotor() ? `
-            <a class="sidebar__link ${activePage === 'piso-loja' ? 'sidebar__link--active' : ''}" data-page="piso-loja" href="#">
-              <span class="sidebar__link-icon">🏪</span>
-              <span>Piso de Loja</span>
-            </a>
-            ` : ''}
-            ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
-            <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
-              <span class="sidebar__link-icon">🍎</span>
-              <span>Perecíveis</span>
-            </a>
-            ` : ''}
 
             ${!window.BrigadaAuth.isPromotor() ? `
             <div class="sidebar__section-label">Configurações</div>
@@ -1116,22 +1132,8 @@ window.BrigadaRouter = {
             ` : ''}
           </nav>
 
-            <div class="sidebar__footer" style="flex-direction: column; align-items: stretch; gap: var(--sp-md);">
-            <div class="sidebar__user" style="width: 100%;" title="Clique para editar seu perfil">
-              <div class="sidebar__avatar" id="sidebar-user-avatar" style="${hasImageAvatar ? '' : `background:${avatarColor}`}">${avatarHTML}</div>
-              <div class="sidebar__user-info">
-                <p class="sidebar__user-name" id="sidebar-user-name">${user.name}</p>
-                <div class="sidebar__user-role-wrapper" style="display: flex; flex-direction: column; gap: 2px; margin-top: 2px;">
-                  <span class="sidebar__user-role" style="font-size: 0.78rem; font-weight: 600;">
-                    ${isSuperAdmin ? '🛡️ Super Admin' : window.BrigadaAuth.isGestao() ? '👥 Gestão' : window.BrigadaAuth.isPromotor() ? '📋 Promotor' : window.BrigadaAuth.currentUser?.role === 'lider' ? '👤 Usuário/Líder' : '👤 Usuário'}
-                  </span>
-                  <span class="sidebar__user-sector-badge" id="sidebar-user-sector" style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 1px 6px; border-radius: 4px; width: fit-content;">
-                    🏬 Setor: ${(user.sector || 'Açougue').toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="sidebar__actions">
+          <div class="sidebar__footer">
+            <div class="sidebar__actions" style="width: 100%;">
               <button class="btn-theme" id="btn-theme-toggle" title="Alternar Tema">
                 <span id="theme-icon">${document.documentElement.classList.contains('light-theme') ? '🌙' : '☀️'}</span> <span class="logout-text" style="font-size: 0.8rem; margin-left: 4px;">Tema</span>
               </button>
