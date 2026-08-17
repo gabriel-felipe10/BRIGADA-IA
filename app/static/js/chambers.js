@@ -18,6 +18,28 @@ window.BrigadaChambers = {
   isListening: false,
   directorySearch: '',
   directoryFilter: 'all',
+  filterScheduleDay: 'all', // 'all', 'today', 'domingo', 'segunda', etc.
+
+  // Esquema Oficial de Verificação de Validade — Câmara Congelada (Ciclo Único - Domingo a Sábado | 16 Colunas)
+  SCHEDULE_CONGELADA: [
+    { dayIndex: 0, dayKey: 'domingo', dayName: 'Domingo', short: 'Dom', columns: [1, 2, 3] },
+    { dayIndex: 1, dayKey: 'segunda', dayName: 'Segunda', short: 'Seg', columns: [4, 5, 6] },
+    { dayIndex: 2, dayKey: 'terca', dayName: 'Terça', short: 'Ter', columns: [7, 8, 9] },
+    { dayIndex: 3, dayKey: 'quarta', dayName: 'Quarta', short: 'Qua', columns: [10, 11] },
+    { dayIndex: 4, dayKey: 'quinta', dayName: 'Quinta', short: 'Qui', columns: [12, 13] },
+    { dayIndex: 5, dayKey: 'sexta', dayName: 'Sexta', short: 'Sex', columns: [14, 15] },
+    { dayIndex: 6, dayKey: 'sabado', dayName: 'Sábado', short: 'Sáb', columns: [16] }
+  ],
+
+  getScheduleForColumn(chamberName, colNum) {
+    if (chamberName !== 'Câmara Congelada') return null;
+    return this.SCHEDULE_CONGELADA.find(s => s.columns.includes(colNum)) || null;
+  },
+
+  getTodayScheduleCongelada() {
+    const todayIndex = new Date().getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+    return this.SCHEDULE_CONGELADA.find(s => s.dayIndex === todayIndex) || this.SCHEDULE_CONGELADA[1];
+  },
 
   CHAMBER_CONFIGS: {
     'Câmara Resfriada': {
@@ -330,11 +352,24 @@ window.BrigadaChambers = {
 
     const glowColor = alerts.hasExpired || alerts.hasToday ? '#ef4444' : alerts.hasAtencao ? '#f59e0b' : alerts.hasResfriado15 ? '#06b6d4' : alerts.hasCongelado30 ? '#6366f1' : (colOccupiedCount > 0 ? '#10b981' : chamberThemeColor);
 
+    const sched = this.getScheduleForColumn(chamberName, colNum);
+    const todaySched = this.getTodayScheduleCongelada();
+    const isTodaySched = sched && todaySched && sched.dayIndex === todaySched.dayIndex;
+
     return `
       <div class="chamber-card-outer ${alertClass}" data-action="view-column" data-chamber="${chamberName}" data-col="${colNum}" style="cursor: pointer; position: relative;">
         <div class="chamber-card-header-glow" style="background: ${glowColor};"></div>
         <div class="chamber-card-body" style="padding: 1.2rem; text-align: center;">
-          <h2 class="chamber-card-name" style="font-size: 1.35rem; font-weight: 800; color: ${chamberThemeColor}; margin-bottom: 0.35rem; letter-spacing: -0.3px;">Coluna ${colNum.toString().padStart(2, '0')}</h2>
+          <h2 class="chamber-card-name" style="font-size: 1.35rem; font-weight: 800; color: ${chamberThemeColor}; margin-bottom: 0.25rem; letter-spacing: -0.3px;">Coluna ${colNum.toString().padStart(2, '0')}</h2>
+          
+          ${sched ? `
+            <div style="margin-bottom: 0.45rem;">
+              <span style="${isTodaySched ? 'background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; font-weight: 800; font-size: 0.76rem; padding: 3px 9px; box-shadow: 0 0 10px rgba(16,185,129,0.25);' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.72rem; padding: 2px 8px;'} border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                ${isTodaySched ? '🎯 Escala de Hoje (' + sched.dayName + ')' : '🗓️ ' + sched.dayName}
+              </span>
+            </div>
+          ` : ''}
+
           <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Rack ${colNum.toString().padStart(2, '0')} de ${totalCols.toString().padStart(2, '0')} • ${chamberTag}</div>
           
           ${alertBadgesHTML}
@@ -499,6 +534,7 @@ window.BrigadaChambers = {
   buildColumnsGridHTML() {
     const config = this.CHAMBER_CONFIGS[this.selectedChamber];
     const isResfriada = this.selectedChamber === 'Câmara Resfriada';
+    const isCongelada = this.selectedChamber === 'Câmara Congelada';
     const themeColor = isResfriada ? '#38bdf8' : '#818cf8';
     const chamberIcon = isResfriada ? '❄️' : '🥶';
     const products = this.getAllChamberProducts();
@@ -506,8 +542,22 @@ window.BrigadaChambers = {
     const activeStats = stats[this.selectedChamber];
     const percent = Math.round((activeStats.occupied / config.capacity) * 100);
 
-    const columnCardsHTML = Array.from({ length: config.columnsCount }, (_, i) => {
-      const colNum = i + 1;
+    const todaySched = this.getTodayScheduleCongelada();
+
+    // Determine filtered columns if viewing Câmara Congelada with day filter
+    let activeColumns = Array.from({ length: config.columnsCount }, (_, i) => i + 1);
+    if (isCongelada) {
+      if (this.filterScheduleDay === 'today') {
+        activeColumns = todaySched.columns;
+      } else if (this.filterScheduleDay !== 'all') {
+        const matchingSched = this.SCHEDULE_CONGELADA.find(s => s.dayKey === this.filterScheduleDay);
+        if (matchingSched) {
+          activeColumns = matchingSched.columns;
+        }
+      }
+    }
+
+    const columnCardsHTML = activeColumns.map(colNum => {
       return this.renderColumnCard(this.selectedChamber, colNum, config.columnsCount, themeColor, isResfriada ? 'Resfriada' : 'Congelada');
     }).join('');
 
@@ -593,6 +643,48 @@ window.BrigadaChambers = {
       </style>
     `;
 
+    const scheduleBannerHTML = isCongelada ? `
+      <!-- Painel do Esquema de Verificação de Validade — Câmara Congelada -->
+      <div class="glass-panel" style="padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; border-radius: 12px; border: 1px solid var(--glass-border); background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.6rem;">🗓️</span>
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">Esquema de Verificação — Câmara Congelada (16 Colunas)</h3>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 2px 0 0 0;">Ciclo único de Domingo a Sábado • Sequência: 1–3 ➔ 4–6 ➔ 7–9 ➔ 10–11 ➔ 12–13 ➔ 14–15 ➔ 16</p>
+            </div>
+          </div>
+
+          <!-- Banner de Destaque do Dia de Hoje -->
+          <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 6px 14px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">🎯</span>
+            <span style="font-size: 0.85rem; color: #10b981; font-weight: 700;">
+              HOJE (${todaySched.dayName.toUpperCase()}): Colunas ${todaySched.columns.join(', ')} (${todaySched.columns.length} colunas programadas)
+            </span>
+          </div>
+        </div>
+
+        <!-- Abas de Filtro por Dia da Semana -->
+        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; flex-wrap: wrap;" id="chamber-sched-day-tabs">
+          <button type="button" class="cat-tab ${this.filterScheduleDay === 'all' ? 'cat-tab--active' : ''}" data-sched-day="all" style="font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer;">
+            🔘 Todas (16)
+          </button>
+          <button type="button" class="cat-tab ${this.filterScheduleDay === 'today' ? 'cat-tab--active' : ''}" data-sched-day="today" style="font-size: 0.8rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border-color: #10b981; color: ${this.filterScheduleDay === 'today' ? '#ffffff' : '#10b981'}; background: ${this.filterScheduleDay === 'today' ? '#10b981' : 'rgba(16,185,129,0.12)'}; cursor: pointer;">
+            🎯 Hoje (${todaySched.dayName})
+          </button>
+          ${this.SCHEDULE_CONGELADA.map(s => {
+            const isActive = this.filterScheduleDay === s.dayKey;
+            const isToday = s.dayIndex === todaySched.dayIndex;
+            return `
+              <button type="button" class="cat-tab ${isActive ? 'cat-tab--active' : ''}" data-sched-day="${s.dayKey}" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 20px; font-weight: 600; cursor: pointer;">
+                ${isToday ? '⭐ ' : ''}${s.short} (${s.columns.length})
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : '';
+
     return `
       <div class="chambers-page">
         ${animationStyles}
@@ -608,6 +700,8 @@ window.BrigadaChambers = {
             </div>
           </div>
         </div>
+
+        ${scheduleBannerHTML}
 
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           ${columnCardsHTML}
@@ -714,10 +808,17 @@ window.BrigadaChambers = {
             </div>
           `;
         } else {
+          const typeLabel = isPiso ? 'Piso' : 'Aéreo';
           return `
-            <div class="pallet-empty-content" data-action="allocate-trigger" data-level="${level}" data-pos="${position}" style="cursor: pointer;">
-              ${this.icons.Plus}
-              <span>Alocar ${isPiso ? 'Piso' : 'Aéreo'} (${posLabel})</span>
+            <div class="pallet-empty-actions">
+              <button type="button" class="pallet-slot-btn pallet-slot-btn--allocate" data-action="allocate-trigger" data-level="${level}" data-pos="${position}" title="Alocar produto do catálogo na posição ${posLabel}">
+                <span class="btn-icon-wrap">📦</span>
+                <span>Alocar ${typeLabel} (${posLetter})</span>
+              </button>
+              <button type="button" class="pallet-slot-btn pallet-slot-btn--add" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" title="Cadastrar novo produto diretamente na posição ${posLabel}">
+                <span class="btn-icon-wrap">➕</span>
+                <span>Adicionar (${posLetter})</span>
+              </button>
             </div>
           `;
         }
@@ -776,7 +877,20 @@ window.BrigadaChambers = {
               <span>Voltar ao Mapa Geral</span>
             </button>
             <div>
-              <h2 class="panel-title" style="margin: 0;">${chamberIcon} ${this.selectedChamber} — Coluna ${colStr}</h2>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h2 class="panel-title" style="margin: 0;">${chamberIcon} ${this.selectedChamber} — Coluna ${colStr}</h2>
+                ${(() => {
+                  const sched = this.getScheduleForColumn(this.selectedChamber, colNum);
+                  const todaySched = this.getTodayScheduleCongelada();
+                  const isToday = sched && todaySched && sched.dayIndex === todaySched.dayIndex;
+                  if (!sched) return '';
+                  return `
+                    <span style="${isToday ? 'background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; font-weight: 800;' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary);'} font-size: 0.8rem; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                      ${isToday ? '🎯 Auditoria Programada para Hoje (' + sched.dayName + ')' : '🗓️ Escala Oficial: ' + sched.dayName}
+                    </span>
+                  `;
+                })()}
+              </div>
               <p class="panel-subtitle" style="margin: 0;">Layout vertical de 4 níveis de paletes (8 posições)</p>
             </div>
           </div>
@@ -1175,6 +1289,14 @@ window.BrigadaChambers = {
       });
     });
 
+    // Schedule Day Tabs Click (Câmara Congelada)
+    this.container.querySelectorAll('#chamber-sched-day-tabs .cat-tab[data-sched-day]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        this.filterScheduleDay = e.currentTarget.dataset.schedDay;
+        this.render(this.container);
+      });
+    });
+
     // Navegador de Colunas (Anterior / Próxima)
     this.container.querySelectorAll('[data-action="nav-col"][data-col]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1220,9 +1342,10 @@ window.BrigadaChambers = {
       });
     });
 
-    // Trigger de Alocação em Slot Vazio
+    // Trigger de Alocação em Slot Vazio (Catálogo)
     this.container.querySelectorAll('[data-action="allocate-trigger"]').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.allocatingSlot = {
           level: parseInt(el.dataset.level, 10),
           position: el.dataset.pos
@@ -1230,6 +1353,16 @@ window.BrigadaChambers = {
         this.selectedCategoryFilter = null;
         this.searchAvailable = '';
         this.openAllocationModal();
+      });
+    });
+
+    // Trigger de Adição Direta de Novo Produto em Slot Vazio
+    this.container.querySelectorAll('[data-action="add-new-trigger"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const level = parseInt(el.dataset.level, 10);
+        const position = el.dataset.pos;
+        this.openAddNewProductModal(this.selectedColumn, level, position);
       });
     });
 
@@ -1687,9 +1820,14 @@ window.BrigadaChambers = {
 
     overlay.innerHTML = `
       <div class="modal" style="max-width: 580px; transform: translateY(0); margin-top: 5vh;">
-        <div class="modal-header">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
           <h3 class="modal-title">${existingProdsInSlot.length > 0 ? 'Adicionar Item ao Palete' : 'Alocar Palete na Posição'}</h3>
-          <button class="modal-close" id="alloc-modal-close">✕</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn btn--outline btn-sm" id="btn-switch-to-add-new-prod" style="font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-color: rgba(16,185,129,0.4); color: #10b981;">
+              <span>➕</span> Novo Produto Manual
+            </button>
+            <button class="modal-close" id="alloc-modal-close">✕</button>
+          </div>
         </div>
         <div class="modal-body" style="padding: 1.5rem;">
           <div class="allocator-modal-content">
@@ -1710,6 +1848,13 @@ window.BrigadaChambers = {
     `;
 
     document.body.appendChild(overlay);
+
+    const switchBtn = overlay.querySelector('#btn-switch-to-add-new-prod');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        this.openAddNewProductModal(col, lvl, pos);
+      });
+    }
 
     document.getElementById('alloc-modal-close').addEventListener('click', () => {
       this.closeModal('allocation-modal');
@@ -2089,6 +2234,273 @@ window.BrigadaChambers = {
     };
 
     recognition.start();
+  },
+
+  // ── Modal de Cadastro Direto de Novo Produto na Posição ──
+  openAddNewProductModal(col, lvl, pos) {
+    this.closeModal('add-product-chamber-modal');
+    this.closeModal('allocation-modal');
+
+    const isResfriada = this.selectedChamber === 'Câmara Resfriada';
+    const chamberIcon = isResfriada ? '❄️' : '🥶';
+    const chamberId = isResfriada ? 'resfriado' : 'congelado';
+    const posLetter = pos === 'esquerda' ? 'E' : 'D';
+    const posLabel = pos === 'esquerda' ? 'Esquerda (E)' : 'Direita (D)';
+    const levelLabel = lvl === 1 ? '📦 Piso (Nível 1)' : `🏗️ Aéreo (Nível ${lvl})`;
+    const today = new Date().toISOString().split('T')[0];
+
+    const allowedCats = window.BrigadaAuth.getAllowedCategoriesForUser(this.selectedChamber);
+    const catOptions = [
+      { val: 'aves', label: '🐔 Aves' },
+      { val: 'bovino', label: '🐮 Bovino' },
+      { val: 'suino', label: '🐷 Suíno' },
+      { val: 'pescado', label: '🐟 Pescado' },
+      { val: 'frios', label: '🥓 Frios' },
+      { val: 'laticinios', label: '🧀 Laticínios' },
+      { val: 'iogurtes', label: '🥛 Iogurtes' },
+      { val: 'pereciveis', label: '🥗 Perecíveis' }
+    ].filter(opt => allowedCats.length === 0 || allowedCats.includes(opt.val));
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay modal-overlay--visible';
+    overlay.id = 'add-product-chamber-modal';
+
+    overlay.innerHTML = `
+      <div class="modal" style="max-width: 540px; width: 92%; transform: translateY(0); margin-top: 4vh;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+          <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span>➕</span>
+            <span>Adicionar Novo Produto na Posição</span>
+          </h3>
+          <button class="modal-close" id="modal-close-add-chamber" style="background: none; border: none; font-size: 1.25rem; color: var(--text-secondary); cursor: pointer;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1.5rem;">
+          <!-- Destino Info Banner -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Destino da Alocação:</span>
+            <span style="font-weight: 700; color: #38bdf8; font-size: 0.88rem;">
+              ${chamberIcon} ${this.selectedChamber} • Col. ${col.toString().padStart(2, '0')} • ${levelLabel} • Pos. ${posLetter}
+            </span>
+          </div>
+
+          <form id="form-add-chamber-prod" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Autocomplete / Busca Rápida no Catálogo -->
+            <div class="form-group" style="position: relative;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                PLU / Código do Produto <span style="font-size: 0.75rem; color: #38bdf8; font-weight: normal;">(ou busque pelo nome)</span>
+              </label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="text" id="add-chamber-plu" class="form-input" placeholder="Digite PLU ou nome para auto-preencher..." autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+              <div id="add-chamber-catalog-suggestions" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #16152b; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 9999; box-shadow: 0 16px 40px rgba(0,0,0,0.95);"></div>
+            </div>
+
+            <!-- Nome do Produto -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Descrição / Nome do Produto <span style="color: #ef4444;">*</span>
+              </label>
+              <input type="text" id="add-chamber-name" class="form-input" placeholder="Ex: Alcatra Bovina Bife 1kg" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Categoria e Unidade -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Categoria <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="add-chamber-category" class="form-input" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  ${catOptions.map(o => `<option value="${o.val}">${o.label}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Unidade
+                </label>
+                <select id="add-chamber-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="kg" selected>kg</option>
+                  <option value="un">un</option>
+                  <option value="cx">cx</option>
+                  <option value="pct">pct</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Quantidade e Validade -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Quantidade <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="number" id="add-chamber-quantity" class="form-input" value="1" min="0.1" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Data de Validade <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="date" id="add-chamber-enddate" class="form-input" min="${today}" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+            </div>
+
+            <!-- Fornecedor / Marca -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Fornecedor / Marca
+              </label>
+              <input type="text" id="add-chamber-supplier" class="form-input" placeholder="Ex: Friboi, Seara, Sadia, Perdigão..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Botões de Ação -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+              <button type="button" class="btn btn--outline" id="btn-cancel-add-chamber" style="padding: 8px 16px;">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn--primary" id="btn-submit-add-chamber" style="padding: 8px 20px; font-weight: 700;">
+                ✓ Cadastrar e Alocar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => this.closeModal('add-product-chamber-modal');
+    overlay.querySelector('#modal-close-add-chamber').addEventListener('click', close);
+    overlay.querySelector('#btn-cancel-add-chamber').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target.id === 'add-product-chamber-modal') close();
+    });
+
+    // Auto-preenchimento e busca no catálogo
+    const pluInput = overlay.querySelector('#add-chamber-plu');
+    const nameInput = overlay.querySelector('#add-chamber-name');
+    const catSelect = overlay.querySelector('#add-chamber-category');
+    const unitSelect = overlay.querySelector('#add-chamber-unit');
+    const supplierInput = overlay.querySelector('#add-chamber-supplier');
+    const suggestionsBox = overlay.querySelector('#add-chamber-catalog-suggestions');
+
+    const handleCatalogItemSelect = (catItem) => {
+      pluInput.value = catItem.plu || '';
+      nameInput.value = catItem.name || '';
+      if (catItem.category && catSelect.querySelector(`option[value="${catItem.category.toLowerCase()}"]`)) {
+        catSelect.value = catItem.category.toLowerCase();
+      }
+      if (catItem.unit && unitSelect.querySelector(`option[value="${catItem.unit.toLowerCase()}"]`)) {
+        unitSelect.value = catItem.unit.toLowerCase();
+      }
+      const supp = catItem.supplier || (window.BrigadaData ? window.BrigadaData.detectSupplierFromName(catItem.name) : '');
+      if (supp) supplierInput.value = supp;
+      suggestionsBox.style.display = 'none';
+    };
+
+    if (pluInput && suggestionsBox) {
+      pluInput.addEventListener('input', () => {
+        const query = (pluInput.value || '').trim().toLowerCase();
+        if (!query || query.length < 2) {
+          suggestionsBox.style.display = 'none';
+          return;
+        }
+
+        const catalog = window.BrigadaData.catalog || [];
+        const matches = catalog.filter(c => 
+          String(c.plu || '').toLowerCase().includes(query) || 
+          (c.name || '').toLowerCase().includes(query)
+        ).slice(0, 6);
+
+        if (matches.length === 0) {
+          suggestionsBox.style.display = 'none';
+          return;
+        }
+
+        suggestionsBox.innerHTML = matches.map(m => `
+          <div class="catalog-sugg-row" data-plu="${m.plu}" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; background: #16152b; transition: background 0.15s ease;">
+            <div>
+              <div style="font-weight: 700; color: #ffffff;">${m.name}</div>
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">PLU: <b style="color: #38bdf8;">${m.plu}</b> • Setor: ${m.category}</div>
+            </div>
+            <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">Selecionar ↵</span>
+          </div>
+        `).join('');
+
+        suggestionsBox.style.display = 'block';
+
+        suggestionsBox.querySelectorAll('.catalog-sugg-row').forEach(row => {
+          row.addEventListener('mouseenter', () => {
+            row.style.background = 'rgba(56, 189, 248, 0.15)';
+          });
+          row.addEventListener('mouseleave', () => {
+            row.style.background = '#16152b';
+          });
+          row.addEventListener('click', () => {
+            const found = catalog.find(c => String(c.plu) === String(row.dataset.plu));
+            if (found) handleCatalogItemSelect(found);
+          });
+        });
+      });
+
+      // Fechar sugestões ao clicar fora
+      document.addEventListener('click', (e) => {
+        if (!pluInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+          suggestionsBox.style.display = 'none';
+        }
+      });
+    }
+
+    // Auto-detect supplier on name blur
+    nameInput.addEventListener('blur', () => {
+      if (!supplierInput.value && nameInput.value && window.BrigadaData?.detectSupplierFromName) {
+        const detected = window.BrigadaData.detectSupplierFromName(nameInput.value);
+        if (detected) supplierInput.value = detected;
+      }
+    });
+
+    // Submissão do formulário
+    const form = overlay.querySelector('#form-add-chamber-prod');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nameVal = nameInput.value.trim();
+      const pluVal = pluInput.value.trim();
+      const catVal = catSelect.value;
+      const unitVal = unitSelect.value;
+      const qtyVal = parseFloat(overlay.querySelector('#add-chamber-quantity').value) || 1;
+      const endVal = overlay.querySelector('#add-chamber-enddate').value;
+      const suppVal = supplierInput.value.trim();
+
+      if (!nameVal || !endVal) {
+        window.BrigadaUI.showToast('Preencha o nome do produto e a data de validade.', 'warning');
+        return;
+      }
+
+      const locString = this.formatLocation(chamberId, col, lvl, pos);
+      window.BrigadaUI.showToast('Cadastrando e adicionando produto...', 'info');
+
+      try {
+        await window.BrigadaData.addProduct({
+          name: nameVal,
+          plu: pluVal || '000000',
+          category: catVal,
+          unit: unitVal,
+          quantity: qtyVal,
+          startDate: today,
+          endDate: endVal,
+          supplier: suppVal || null,
+          location: locString
+        });
+
+        window.BrigadaUI.showToast('Produto cadastrado e alocado com sucesso!', 'success');
+        close();
+        this.render(this.container);
+      } catch (err) {
+        console.error(err);
+        window.BrigadaUI.showToast('Erro ao cadastrar produto: ' + err.message, 'error');
+      }
+    });
   },
 
   closeModal(modalId) {

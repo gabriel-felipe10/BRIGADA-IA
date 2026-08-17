@@ -7,11 +7,32 @@ window.BrigadaPisoLoja = {
   selectedFreezer: null,  // null = overview, number = freezer detail
   searchQuery: '',
   filterCategory: 'all',
+  filterScheduleDay: 'all', // 'all', 'today', 'domingo', 'segunda', etc.
   
   allocatingFreezer: null,
   allocatingSearch: '',
   allocatingCategory: 'all',
   
+  // Esquema Oficial de Verificação de Validade (Ciclo Único - Domingo a Sábado | 31 Freezers)
+  SCHEDULE: [
+    { dayIndex: 0, dayKey: 'domingo', dayName: 'Domingo', short: 'Dom', freezers: [42, 43, 44, 45, 46], color: '#38bdf8' },
+    { dayIndex: 1, dayKey: 'segunda', dayName: 'Segunda', short: 'Seg', freezers: [47, 48, 34, 35], color: '#a855f7' },
+    { dayIndex: 2, dayKey: 'terca', dayName: 'Terça', short: 'Ter', freezers: [36, 37, 38, 39, 40], color: '#f97316' },
+    { dayIndex: 3, dayKey: 'quarta', dayName: 'Quarta', short: 'Qua', freezers: [41, 17, 18, 19], color: '#f59e0b' },
+    { dayIndex: 4, dayKey: 'quinta', dayName: 'Quinta', short: 'Qui', freezers: [20, 21, 22, 23, 24], color: '#10b981' },
+    { dayIndex: 5, dayKey: 'sexta', dayName: 'Sexta', short: 'Sex', freezers: [25, 26, 27, 28], color: '#ec4899' },
+    { dayIndex: 6, dayKey: 'sabado', dayName: 'Sábado', short: 'Sáb', freezers: [29, 30, 31, 32], color: '#6366f1' }
+  ],
+
+  getScheduleForFreezer(freezerNum) {
+    return this.SCHEDULE.find(s => s.freezers.includes(freezerNum)) || null;
+  },
+
+  getTodaySchedule() {
+    const todayIndex = new Date().getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+    return this.SCHEDULE.find(s => s.dayIndex === todayIndex) || this.SCHEDULE[1];
+  },
+
   // Configuração dos freezers com categorias
   FREEZERS: [
     { num: 17, category: 'aves' },
@@ -334,10 +355,23 @@ window.BrigadaPisoLoja = {
     if (this.selectedFreezer === null) {
       // ── Main Overview Page ──
       const productsInPiso = this.getProductsInPisoLoja();
+      const todaySched = this.getTodaySchedule();
       
-      // Group freezers by category
+      // Determine active day filter freezers
+      let filteredFreezerNums = null;
+      if (this.filterScheduleDay === 'today') {
+        filteredFreezerNums = new Set(todaySched.freezers);
+      } else if (this.filterScheduleDay !== 'all') {
+        const matchingSched = this.SCHEDULE.find(s => s.dayKey === this.filterScheduleDay);
+        if (matchingSched) {
+          filteredFreezerNums = new Set(matchingSched.freezers);
+        }
+      }
+
+      // Group freezers by category (applying day filter if set)
       const freezersByCategory = {};
       this.FREEZERS.forEach(fz => {
+        if (filteredFreezerNums && !filteredFreezerNums.has(fz.num)) return;
         if (!freezersByCategory[fz.category]) freezersByCategory[fz.category] = [];
         freezersByCategory[fz.category].push(fz);
       });
@@ -345,15 +379,18 @@ window.BrigadaPisoLoja = {
       let freezerSectionsHTML = '';
       let displayCounter = 0;
       Object.entries(freezersByCategory).forEach(([cat, freezers]) => {
+        if (freezers.length === 0) return;
         const catLabel = this.FREEZER_CATEGORY_LABELS[cat] || cat;
         const sectionCards = freezers.map(fz => {
           displayCounter++;
           const freezerNum = fz.num;
           const displayNum = displayCounter;
-        const productsInThisFreezer = this.getProductsInFreezer(freezerNum).length;
-        const hasProducts = productsInThisFreezer > 0;
-        const catColor = {pescado:'#38bdf8',aves:'#f59e0b',bovino:'#ef4444',suino:'#a855f7',misto:'#f97316'}[cat] || '#10b981';
-        
+          const productsInThisFreezer = this.getProductsInFreezer(freezerNum).length;
+          const catColor = {pescado:'#38bdf8',aves:'#f59e0b',bovino:'#ef4444',suino:'#a855f7',misto:'#f97316'}[cat] || '#10b981';
+          
+          const sched = this.getScheduleForFreezer(freezerNum);
+          const isTodaySched = sched && sched.dayIndex === todaySched.dayIndex;
+
           const alerts = this.getFreezerAlerts(freezerNum);
           let alertClass = '';
           const alertBadges = [];
@@ -411,8 +448,18 @@ window.BrigadaPisoLoja = {
             <div class="chamber-card-outer ${alertClass}" data-action="view-freezer" data-num="${freezerNum}" style="cursor: pointer; position: relative;">
               <div class="chamber-card-header-glow" style="background: ${glowColor};"></div>
               <div class="chamber-card-body" style="padding: 1.2rem; text-align: center;">
-                <h2 class="chamber-card-name" style="font-size: 1.35rem; font-weight: 800; color: ${catColor}; margin-bottom: 0.35rem; letter-spacing: -0.3px;">Freezer ${freezerNum.toString().padStart(2, '0')}</h2>
-                <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Freezer ${displayNum.toString().padStart(2, '0')} de 31</div>
+                <h2 class="chamber-card-name" style="font-size: 1.35rem; font-weight: 800; color: ${catColor}; margin-bottom: 0.25rem; letter-spacing: -0.3px;">Freezer ${freezerNum.toString().padStart(2, '0')}</h2>
+                
+                <!-- Badge de Escala Oficial -->
+                ${sched ? `
+                  <div style="margin-bottom: 0.45rem;">
+                    <span style="${isTodaySched ? 'background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; font-weight: 800; font-size: 0.76rem; padding: 3px 9px; box-shadow: 0 0 10px rgba(16,185,129,0.25);' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.72rem; padding: 2px 8px;'} border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                      ${isTodaySched ? '🎯 Escala de Hoje (' + sched.dayName + ')' : '🗓️ ' + sched.dayName}
+                    </span>
+                  </div>
+                ` : ''}
+
+                <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Freezer ${freezerNum.toString().padStart(2, '0')} de 31</div>
                 
                 ${alertBadgesHTML}
                 
@@ -421,9 +468,13 @@ window.BrigadaPisoLoja = {
                   <span style="font-size: 0.9rem; color: var(--text-secondary);">${productsInThisFreezer} produtos</span>
                 </div>
                 
-                <div class="chamber-card-footer" style="justify-content: center;">
-                  <span class="enter-text">Acessar</span>
-                  ${this.icons.ChevronRight}
+                <div class="chamber-card-footer" style="display: flex; gap: 8px; justify-content: center; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 8px;">
+                  <button type="button" class="btn btn--ghost btn--sm" data-action="view-freezer-btn" data-num="${freezerNum}" style="flex: 1; padding: 6px 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer;">
+                    <span>Acessar</span> <span>❯</span>
+                  </button>
+                  <button type="button" class="btn btn--primary btn--sm" data-action="add-new-freezer-btn" data-num="${freezerNum}" title="Adicionar produto diretamente no Freezer ${freezerNum}" style="flex: 1; padding: 6px 8px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; border-radius: 6px; cursor: pointer;">
+                    <span>➕</span> <span>Adicionar</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -442,6 +493,16 @@ window.BrigadaPisoLoja = {
         `;
       });
 
+      if (!freezerSectionsHTML) {
+        freezerSectionsHTML = `
+          <div class="empty-state" style="padding: 3rem 1rem; text-align: center; color: var(--text-secondary); background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px dashed var(--border-color); margin-bottom: 2rem;">
+            <div style="font-size: 2.2rem; margin-bottom: 8px;">🔍</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Nenhum freezer correspondente aos filtros</div>
+            <p style="margin: 0; font-size: 0.85rem;">Não há freezers para a combinação de filtros selecionada.</p>
+          </div>
+        `;
+      }
+
       const animationStyles = `
         <style>
           @keyframes pulseAlertCard {
@@ -450,8 +511,8 @@ window.BrigadaPisoLoja = {
               border-color: rgba(239, 68, 68, 0.9);
             }
             50% {
-              box-shadow: 0 0 0 10px rgba(239, 68, 68, 0), 0 12px 32px rgba(239, 68, 68, 0.5);
-              border-color: #ef4444;
+              box-shadow: 0 0 0 8px rgba(239, 68, 68, 0), 0 8px 24px rgba(239, 68, 68, 0.4);
+              border-color: rgba(239, 68, 68, 1);
             }
           }
           @keyframes pulseWarningCard {
@@ -460,8 +521,8 @@ window.BrigadaPisoLoja = {
               border-color: rgba(245, 158, 11, 0.9);
             }
             50% {
-              box-shadow: 0 0 0 10px rgba(245, 158, 11, 0), 0 12px 32px rgba(245, 158, 11, 0.5);
-              border-color: #f59e0b;
+              box-shadow: 0 0 0 8px rgba(245, 158, 11, 0), 0 8px 24px rgba(245, 158, 11, 0.4);
+              border-color: rgba(245, 158, 11, 1);
             }
           }
           @keyframes pulseCyanCard {
@@ -470,8 +531,8 @@ window.BrigadaPisoLoja = {
               border-color: rgba(6, 182, 212, 0.9);
             }
             50% {
-              box-shadow: 0 0 0 10px rgba(6, 182, 212, 0), 0 12px 32px rgba(6, 182, 212, 0.5);
-              border-color: #06b6d4;
+              box-shadow: 0 0 0 8px rgba(6, 182, 212, 0), 0 8px 24px rgba(6, 182, 212, 0.4);
+              border-color: rgba(6, 182, 212, 1);
             }
           }
           @keyframes pulseBlueCard {
@@ -480,8 +541,8 @@ window.BrigadaPisoLoja = {
               border-color: rgba(99, 102, 241, 0.9);
             }
             50% {
-              box-shadow: 0 0 0 10px rgba(99, 102, 241, 0), 0 12px 32px rgba(99, 102, 241, 0.5);
-              border-color: #6366f1;
+              box-shadow: 0 0 0 8px rgba(99, 102, 241, 0), 0 8px 24px rgba(99, 102, 241, 0.4);
+              border-color: rgba(99, 102, 241, 1);
             }
           }
           @keyframes blinkAlertBadge {
@@ -490,8 +551,8 @@ window.BrigadaPisoLoja = {
               transform: scale(1);
             }
             50% {
-              opacity: 0.6;
-              transform: scale(1.04);
+              opacity: 0.85;
+              transform: scale(0.98);
             }
           }
           .freezer-card--critical {
@@ -526,6 +587,46 @@ window.BrigadaPisoLoja = {
             <div class="panel-header__left">
               <h2 class="panel-title">🏪 Piso de Loja</h2>
               <p class="panel-subtitle">Mapa dos freezers do piso de loja — ${this.FREEZERS.length} unidades</p>
+            </div>
+          </div>
+
+          <!-- Painel do Esquema de Verificação de Validade (Semanal) -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; border-radius: 12px; border: 1px solid var(--glass-border); background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.6rem;">🗓️</span>
+                <div>
+                  <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">Esquema de Verificação de Validade (31 Freezers)</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 2px 0 0 0;">Ciclo único de Domingo a Sábado • Sequência: 42–48 ➔ 34–41 ➔ 17–25 ➔ 26–32</p>
+                </div>
+              </div>
+
+              <!-- Banner de Destaque do Dia de Hoje -->
+              <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 6px 14px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.1rem;">🎯</span>
+                <span style="font-size: 0.85rem; color: #10b981; font-weight: 700;">
+                  HOJE (${todaySched.dayName.toUpperCase()}): Freezers ${todaySched.freezers.join(', ')} (${todaySched.freezers.length} freezers)
+                </span>
+              </div>
+            </div>
+
+            <!-- Abas de Filtro por Dia da Semana -->
+            <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; flex-wrap: wrap;" id="sched-day-tabs">
+              <button type="button" class="cat-tab ${this.filterScheduleDay === 'all' ? 'cat-tab--active' : ''}" data-sched-day="all" style="font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer;">
+                🔘 Todos (31)
+              </button>
+              <button type="button" class="cat-tab ${this.filterScheduleDay === 'today' ? 'cat-tab--active' : ''}" data-sched-day="today" style="font-size: 0.8rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border-color: #10b981; color: ${this.filterScheduleDay === 'today' ? '#ffffff' : '#10b981'}; background: ${this.filterScheduleDay === 'today' ? '#10b981' : 'rgba(16,185,129,0.12)'}; cursor: pointer;">
+                🎯 Hoje (${todaySched.dayName})
+              </button>
+              ${this.SCHEDULE.map(s => {
+                const isActive = this.filterScheduleDay === s.dayKey;
+                const isToday = s.dayIndex === todaySched.dayIndex;
+                return `
+                  <button type="button" class="cat-tab ${isActive ? 'cat-tab--active' : ''}" data-sched-day="${s.dayKey}" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 20px; font-weight: 600; cursor: pointer;">
+                    ${isToday ? '⭐ ' : ''}${s.short} (${s.freezers.length})
+                  </button>
+                `;
+              }).join('')}
             </div>
           </div>
 
@@ -564,9 +665,20 @@ window.BrigadaPisoLoja = {
               ${this.icons.ArrowLeft}
               Voltar aos Freezers
             </button>
-            <div class="chamber-active-info" style="display: flex; align-items: center; gap: 8px;">
+            <div class="chamber-active-info" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <span class="status-dot" style="width:10px; height:10px; border-radius:50%; background-color:${alerts.hasCritical ? '#ef4444' : alerts.hasWarning ? '#f59e0b' : '#10b981'}; display:inline-block;"></span>
               <h2 class="chamber-title" style="margin: 0; font-size: 1.5rem; font-weight: 700;">${freezerStr}</h2>
+              ${(() => {
+                const sched = this.getScheduleForFreezer(this.selectedFreezer);
+                const todaySched = this.getTodaySchedule();
+                const isToday = sched && sched.dayIndex === todaySched.dayIndex;
+                if (!sched) return '';
+                return `
+                  <span style="${isToday ? 'background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; font-weight: 800;' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-secondary);'} font-size: 0.8rem; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                    ${isToday ? '🎯 Auditoria Programada para Hoje (' + sched.dayName + ')' : '🗓️ Escala Oficial: ' + sched.dayName}
+                  </span>
+                `;
+              })()}
             </div>
           </div>
 
@@ -578,10 +690,16 @@ window.BrigadaPisoLoja = {
                 <h3 style="font-size: 1.2rem; font-weight: 600; margin: 0;">Produtos Alocados neste Freezer</h3>
                 <p style="font-size:0.85rem; color:var(--text-secondary); margin: 0;">Total: ${products.length} itens armazenados no ${freezerStr}</p>
               </div>
-              <button class="btn btn-primary" id="btn-open-allocation" style="display: flex; align-items: center; gap: 6px; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer;">
-                ${this.icons.Plus}
-                Alocar Produto
-              </button>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn--outline" id="btn-open-allocation" style="display: flex; align-items: center; gap: 6px; border-color: rgba(56,189,248,0.4); color: #38bdf8; cursor: pointer; padding: 7px 14px; font-weight: 600;">
+                  <span>📦</span>
+                  Alocar Existente
+                </button>
+                <button class="btn btn--primary" id="btn-open-add-new-piso" style="display: flex; align-items: center; gap: 6px; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer; font-weight: 700; padding: 7px 14px;">
+                  <span>➕</span>
+                  Adicionar Novo Produto
+                </button>
+              </div>
             </div>
 
             <div class="table-scroll">
@@ -659,7 +777,7 @@ window.BrigadaPisoLoja = {
     overlay.innerHTML = `
       <div class="modal" id="piso-alloc-modal-card" style="width: 100%; max-width: 680px; max-height: min(90vh, 620px); display: flex; flex-direction: column; padding: 0;">
         <!-- Modal Header -->
-        <div class="modal-header" style="padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--glass-border);">
+        <div class="modal-header" style="padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.4rem;">📦</span>
             <div>
@@ -667,7 +785,12 @@ window.BrigadaPisoLoja = {
               <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary);">Selecione o produto abaixo para transferir ao freezer</p>
             </div>
           </div>
-          <button class="modal-close" id="btn-modal-x-close" title="Fechar">✕</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn btn--outline btn-sm" id="btn-switch-to-add-piso" style="font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-color: rgba(16,185,129,0.4); color: #10b981;">
+              <span>➕</span> Novo Produto Manual
+            </button>
+            <button class="modal-close" id="btn-modal-x-close" title="Fechar">✕</button>
+          </div>
         </div>
 
         <!-- Modal Body -->
@@ -737,6 +860,16 @@ window.BrigadaPisoLoja = {
         this.refreshModalProducts();
       });
     });
+
+    // Switch to manual new product modal
+    const switchBtn = overlay.querySelector('#btn-switch-to-add-piso');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        const fz = this.allocatingFreezer;
+        this.closeAllocationModal();
+        this.openAddNewProductModal(fz);
+      });
+    }
 
     // Close buttons
     const closeBtnX = document.getElementById('btn-modal-x-close');
@@ -838,6 +971,286 @@ window.BrigadaPisoLoja = {
     });
   },
 
+  // ── Modal de Cadastro Direto de Novo Produto no Freezer ──
+  openAddNewProductModal(freezerNum) {
+    this.closeAllocationModal();
+    const existing = document.getElementById('add-product-piso-modal');
+    if (existing) existing.remove();
+
+    const freezerObj = this.FREEZERS.find(f => f.num === freezerNum) || { num: freezerNum, category: 'aves' };
+    const defaultCat = freezerObj.category === 'misto' ? 'bovino' : freezerObj.category;
+    const freezerStr = `Freezer ${freezerNum.toString().padStart(2, '0')}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    const allowedCats = this.getAllowedCategories();
+    const catOptions = [
+      { val: 'aves', label: '🐔 Aves' },
+      { val: 'bovino', label: '🐮 Bovino' },
+      { val: 'suino', label: '🐷 Suíno' },
+      { val: 'pescado', label: '🐟 Pescado' },
+      { val: 'frios', label: '🥓 Frios' },
+      { val: 'laticinios', label: '🧀 Laticínios' },
+      { val: 'iogurtes', label: '🥛 Iogurtes' },
+      { val: 'pereciveis', label: '🥗 Perecíveis' }
+    ].filter(opt => allowedCats.length === 0 || allowedCats.includes(opt.val));
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay modal-overlay--visible';
+    overlay.id = 'add-product-piso-modal';
+    overlay.style.display = 'flex';
+
+    overlay.innerHTML = `
+      <div class="modal" style="max-width: 540px; width: 92%; transform: translateY(0); margin-top: 4vh;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+          <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span>➕</span>
+            <span>Adicionar Novo Produto no Freezer</span>
+          </h3>
+          <button class="modal-close" id="modal-close-add-piso" style="background: none; border: none; font-size: 1.25rem; color: var(--text-secondary); cursor: pointer;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1.5rem;">
+          <!-- Destino Info Banner -->
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Destino da Alocação:</span>
+            <span style="font-weight: 700; color: #10b981; font-size: 0.88rem;">
+              🏪 Piso de Loja • ${freezerStr} (${this.FREEZER_CATEGORY_LABELS[freezerObj.category] || freezerObj.category})
+            </span>
+          </div>
+
+          <form id="form-add-piso-prod" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Autocomplete / Busca Rápida no Catálogo -->
+            <div class="form-group" style="position: relative;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                PLU / Código do Produto <span style="font-size: 0.75rem; color: #38bdf8; font-weight: normal;">(ou busque pelo nome)</span>
+              </label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="text" id="add-piso-plu" class="form-input" placeholder="Digite PLU ou nome para auto-preencher..." autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+              <div id="add-piso-catalog-suggestions" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #16152b; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 9999; box-shadow: 0 16px 40px rgba(0,0,0,0.95);"></div>
+            </div>
+
+            <!-- Nome do Produto -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Descrição / Nome do Produto <span style="color: #ef4444;">*</span>
+              </label>
+              <input type="text" id="add-piso-name" class="form-input" placeholder="Ex: Frango Inteiro Congelado" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Categoria e Unidade -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Categoria <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="add-piso-category" class="form-input" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  ${catOptions.map(o => `<option value="${o.val}" ${o.val === defaultCat ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Unidade
+                </label>
+                <select id="add-piso-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="kg" selected>kg</option>
+                  <option value="un">un</option>
+                  <option value="cx">cx</option>
+                  <option value="pct">pct</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Quantidade e Validade -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Quantidade <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="number" id="add-piso-quantity" class="form-input" value="1" min="0.1" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Data de Validade <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="date" id="add-piso-enddate" class="form-input" min="${today}" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+            </div>
+
+            <!-- Fornecedor / Marca -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Fornecedor / Marca
+              </label>
+              <input type="text" id="add-piso-supplier" class="form-input" placeholder="Ex: Friboi, Seara, Sadia, Perdigão, Mauricéa..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Botões de Ação -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+              <button type="button" class="btn btn--outline" id="btn-cancel-add-piso" style="padding: 8px 16px;">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn--primary" id="btn-submit-add-piso" style="padding: 8px 20px; font-weight: 700; background: #10b981; border-color: #10b981;">
+                ✓ Cadastrar no Freezer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => {
+      overlay.remove();
+    };
+
+    overlay.querySelector('#modal-close-add-piso').addEventListener('click', close);
+    overlay.querySelector('#btn-cancel-add-piso').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target.id === 'add-product-piso-modal') close();
+    });
+
+    // Auto-preenchimento e busca no catálogo
+    const pluInput = overlay.querySelector('#add-piso-plu');
+    const nameInput = overlay.querySelector('#add-piso-name');
+    const catSelect = overlay.querySelector('#add-piso-category');
+    const unitSelect = overlay.querySelector('#add-piso-unit');
+    const supplierInput = overlay.querySelector('#add-piso-supplier');
+    const suggestionsBox = overlay.querySelector('#add-piso-catalog-suggestions');
+
+    const handleCatalogItemSelect = (catItem) => {
+      pluInput.value = catItem.plu || '';
+      nameInput.value = catItem.name || '';
+      if (catItem.category && catSelect.querySelector(`option[value="${catItem.category.toLowerCase()}"]`)) {
+        catSelect.value = catItem.category.toLowerCase();
+      }
+      if (catItem.unit && unitSelect.querySelector(`option[value="${catItem.unit.toLowerCase()}"]`)) {
+        unitSelect.value = catItem.unit.toLowerCase();
+      }
+      const supp = catItem.supplier || (window.BrigadaData ? window.BrigadaData.detectSupplierFromName(catItem.name) : '');
+      if (supp) supplierInput.value = supp;
+      suggestionsBox.style.display = 'none';
+    };
+
+    if (pluInput && suggestionsBox) {
+      pluInput.addEventListener('input', () => {
+        const query = (pluInput.value || '').trim().toLowerCase();
+        if (!query || query.length < 2) {
+          suggestionsBox.style.display = 'none';
+          return;
+        }
+
+        const catalog = window.BrigadaData.catalog || [];
+        const matches = catalog.filter(c => 
+          String(c.plu || '').toLowerCase().includes(query) || 
+          (c.name || '').toLowerCase().includes(query)
+        ).slice(0, 6);
+
+        if (matches.length === 0) {
+          suggestionsBox.style.display = 'none';
+          return;
+        }
+
+        suggestionsBox.innerHTML = matches.map(m => `
+          <div class="catalog-sugg-row" data-plu="${m.plu}" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; background: #16152b; transition: background 0.15s ease;">
+            <div>
+              <div style="font-weight: 700; color: #ffffff;">${m.name}</div>
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">PLU: <b style="color: #38bdf8;">${m.plu}</b> • Setor: ${m.category}</div>
+            </div>
+            <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">Selecionar ↵</span>
+          </div>
+        `).join('');
+
+        suggestionsBox.style.display = 'block';
+
+        suggestionsBox.querySelectorAll('.catalog-sugg-row').forEach(row => {
+          row.addEventListener('mouseenter', () => {
+            row.style.background = 'rgba(56, 189, 248, 0.15)';
+          });
+          row.addEventListener('mouseleave', () => {
+            row.style.background = '#16152b';
+          });
+          row.addEventListener('click', () => {
+            const found = catalog.find(c => String(c.plu) === String(row.dataset.plu));
+            if (found) handleCatalogItemSelect(found);
+          });
+        });
+      });
+
+      // Fechar sugestões ao clicar fora
+      document.addEventListener('click', (e) => {
+        if (!pluInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+          suggestionsBox.style.display = 'none';
+        }
+      });
+    }
+
+    // Auto-detect supplier on name blur
+    nameInput.addEventListener('blur', () => {
+      if (!supplierInput.value && nameInput.value && window.BrigadaData?.detectSupplierFromName) {
+        const detected = window.BrigadaData.detectSupplierFromName(nameInput.value);
+        if (detected) supplierInput.value = detected;
+      }
+    });
+
+    // Submissão do formulário
+    const form = overlay.querySelector('#form-add-piso-prod');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nameVal = nameInput.value.trim();
+      const pluVal = pluInput.value.trim();
+      const catVal = catSelect.value;
+      const unitVal = unitSelect.value;
+      const qtyVal = parseFloat(overlay.querySelector('#add-piso-quantity').value) || 1;
+      const endVal = overlay.querySelector('#add-piso-enddate').value;
+      const suppVal = supplierInput.value.trim();
+
+      if (!nameVal || !endVal) {
+        if (window.BrigadaUI && window.BrigadaUI.showToast) {
+          window.BrigadaUI.showToast('Preencha o nome do produto e a data de validade.', 'warning');
+        }
+        return;
+      }
+
+      const locString = this.formatLocation(freezerNum);
+      if (window.BrigadaUI && window.BrigadaUI.showToast) {
+        window.BrigadaUI.showToast('Cadastrando produto no freezer...', 'info');
+      }
+
+      try {
+        await window.BrigadaData.addProduct({
+          name: nameVal,
+          plu: pluVal || '000000',
+          category: catVal,
+          unit: unitVal,
+          quantity: qtyVal,
+          startDate: today,
+          endDate: endVal,
+          supplier: suppVal || null,
+          location: locString
+        });
+
+        if (window.BrigadaUI && window.BrigadaUI.showToast) {
+          window.BrigadaUI.showToast('Produto cadastrado e alocado no freezer com sucesso!', 'success');
+        } else if (window.BrigadaUI && window.BrigadaUI.toast) {
+          window.BrigadaUI.toast('Produto cadastrado e alocado no freezer com sucesso!', 'success');
+        }
+
+        close();
+        this.render(this.container);
+      } catch (err) {
+        console.error(err);
+        if (window.BrigadaUI && window.BrigadaUI.showToast) {
+          window.BrigadaUI.showToast('Erro ao cadastrar produto: ' + err.message, 'error');
+        }
+      }
+    });
+  },
+
   closeAllocationModal() {
     const existing = document.getElementById('piso-alloc-modal-overlay');
     if (existing) {
@@ -851,12 +1264,33 @@ window.BrigadaPisoLoja = {
   bindEvents() {
     if (!this.container) return;
 
-    // Overview Events
+    // Overview Events - Card Click
     this.container.querySelectorAll('[data-action="view-freezer"]').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        // Don't navigate if clicking the add button inside the card
+        if (e.target.closest('[data-action="add-new-freezer-btn"]')) return;
         this.selectedFreezer = parseInt(el.dataset.num, 10);
         this.closeAllocationModal();
         this.render(this.container);
+      });
+    });
+
+    // Overview Events - Acessar Button Click
+    this.container.querySelectorAll('[data-action="view-freezer-btn"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.selectedFreezer = parseInt(btn.dataset.num, 10);
+        this.closeAllocationModal();
+        this.render(this.container);
+      });
+    });
+
+    // Overview Events - Adicionar Button Click Direct on Card
+    this.container.querySelectorAll('[data-action="add-new-freezer-btn"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fzNum = parseInt(btn.dataset.num, 10);
+        this.openAddNewProductModal(fzNum);
       });
     });
 
@@ -880,6 +1314,14 @@ window.BrigadaPisoLoja = {
       });
     });
 
+    // Schedule Day Tabs Click
+    this.container.querySelectorAll('#sched-day-tabs .cat-tab[data-sched-day]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        this.filterScheduleDay = e.currentTarget.dataset.schedDay;
+        this.render(this.container);
+      });
+    });
+
     // Back to overview
     const backBtn = this.container.querySelector('#btn-back-to-overview');
     if (backBtn) {
@@ -895,6 +1337,14 @@ window.BrigadaPisoLoja = {
     if (openAllocBtn) {
       openAllocBtn.addEventListener('click', () => {
         this.openAllocationModal(this.selectedFreezer);
+      });
+    }
+
+    // Open Direct Add Modal inside Freezer Detail
+    const openAddNewBtn = this.container.querySelector('#btn-open-add-new-piso');
+    if (openAddNewBtn) {
+      openAddNewBtn.addEventListener('click', () => {
+        this.openAddNewProductModal(this.selectedFreezer);
       });
     }
 

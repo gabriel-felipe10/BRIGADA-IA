@@ -68,6 +68,42 @@ agents/python_agent/
 4. Integrar Mister ao fluxo de trabalho.
 5. Executar testes e ajustar documentação.
 
+## Esquema de Verificação de Validade dos Freezers (Piso de Loja)
+
+**Ciclo único — Domingo a Sábado | 31 Freezers**
+
+| Dia | Freezers Auditados | Total | Categorias |
+| :--- | :--- | :---: | :--- |
+| **Domingo** | 42, 43, 44, 45, 46 | 5 | Pescados |
+| **Segunda** | 47, 48, 34, 35 | 4 | Pescados e Suínos |
+| **Terça** | 36, 37, 38, 39, 40 | 5 | Misto (Bovino / Suíno / Aves) e Bovino |
+| **Quarta** | 41, 17, 18, 19 | 4 | Bovino e Aves |
+| **Quinta** | 20, 21, 22, 23, 24 | 5 | Aves |
+| **Sexta** | 25, 26, 27, 28 | 4 | Aves e Bovino |
+| **Sábado** | 29, 30, 31, 32 | 4 | Aves |
+| **TOTAL** | **31 Freezers** | **31** | *Ciclo 100% Completo Sem Repetição* |
+
+- **Sequência:** `42–48` ➔ `34–41` ➔ `17–25` ➔ `26–32`
+- **Objetivo:** Verificar todos os 31 freezers exatamente uma única vez durante o ciclo semanal, garantindo conformidade total e zero rupturas de validade.
+
+## Esquema de Verificação — Câmara Congelada
+
+**Ciclo único — Domingo a Sábado | 16 Colunas (Racks)**
+
+| Dia | Colunas Auditadas | Total |
+| :--- | :--- | :---: |
+| **Domingo** | 1, 2, 3 | 3 |
+| **Segunda** | 4, 5, 6 | 3 |
+| **Terça** | 7, 8, 9 | 3 |
+| **Quarta** | 10, 11 | 2 |
+| **Quinta** | 12, 13 | 2 |
+| **Sexta** | 14, 15 | 2 |
+| **Sábado** | 16 | 1 |
+| **TOTAL** | **16 Colunas** | **16** |
+
+- **Sequência:** `1–3` ➔ `4–6` ➔ `7–9` ➔ `10–11` ➔ `12–13` ➔ `14–15` ➔ `16`
+- **Objetivo:** Verificar todas as 16 colunas da câmara congelada uma única vez durante o ciclo semanal, sem repetir nenhuma coluna.
+
 ## Documentação Adicional
 - `README.md` na raiz explicando como iniciar a aplicação.
 - `CHANGELOG.md` para versionamento.

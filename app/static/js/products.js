@@ -86,11 +86,6 @@ window.BrigadaProducts = {
           <button class="btn btn--primary" id="btn-export-pdf" title="Exportar para PDF">
             <span>📄</span> PDF
           </button>
-          ${canAddProduct ? `
-          <button class="btn btn--primary" id="btn-add-product">
-            <span>＋</span> Novo Produto
-          </button>
-          ` : ''}
         </div>
       </div>
 
