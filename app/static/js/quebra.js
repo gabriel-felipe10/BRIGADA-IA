@@ -326,8 +326,8 @@ window.BrigadaQuebra = {
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="q-occurrence-date">Data da Avaria *</label>
-                <input type="date" id="q-occurrence-date" class="form-input" value="${todayStr}" required>
+                <label class="form-label" for="q-occurrence-date">Data da Avaria (DD/MM/AAAA) *</label>
+                <input type="text" id="q-occurrence-date" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" value="${window.BrigadaData ? window.BrigadaData.getTodayFormatted() : ''}" required>
               </div>
             </div>
 
@@ -548,6 +548,11 @@ window.BrigadaQuebra = {
     const productNameInput = container.querySelector('#q-product-name');
     const pluInput = container.querySelector('#q-plu');
     const previewSpan = container.querySelector('#q-product-preview');
+    const occDateInput = container.querySelector('#q-occurrence-date');
+
+    if (window.BrigadaData?.applyDateMask && occDateInput) {
+      window.BrigadaData.applyDateMask(occDateInput);
+    }
 
     productNameInput?.addEventListener('change', () => {
       const nameVal = productNameInput.value.trim();
@@ -570,7 +575,8 @@ window.BrigadaQuebra = {
       e.preventDefault();
 
       const supplier = container.querySelector('#q-supplier').value.trim();
-      const occurrenceDate = container.querySelector('#q-occurrence-date').value;
+      const rawOccDate = container.querySelector('#q-occurrence-date').value.trim();
+      const occurrenceDate = window.BrigadaData.parseDateInput(rawOccDate);
       const productName = productNameInput.value.trim();
       const plu = pluInput.value.trim();
       const quantity = parseFloat(container.querySelector('#q-quantity').value);
@@ -580,6 +586,11 @@ window.BrigadaQuebra = {
       const reason = container.querySelector('#q-reason').value;
       const responsibleName = container.querySelector('#q-responsible-name').value.trim();
       const notes = container.querySelector('#q-notes').value.trim();
+
+      if (!occurrenceDate) {
+        alert('Por favor, informe uma data válida no formato DD/MM/AAAA!');
+        return;
+      }
 
       if (!productName || !quantity || !occurrenceDate) {
         alert('Por favor, preencha todos os campos obrigatórios!');

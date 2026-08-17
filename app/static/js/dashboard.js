@@ -18,12 +18,6 @@ window.BrigadaDashboard = {
         products = products.filter(p => ['aves', 'suino', 'bovino', 'pescado'].includes(p.category));
       } else if (sector === 'pereciveis') {
         products = products.filter(p => ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'].includes(p.category));
-      } else if (sector === 'padaria') {
-        products = products.filter(p => p.category === 'padaria');
-      } else if (sector === 'hortifruti') {
-        products = products.filter(p => p.category === 'hortifruti');
-      } else if (sector === 'mercearia') {
-        products = products.filter(p => p.category === 'mercearia');
       }
     }
     return products;
@@ -363,11 +357,10 @@ window.BrigadaDashboard = {
             <button class="cat-tab cat-tab--sm" data-cat="bovino">🐮 Bovino</button>
             <button class="cat-tab cat-tab--sm" data-cat="pescado">🐟 Pescado</button>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('padaria') ? `
-            <button class="cat-tab cat-tab--sm" data-cat="padaria">🍞 Padaria</button>
-            ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
-            <button class="cat-tab cat-tab--sm" data-cat="hortifruti">🥦 Hortifruti</button>
+            ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <button class="cat-tab cat-tab--sm" data-cat="frios">🥓 Frios</button>
+            <button class="cat-tab cat-tab--sm" data-cat="laticinios">🧀 Laticínios</button>
+            <button class="cat-tab cat-tab--sm" data-cat="iogurtes">🥛 Iogurtes</button>
             ` : ''}
           </div>
         </div>
@@ -408,11 +401,11 @@ window.BrigadaDashboard = {
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Data de Cadastro</label>
-                  <input type="date" id="field-startDate" class="form-input">
+                  <input type="text" id="field-startDate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Data Final (Validade) *</label>
-                  <input type="date" id="field-endDate" class="form-input" required>
+                  <input type="text" id="field-endDate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required>
                 </div>
               </div>
               <div class="form-row">
@@ -604,11 +597,10 @@ window.BrigadaDashboard = {
             <button class="cat-tab cat-tab--sm" data-panel-cat="bovino">🐮 Bovino</button>
             <button class="cat-tab cat-tab--sm" data-panel-cat="pescado">🐟 Pescado</button>
             ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('padaria') ? `
-            <button class="cat-tab cat-tab--sm" data-panel-cat="padaria">🍞 Padaria</button>
-            ` : ''}
-            ${window.BrigadaAuth.hasSectorAccess('hortifruti') ? `
-            <button class="cat-tab cat-tab--sm" data-panel-cat="hortifruti">🥦 Hortifruti</button>
+            ${window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
+            <button class="cat-tab cat-tab--sm" data-panel-cat="frios">🥓 Frios</button>
+            <button class="cat-tab cat-tab--sm" data-panel-cat="laticinios">🧀 Laticínios</button>
+            <button class="cat-tab cat-tab--sm" data-panel-cat="iogurtes">🥛 Iogurtes</button>
             ` : ''}
           </div>
           <div class="status-panel__body" id="status-panel-body"></div>
@@ -794,6 +786,12 @@ window.BrigadaDashboard = {
       updateLocationSlots(e.target.value);
     });
 
+    // Máscaras de data manual DD/MM/AAAA
+    if (window.BrigadaData?.applyDateMask) {
+      window.BrigadaData.applyDateMask(container.querySelector('#field-startDate'));
+      window.BrigadaData.applyDateMask(container.querySelector('#field-endDate'));
+    }
+
     // Listener para o campo de quantidade exibir/ocultar anotação
     const qtyInput = container.querySelector('#field-quantity');
     const annotationGroup = container.querySelector('#group-annotation');
@@ -973,7 +971,8 @@ window.BrigadaDashboard = {
       .sort((a, b) => a._status.days - b._status.days);
 
     const catMap = { 
-      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado', padaria: '🍞 Padaria', hortifruti: '🥦 Hortifruti'
+      aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado',
+      frios: '🥓 Frios', laticinios: '🧀 Laticínios', iogurtes: '🥛 Iogurtes', pereciveis: '🥗 Perecíveis'
     };
     const showActions = products.some(p => window.BrigadaAuth.canEditProduct(p) || window.BrigadaAuth.canDeleteProduct(p));
 
@@ -1227,10 +1226,10 @@ window.BrigadaDashboard = {
     }
 
     const catMap = {
-      aves: '🐔', suino: '🐷', bovino: '🐮', pescado: '🐟', padaria: '🍞', hortifruti: '🥦'
+      aves: '🐔', suino: '🐷', bovino: '🐮', pescado: '🐟', frios: '🥓', laticinios: '🧀', iogurtes: '🥛', pereciveis: '🥗'
     };
     const catNameMap = {
-      aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado', padaria: 'Padaria', hortifruti: 'Hortifruti'
+      aves: 'Aves', suino: 'Suíno', bovino: 'Bovino', pescado: 'Pescado', frios: 'Frios', laticinios: 'Laticínios', iogurtes: 'Iogurtes', pereciveis: 'Perecíveis'
     };
 
     bodyEl.innerHTML = products.map((p, idx) => {
@@ -1322,8 +1321,8 @@ window.BrigadaDashboard = {
     container.querySelector('#field-plu').value = product.plu;
     container.querySelector('#field-name').value = product.name;
     container.querySelector('#field-category').value = product.category;
-    container.querySelector('#field-startDate').value = product.startDate || '';
-    container.querySelector('#field-endDate').value = product.endDate;
+    container.querySelector('#field-startDate').value = window.BrigadaData.formatDate(product.startDate);
+    container.querySelector('#field-endDate').value = window.BrigadaData.formatDate(product.endDate);
     container.querySelector('#field-supplier').value = product.supplier || '';
     
     // Parse location format
@@ -1455,13 +1454,16 @@ window.BrigadaDashboard = {
     const plu = container.querySelector('#field-plu').value.trim();
     const name = container.querySelector('#field-name').value.trim();
     const category = container.querySelector('#field-category').value;
-    const startDate = container.querySelector('#field-startDate').value;
-    const endDate = container.querySelector('#field-endDate').value;
+    const rawStartDate = container.querySelector('#field-startDate').value.trim();
+    const rawEndDate = container.querySelector('#field-endDate').value.trim();
     const supplier = container.querySelector('#field-supplier').value.trim();
     const locationType = container.querySelector('#field-location').value;
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+    
+    const startDate = rawStartDate ? window.BrigadaData.parseDateInput(rawStartDate) : null;
+    const endDate = window.BrigadaData.parseDateInput(rawEndDate);
     
     let location = locationType;
     let column = null;

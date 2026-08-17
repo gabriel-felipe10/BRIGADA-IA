@@ -1201,10 +1201,7 @@ window.BrigadaRouter = {
                   <label class="form-label">Setor / Departamento *</label>
                   <select id="profile-field-sector" class="form-input" style="width: 100%; font-weight: 600;">
                     <option value="açougue">🥩 Açougue</option>
-                    <option value="pereciveis">🥗 Perecíveis</option>
-                    <option value="frios">🥓 Frios / Laticínios</option>
-                    <option value="hortifruti">🍎 Hortifruti</option>
-                    <option value="padaria">🥖 Padaria</option>
+                    <option value="pereciveis">🥗 Perecíveis / Frios</option>
                     <option value="todos">👑 Todos os Setores (Geral)</option>
                   </select>
                 </div>
@@ -1267,9 +1264,6 @@ window.BrigadaRouter = {
 
         let targetPage = 'products';
         if (sector === 'pereciveis') targetPage = 'pereciveis';
-        else if (sector === 'padaria') targetPage = 'padaria';
-        else if (sector === 'hortifruti') targetPage = 'hortifruti';
-        else if (sector === 'mercearia') targetPage = 'mercearia';
 
         await this.navigate(targetPage);
         if (window.innerWidth <= 768) {
@@ -1283,12 +1277,6 @@ window.BrigadaRouter = {
             window.BrigadaProducts.openAddModal(pageContainer);
           } else if (targetPage === 'pereciveis' && window.BrigadaPereciveis) {
             window.BrigadaPereciveis.openAddModal(pageContainer);
-          } else if (targetPage === 'padaria' && window.BrigadaPadaria) {
-            window.BrigadaPadaria.openAddModal(pageContainer);
-          } else if (targetPage === 'hortifruti' && window.BrigadaHortifruti) {
-            window.BrigadaHortifruti.openAddModal(pageContainer);
-          } else if (targetPage === 'mercearia' && window.BrigadaMercearia) {
-            window.BrigadaMercearia.openAddModal(pageContainer);
           }
         }, 50);
       });

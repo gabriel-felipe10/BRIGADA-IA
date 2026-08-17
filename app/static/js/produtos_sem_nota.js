@@ -191,8 +191,8 @@ window.BrigadaProdutosSemNota = {
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="sn-arrival-date">Data de Chegada *</label>
-              <input type="date" id="sn-arrival-date" class="form-input" required>
+              <label class="form-label" for="sn-arrival-date">Data de Chegada (DD/MM/AAAA) *</label>
+              <input type="text" id="sn-arrival-date" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required>
             </div>
 
             <!-- Nome Completo do Responsável -->
@@ -313,6 +313,15 @@ window.BrigadaProdutosSemNota = {
     this.setupCatalogAutocomplete();
     this.initSignatureDrawing();
     this.setupFormSubmit();
+
+    const arrivalDateInput = document.getElementById('sn-arrival-date');
+    if (arrivalDateInput) {
+      arrivalDateInput.value = window.BrigadaData ? window.BrigadaData.getTodayFormatted() : '';
+      if (window.BrigadaData?.applyDateMask) {
+        window.BrigadaData.applyDateMask(arrivalDateInput);
+      }
+    }
+
     this.loadData();
   },
 
@@ -395,18 +404,20 @@ window.BrigadaProdutosSemNota = {
     // Mouse Events
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
+    window.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseleave', stopDrawing);
 
     // Touch Events
     canvas.addEventListener('touchstart', startDrawing, { passive: false });
     canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', stopDrawing);
+    window.addEventListener('touchend', stopDrawing);
     canvas.addEventListener('touchcancel', stopDrawing);
 
-    clearBtn.addEventListener('click', () => {
-      this.clearCanvas();
-    });
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        this.clearCanvas();
+      });
+    }
   },
 
   clearCanvas() {
@@ -427,10 +438,16 @@ window.BrigadaProdutosSemNota = {
       const plu = document.getElementById('sn-plu').value.trim();
       const quantity = document.getElementById('sn-quantity').value;
       const unit = document.getElementById('sn-unit').value;
-      const arrivalDate = document.getElementById('sn-arrival-date').value;
+      const rawArrivalDate = document.getElementById('sn-arrival-date').value.trim();
       const responsibleName = document.getElementById('sn-responsible-name').value.trim();
 
-      if (!plu || !quantity || !arrivalDate || !responsibleName) {
+      const arrivalDate = window.BrigadaData.parseDateInput(rawArrivalDate);
+      if (!arrivalDate) {
+        window.BrigadaUI.showToast('Data de chegada inválida. Digite no formato DD/MM/AAAA (ex: 25/12/2026).', 'error');
+        return;
+      }
+
+      if (!plu || !quantity || !responsibleName) {
         window.BrigadaUI.showToast('Preencha todos os campos obrigatórios.', 'error');
         return;
       }
@@ -453,7 +470,7 @@ window.BrigadaProdutosSemNota = {
         
         // Reset form
         form.reset();
-        document.getElementById('sn-arrival-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('sn-arrival-date').value = window.BrigadaData ? window.BrigadaData.getTodayFormatted() : '';
         document.getElementById('sn-product-name-preview').textContent = '—';
         this.clearCanvas();
         

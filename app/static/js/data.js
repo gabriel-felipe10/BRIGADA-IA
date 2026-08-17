@@ -706,12 +706,98 @@ window.BrigadaData = {
     return Math.max(...this.users.map(u => u.id), 0) + 1;
   },
 
-  // Formata data para exibição
-  // Formata data para exibição
+  // Formata data para exibição (YYYY-MM-DD -> DD/MM/AAAA)
   formatDate(dateStr) {
     if (!dateStr) return '—';
-    const [y, m, d] = dateStr.split('-');
-    return `${d}/${m}/${y}`;
+    if (dateStr.includes('/')) return dateStr;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  },
+
+  // Converte data digitada manualmente (DD/MM/AAAA, DD/MM/AA, DD-MM-AAAA ou YYYY-MM-DD) para YYYY-MM-DD
+  parseDateInput(inputStr) {
+    if (!inputStr) return null;
+    const str = String(inputStr).trim();
+    if (!str) return null;
+
+    // Se já estiver no formato YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+
+    // Se for DD/MM/AAAA ou DD/MM/AA ou DD-MM-AAAA
+    const parts = str.split(/[/.-]/);
+    if (parts.length === 3) {
+      let day = parseInt(parts[0], 10);
+      let month = parseInt(parts[1], 10);
+      let year = parseInt(parts[2], 10);
+
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+      // Se ano for 2 dígitos (ex: 26 -> 2026)
+      if (year < 100) {
+        year += 2000;
+      }
+
+      if (month < 1 || month > 12) return null;
+      if (day < 1 || day > 31) return null;
+
+      const yStr = String(year);
+      const mStr = String(month).padStart(2, '0');
+      const dStr = String(day).padStart(2, '0');
+      return `${yStr}-${mStr}-${dStr}`;
+    }
+
+    // Se usuário digitou apenas números (ex: 25082026 ou 250826)
+    const digitsOnly = str.replace(/\D/g, '');
+    if (digitsOnly.length === 8) {
+      const d = digitsOnly.substring(0, 2);
+      const m = digitsOnly.substring(2, 4);
+      const y = digitsOnly.substring(4, 8);
+      return `${y}-${m}-${d}`;
+    } else if (digitsOnly.length === 6) {
+      const d = digitsOnly.substring(0, 2);
+      const m = digitsOnly.substring(2, 4);
+      const y = '20' + digitsOnly.substring(4, 6);
+      return `${y}-${m}-${d}`;
+    }
+
+    return null;
+  },
+
+  // Retorna a data de hoje no formato DD/MM/AAAA
+  getTodayFormatted() {
+    const d = new Date();
+    const dia = String(d.getDate()).padStart(2, '0');
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const ano = d.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  },
+
+  // Aplica máscara automática DD/MM/AAAA no input
+  applyDateMask(inputElement) {
+    if (!inputElement) return;
+    inputElement.setAttribute('inputmode', 'numeric');
+    inputElement.setAttribute('placeholder', 'DD/MM/AAAA');
+    inputElement.setAttribute('maxlength', '10');
+    
+    inputElement.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 8) val = val.slice(0, 8);
+      
+      let formatted = '';
+      if (val.length > 4) {
+        formatted = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
+      } else if (val.length > 2) {
+        formatted = `${val.slice(0, 2)}/${val.slice(2)}`;
+      } else {
+        formatted = val;
+      }
+      e.target.value = formatted;
+    });
   },
 
   // Formata data e hora
@@ -766,9 +852,12 @@ window.BrigadaData = {
     // Testa se é coordenada de câmara fria: resfriado:C01-N01-E
     const matchChamber = loc.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
     if (matchChamber) {
-      const chamber = matchChamber[1] === 'resfriado' ? '❄️ Resf' : '🥶 Cong';
-      const pos = matchChamber[4] === 'E' ? 'E' : 'D';
-      return `${chamber}: C${matchChamber[2]}-N${matchChamber[3]}-${pos}`;
+      const chamber = matchChamber[1] === 'resfriado' ? '❄️ Resfriada' : '🥶 Congelada';
+      const col = matchChamber[2].padStart(2, '0');
+      const levelNum = parseInt(matchChamber[3], 10);
+      const side = matchChamber[4] === 'E' ? 'Lado Esquerdo' : 'Lado Direito';
+      const levelStr = levelNum === 1 ? 'Piso' : `Nível ${levelNum}`;
+      return `${chamber} • Coluna ${col} • ${levelStr} • ${side}`;
     }
 
     // Testa se é freezer do piso de loja: piso_loja:FZ01

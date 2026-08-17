@@ -94,19 +94,13 @@ window.BrigadaPisoLoja = {
     laticinios: '🧀 Laticínios', 
     frios: '🥓 Frios', 
     iogurtes: '🍦 Iogurtes', 
-    pereciveis: '🍎 Perecíveis',
-    padaria: '🥖 Padaria',
-    hortifruti: '🥬 Hortifrúti',
-    mercearia: '🥫 Mercearia'
+    pereciveis: '🥗 Perecíveis'
   },
 
   sectorCategories: {
     'açougue': ['aves', 'suino', 'bovino', 'pescado'],
     'acougue': ['aves', 'suino', 'bovino', 'pescado'],
-    'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis'],
-    'padaria': ['padaria'],
-    'hortifruti': ['hortifruti'],
-    'mercearia': ['mercearia']
+    'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis']
   },
 
   // Check if current user is SuperAdmin or has full access
@@ -301,9 +295,14 @@ window.BrigadaPisoLoja = {
           <td data-label="Validade"><strong>${window.BrigadaData.formatDate(p.endDate)}</strong></td>
           <td data-label="Status"><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
           <td data-label="Ações" class="actions-cell">
-            <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;">
-              🗑️ Desalocar
-            </button>
+            <div style="display: inline-flex; gap: 6px;">
+              <button class="btn btn-outline btn-sm" data-action="edit-product-piso" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
+                ✏️ Editar
+              </button>
+              <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;" title="Desalocar Produto">
+                🗑️ Desalocar
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -691,10 +690,6 @@ window.BrigadaPisoLoja = {
                 <p style="font-size:0.85rem; color:var(--text-secondary); margin: 0;">Total: ${products.length} itens armazenados no ${freezerStr}</p>
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="btn btn--outline" id="btn-open-allocation" style="display: flex; align-items: center; gap: 6px; border-color: rgba(56,189,248,0.4); color: #38bdf8; cursor: pointer; padding: 7px 14px; font-weight: 600;">
-                  <span>📦</span>
-                  Alocar Existente
-                </button>
                 <button class="btn btn--primary" id="btn-open-add-new-piso" style="display: flex; align-items: center; gap: 6px; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer; font-weight: 700; padding: 7px 14px;">
                   <span>➕</span>
                   Adicionar Novo Produto
@@ -720,7 +715,7 @@ window.BrigadaPisoLoja = {
                       <td colspan="6" class="empty-state" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🧊</div>
                         Nenhum produto alocado neste freezer ainda.<br>
-                        <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Alocar Produto" para adicionar itens a este freezer.</small>
+                        <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" para cadastrar itens neste freezer.</small>
                       </td>
                     </tr>
                   ` : products.map(p => {
@@ -742,9 +737,14 @@ window.BrigadaPisoLoja = {
                         <td><strong>${window.BrigadaData.formatDate(p.endDate)}</strong></td>
                         <td><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
                         <td>
-                          <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="cursor: pointer;">
-                            🗑️ Desalocar
-                          </button>
+                          <div style="display: inline-flex; gap: 6px;">
+                            <button class="btn btn-outline btn-sm" data-action="edit-product-piso" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
+                              ✏️ Editar
+                            </button>
+                            <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem;" title="Desalocar Produto">
+                              🗑️ Desalocar
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     `;
@@ -1073,9 +1073,9 @@ window.BrigadaPisoLoja = {
 
               <div class="form-group">
                 <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Data de Validade <span style="color: #ef4444;">*</span>
+                  Data de Validade (DD/MM/AAAA) <span style="color: #ef4444;">*</span>
                 </label>
-                <input type="date" id="add-piso-enddate" class="form-input" min="${today}" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                <input type="text" id="add-piso-enddate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
               </div>
             </div>
 
@@ -1102,6 +1102,12 @@ window.BrigadaPisoLoja = {
     `;
 
     document.body.appendChild(overlay);
+
+    // Aplica máscara de data manual DD/MM/AAAA
+    const endDateInput = overlay.querySelector('#add-piso-enddate');
+    if (window.BrigadaData?.applyDateMask && endDateInput) {
+      window.BrigadaData.applyDateMask(endDateInput);
+    }
 
     const close = () => {
       overlay.remove();
@@ -1206,12 +1212,20 @@ window.BrigadaPisoLoja = {
       const catVal = catSelect.value;
       const unitVal = unitSelect.value;
       const qtyVal = parseFloat(overlay.querySelector('#add-piso-quantity').value) || 1;
-      const endVal = overlay.querySelector('#add-piso-enddate').value;
+      const rawEndVal = overlay.querySelector('#add-piso-enddate').value.trim();
       const suppVal = supplierInput.value.trim();
 
-      if (!nameVal || !endVal) {
+      const parsedEndDate = window.BrigadaData.parseDateInput(rawEndVal);
+      if (!parsedEndDate) {
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast('Data de validade inválida. Digite no formato DD/MM/AAAA (ex: 25/12/2026).', 'warning');
+        }
+        return;
+      }
+
+      if (!nameVal) {
         if (window.BrigadaUI && window.BrigadaUI.showToast) {
-          window.BrigadaUI.showToast('Preencha o nome do produto e a data de validade.', 'warning');
+          window.BrigadaUI.showToast('Preencha o nome do produto.', 'warning');
         }
         return;
       }
@@ -1229,7 +1243,7 @@ window.BrigadaPisoLoja = {
           unit: unitVal,
           quantity: qtyVal,
           startDate: today,
-          endDate: endVal,
+          endDate: parsedEndDate,
           supplier: suppVal || null,
           location: locString
         });
@@ -1348,6 +1362,14 @@ window.BrigadaPisoLoja = {
       });
     }
 
+    // Edit Product in Freezer
+    this.container.querySelectorAll('[data-action="edit-product-piso"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id, 10);
+        this.openEditProductModal(id);
+      });
+    });
+
     // Deallocate
     this.container.querySelectorAll('[data-action="deallocate"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -1366,6 +1388,212 @@ window.BrigadaPisoLoja = {
           this.render(this.container);
         }
       });
+    });
+  },
+
+  // ── Modal de Edição de Produto no Freezer ──
+  openEditProductModal(productId) {
+    const product = window.BrigadaData.products.find(p => p.id === productId);
+    if (!product) {
+      if (window.BrigadaUI?.showToast) window.BrigadaUI.showToast('Produto não encontrado.', 'error');
+      return;
+    }
+
+    const existing = document.getElementById('edit-product-piso-modal');
+    if (existing) existing.remove();
+
+    const allowedCats = this.getAllowedCategories();
+    const catOptions = [
+      { val: 'aves', label: '🐔 Aves' },
+      { val: 'bovino', label: '🐮 Bovino' },
+      { val: 'suino', label: '🐷 Suíno' },
+      { val: 'pescado', label: '🐟 Pescado' },
+      { val: 'frios', label: '🥓 Frios' },
+      { val: 'laticinios', label: '🧀 Laticínios' },
+      { val: 'iogurtes', label: '🥛 Iogurtes' },
+      { val: 'pereciveis', label: '🥗 Perecíveis' }
+    ].filter(opt => allowedCats.length === 0 || allowedCats.includes(opt.val));
+
+    // Identificar freezer atual do produto
+    let currentFreezerNum = this.selectedFreezer;
+    if (product.location && product.location.startsWith('piso_loja:FZ')) {
+      const match = product.location.match(/^piso_loja:FZ(\d+)$/);
+      if (match) currentFreezerNum = parseInt(match[1], 10);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay modal-overlay--visible';
+    overlay.id = 'edit-product-piso-modal';
+
+    overlay.innerHTML = `
+      <div class="modal" style="max-width: 540px; width: 92%; transform: translateY(0); margin-top: 4vh;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+          <div>
+            <h3 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span>✏️ Editar Produto no Freezer</span>
+            </h3>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+              Freezer ${currentFreezerNum ? currentFreezerNum.toString().padStart(2, '0') : 'Geral'}
+            </div>
+          </div>
+          <button class="modal-close" id="modal-close-edit-piso">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+          <form id="form-edit-piso-prod" style="display: flex; flex-direction: column; gap: 12px;">
+            
+            <!-- PLU -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Código PLU / EAN
+              </label>
+              <input type="text" id="edit-piso-plu" class="form-input" value="${product.plu || ''}" placeholder="Digite o PLU..." autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Nome do Produto -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Nome do Produto <span style="color: #ef4444;">*</span>
+              </label>
+              <input type="text" id="edit-piso-name" class="form-input" value="${product.name || ''}" placeholder="Nome do produto..." required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Categoria e Unidade -->
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Categoria / Setor <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="edit-piso-category" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  ${catOptions.map(c => `<option value="${c.val}" ${product.category === c.val ? 'selected' : ''}>${c.label}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Unidade <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="edit-piso-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="kg" ${product.unit === 'kg' ? 'selected' : ''}>kg</option>
+                  <option value="cx" ${product.unit === 'cx' ? 'selected' : ''}>cx</option>
+                  <option value="un" ${product.unit === 'un' ? 'selected' : ''}>un</option>
+                  <option value="pct" ${product.unit === 'pct' ? 'selected' : ''}>pct</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Quantidade e Validade -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Quantidade <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="number" id="edit-piso-quantity" class="form-input" value="${product.quantity || 1}" min="0.01" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Data de Validade (DD/MM/AAAA) <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="text" id="edit-piso-enddate" class="form-input" value="${window.BrigadaData.formatDate(product.endDate)}" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+            </div>
+
+            <!-- Fornecedor / Marca -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Fornecedor / Marca
+              </label>
+              <input type="text" id="edit-piso-supplier" class="form-input" value="${product.supplier || ''}" placeholder="Ex: Friboi, Seara, Sadia, Perdigão, Mauricéa..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+            </div>
+
+            <!-- Botões de Ação -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+              <button type="button" class="btn btn--outline" id="btn-cancel-edit-piso" style="padding: 8px 16px;">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn--primary" id="btn-submit-edit-piso" style="padding: 8px 20px; font-weight: 700; background: #38bdf8; border-color: #38bdf8; color: #0f172a;">
+                ✓ Salvar Alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Aplica máscara de data DD/MM/AAAA
+    const endDateInput = overlay.querySelector('#edit-piso-enddate');
+    if (window.BrigadaData?.applyDateMask && endDateInput) {
+      window.BrigadaData.applyDateMask(endDateInput);
+    }
+
+    const close = () => {
+      overlay.remove();
+    };
+
+    overlay.querySelector('#modal-close-edit-piso').addEventListener('click', close);
+    overlay.querySelector('#btn-cancel-edit-piso').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target.id === 'edit-product-piso-modal') close();
+    });
+
+    // Submissão do formulário de edição
+    const form = overlay.querySelector('#form-edit-piso-prod');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nameVal = overlay.querySelector('#edit-piso-name').value.trim();
+      const pluVal = overlay.querySelector('#edit-piso-plu').value.trim();
+      const catVal = overlay.querySelector('#edit-piso-category').value;
+      const unitVal = overlay.querySelector('#edit-piso-unit').value;
+      const qtyVal = parseFloat(overlay.querySelector('#edit-piso-quantity').value) || 1;
+      const rawEndVal = overlay.querySelector('#edit-piso-enddate').value.trim();
+      const suppVal = overlay.querySelector('#edit-piso-supplier').value.trim();
+
+      const parsedEndDate = window.BrigadaData.parseDateInput(rawEndVal);
+      if (!parsedEndDate) {
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast('Data de validade inválida. Digite no formato DD/MM/AAAA (ex: 25/12/2026).', 'warning');
+        }
+        return;
+      }
+
+      if (!nameVal) {
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast('Preencha o nome do produto.', 'warning');
+        }
+        return;
+      }
+
+      if (window.BrigadaUI?.showToast) {
+        window.BrigadaUI.showToast('Salvando alterações do produto...', 'info');
+      }
+
+      try {
+        await window.BrigadaData.updateProduct(productId, {
+          name: nameVal,
+          plu: pluVal || product.plu,
+          category: catVal,
+          unit: unitVal,
+          quantity: qtyVal,
+          endDate: parsedEndDate,
+          supplier: suppVal || null
+        });
+
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');
+        }
+
+        close();
+        this.render(this.container);
+      } catch (err) {
+        console.error(err);
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast('Erro ao atualizar produto: ' + err.message, 'error');
+        }
+      }
     });
   }
 };

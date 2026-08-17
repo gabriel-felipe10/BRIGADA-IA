@@ -259,11 +259,11 @@ window.BrigadaProducts = {
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Data de Cadastro</label>
-                    <input type="date" id="field-startDate" class="form-input">
+                    <input type="text" id="field-startDate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
                   </div>
                   <div class="form-group">
                     <label class="form-label">Data Final (Validade) *</label>
-                    <input type="date" id="field-endDate" class="form-input" required>
+                    <input type="text" id="field-endDate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required>
                   </div>
                 </div>
                 <div class="form-row">
@@ -1045,6 +1045,12 @@ window.BrigadaProducts = {
       updateLocationSlots(e.target.value);
     });
 
+    // Máscaras de data manual DD/MM/AAAA
+    if (window.BrigadaData?.applyDateMask) {
+      window.BrigadaData.applyDateMask(container.querySelector('#field-startDate'));
+      window.BrigadaData.applyDateMask(container.querySelector('#field-endDate'));
+    }
+
     // Eventos do seletor inteligente de catálogo no modal de Novo Produto
     const catSearchInput = container.querySelector('#catalog-modal-search');
     const catVoiceBtn = container.querySelector('#catalog-modal-voice-btn');
@@ -1344,7 +1350,8 @@ window.BrigadaProducts = {
 
     container.querySelector('#field-id').value = '';
     container.querySelector('#field-plu').value = '';
-    container.querySelector('#field-startDate').value = new Date().toISOString().split('T')[0];
+    container.querySelector('#field-startDate').value = window.BrigadaData.getTodayFormatted();
+    container.querySelector('#field-endDate').value = '';
     container.querySelector('#field-quantity').value = '';
     container.querySelector('#field-location').value = '';
     if (container.querySelector('#field-chamber-col')) container.querySelector('#field-chamber-col').value = '';
@@ -1414,8 +1421,8 @@ window.BrigadaProducts = {
     container.querySelector('#field-plu').value = product.plu;
     container.querySelector('#field-name').value = product.name;
     container.querySelector('#field-category').value = product.category;
-    container.querySelector('#field-startDate').value = product.startDate || '';
-    container.querySelector('#field-endDate').value = product.endDate;
+    container.querySelector('#field-startDate').value = window.BrigadaData.formatDate(product.startDate);
+    container.querySelector('#field-endDate').value = window.BrigadaData.formatDate(product.endDate);
     container.querySelector('#field-supplier').value = product.supplier || '';
     
     // Parse location format
@@ -1559,14 +1566,17 @@ window.BrigadaProducts = {
     const barcode = product?.barcode || '';
     const name = container.querySelector('#field-name').value.trim();
     const category = container.querySelector('#field-category').value;
-    const startDate = container.querySelector('#field-startDate').value;
-    const endDate = container.querySelector('#field-endDate').value;
+    const rawStartDate = container.querySelector('#field-startDate').value.trim();
+    const rawEndDate = container.querySelector('#field-endDate').value.trim();
     const supplier = container.querySelector('#field-supplier').value.trim();
     const locationType = container.querySelector('#field-location').value;
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
     
+    const startDate = rawStartDate ? window.BrigadaData.parseDateInput(rawStartDate) : null;
+    const endDate = window.BrigadaData.parseDateInput(rawEndDate);
+
     let location = locationType;
     let column = null;
     let columnNumber = null;
@@ -1605,7 +1615,7 @@ window.BrigadaProducts = {
     const annotation = selectVal ? `${selectVal} - ${textVal}` : '';
 
     if (!plu || !name || !category || !endDate || !location) {
-      window.BrigadaUI.showToast('Preencha todos os campos obrigatórios (incluindo Localização).', 'error');
+      window.BrigadaUI.showToast('Preencha todos os campos obrigatórios (incluindo Localização e Validade correta DD/MM/AAAA).', 'error');
       return;
     }
 

@@ -1720,23 +1720,8 @@ window.BrigadaNotifications = {
         ],
         'pereciveis': [
           'Verificar temperatura dos balcões de frios e laticínios.',
-          'Limpeza e organização das câmaras de congelados.',
+          'Limpeza e organização das câmaras de congelados e resfriados.',
           'Rodízio PEPS (Primeiro que Entra, Primeiro que Sai).'
-        ],
-        'padaria': [
-          'Conferir datas de validade dos insumos e farinhas.',
-          'Higienização dos fornos e fatiadoras de pães.',
-          'Higienizar vitrines e balcões de autoatendimento.'
-        ],
-        'hortifruti': [
-          'Triagem e descarte de produtos machucados ou passados.',
-          'Higienização das bancadas de exposição.',
-          'Verificar funcionamento dos umidificadores/nebulizadores.'
-        ],
-        'mercearia': [
-          'Auditoria de validade nas gôndolas e prateleiras.',
-          'Organização do estoque e controle de caixas pesadas.',
-          'Verificação de precificação e etiquetas nas gôndolas.'
         ]
       };
 

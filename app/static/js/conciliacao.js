@@ -283,10 +283,7 @@ window.BrigadaConciliacao = {
 
       const sectorCategories = {
         'açougue': ['aves', 'suino', 'bovino', 'pescado'],
-        'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'],
-        'padaria': ['padaria'],
-        'hortifruti': ['hortifruti'],
-        'mercearia': ['mercearia']
+        'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis']
       };
 
       let allowedCategories = [];
@@ -328,9 +325,10 @@ window.BrigadaConciliacao = {
           if (target === 'suino') return cat.includes('suin') || cat.includes('suno') || cat.includes('porc');
           if (target === 'pescado') return cat.includes('pesc') || cat.includes('peix');
           if (target === 'aves') return cat.includes('av') || cat.includes('frang');
-          if (target === 'padaria') return cat.includes('padaria') || cat.includes('paes');
-          if (target === 'hortifruti') return cat.includes('horti') || cat.includes('frut');
-          if (target === 'mercearia') return cat.includes('mercearia');
+          if (target === 'frios') return cat.includes('frio') || cat.includes('embut');
+          if (target === 'laticinios') return cat.includes('laticin') || cat.includes('queij');
+          if (target === 'iogurtes') return cat.includes('iogurt');
+          if (target === 'pereciveis') return cat.includes('pereciv');
 
           return cat === target || cat.includes(target) || target.includes(cat);
         });
@@ -439,10 +437,7 @@ window.BrigadaConciliacao = {
 
     const sectorCategories = {
       'açougue': ['aves', 'suino', 'bovino', 'pescado'],
-      'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis'],
-      'padaria': ['padaria'],
-      'hortifruti': ['hortifruti'],
-      'mercearia': ['mercearia']
+      'pereciveis': ['iogurtes', 'laticinios', 'frios', 'pereciveis', 'perecíveis']
     };
 
     let allowedCategories = [];
@@ -628,20 +623,13 @@ window.BrigadaConciliacao = {
       'açougue': [
         { value: 'Câmara Resfriada', label: '❄️ Câmara Resfriada' },
         { value: 'Congelado', label: '🥶 Congelado' },
+        { value: 'Piso de Loja', label: '🏬 Piso de Loja' },
         { value: 'Antecâmara', label: '🚪 Antecâmara' }
       ],
-      'padaria': [
+      'pereciveis': [
         { value: 'Câmara Resfriada', label: '❄️ Câmara Resfriada' },
         { value: 'Congelado', label: '🥶 Congelado' },
-        { value: 'Área de Produção', label: '🍞 Área de Produção' }
-      ],
-      'hortifruti': [
-        { value: 'Câmara Resfriada', label: '❄️ Câmara Resfriada' },
-        { value: 'Exposição', label: '🏬 Exposição' }
-      ],
-      'mercearia': [
-        { value: 'Depósito', label: '📦 Depósito' },
-        { value: 'Gôndola', label: '🛒 Gôndola' }
+        { value: 'Piso de Loja', label: '🏬 Piso de Loja' }
       ]
     };
 

@@ -266,11 +266,11 @@ window.BrigadaPereciveis = {
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Data de Cadastro</label>
-                    <input type="date" id="field-startDate-pereciveis" class="form-input">
+                    <input type="text" id="field-startDate-pereciveis" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
                   </div>
                   <div class="form-group">
                     <label class="form-label">Data Final (Validade) *</label>
-                    <input type="date" id="field-endDate-pereciveis" class="form-input" required>
+                    <input type="text" id="field-endDate-pereciveis" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required>
                   </div>
                 </div>
                 <div class="form-row">
@@ -290,45 +290,63 @@ window.BrigadaPereciveis = {
                     <label class="form-label">Localização *</label>
                     <select id="field-location-pereciveis" class="form-input" required>
                       <option value="">Selecione...</option>
-                      <option value="resfriado">❄️ Resfriado</option>
-                      <option value="congelado">🥶 Congelado</option>
+                      <option value="resfriado">❄️ Câmara Resfriada</option>
+                      <option value="congelado">🥶 Câmara Congelada</option>
                       <option value="piso_loja">🏪 Piso de Loja</option>
                     </select>
                   </div>
                 </div>
-                <div class="form-row">
+                <!-- Seletor de Posição da Câmara Fria -->
+                <div class="form-row" id="row-chamber-slots-pereciveis" style="display: none; background: rgba(56,189,248,0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.2); margin-bottom: 1rem;">
                   <div class="form-group">
-                    <label class="form-label">Coluna</label>
-                    <select id="field-column-pereciveis" class="form-input">
-                      <option value="">Selecione...</option>
-                      <option value="Aéreo">Aéreo</option>
-                      <option value="Piso">Piso</option>
+                    <label class="form-label" style="color: #38bdf8;">Coluna *</label>
+                    <select id="field-chamber-col-pereciveis" class="form-input">
+                      <option value="">Selecione a coluna...</option>
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Número da Coluna</label>
-                    <select id="field-column-number-pereciveis" class="form-input">
-                      <option value="">Selecione...</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                      <option value="9">9</option>
-                      <option value="10">10</option>
-                      <option value="11">11</option>
-                      <option value="12">12</option>
-                      <option value="13">13</option>
-                      <option value="14">14</option>
-                      <option value="15">15</option>
-                      <option value="16">16</option>
-                      <option value="17">17</option>
-                      <option value="18">18</option>
-                      <option value="19">19</option>
-                      <option value="20">20</option>
+                    <label class="form-label" style="color: #38bdf8;">Nível *</label>
+                    <select id="field-chamber-level-pereciveis" class="form-input">
+                      <option value="">Selecione o nível...</option>
+                      <option value="1">📦 Nível 1 — Piso (Chão)</option>
+                      <option value="2">🏗️ Nível 2 — Aéreo</option>
+                      <option value="3">🏗️ Nível 3 — Aéreo</option>
+                      <option value="4">🏗️ Nível 4 — Aéreo (Topo)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="color: #38bdf8;">Posição *</label>
+                    <select id="field-chamber-pos-pereciveis" class="form-input">
+                      <option value="">Selecione o lado...</option>
+                      <option value="E">⬅️ Esquerda (E)</option>
+                      <option value="D">➡️ Direita (D)</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Seletor de Freezer do Piso de Loja -->
+                <div class="form-row" id="row-freezer-slots-pereciveis" style="display: none; background: rgba(16,185,129,0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="color: #34d399;">Freezer do Piso de Loja</label>
+                    <select id="field-freezer-num-pereciveis" class="form-input">
+                      <option value="">Geral / Sem freezer específico</option>
+                      <optgroup label="🥛 Iogurtes / Laticínios / Frios">
+                        <option value="FZ01">Freezer 01</option>
+                        <option value="FZ02">Freezer 02</option>
+                        <option value="FZ03">Freezer 03</option>
+                        <option value="FZ04">Freezer 04</option>
+                        <option value="FZ05">Freezer 05</option>
+                        <option value="FZ06">Freezer 06</option>
+                        <option value="FZ07">Freezer 07</option>
+                        <option value="FZ08">Freezer 08</option>
+                        <option value="FZ09">Freezer 09</option>
+                        <option value="FZ10">Freezer 10</option>
+                        <option value="FZ11">Freezer 11</option>
+                        <option value="FZ12">Freezer 12</option>
+                        <option value="FZ13">Freezer 13</option>
+                        <option value="FZ14">Freezer 14</option>
+                        <option value="FZ15">Freezer 15</option>
+                        <option value="FZ16">Freezer 16</option>
+                      </optgroup>
                     </select>
                   </div>
                 </div>
@@ -977,6 +995,49 @@ window.BrigadaPereciveis = {
       });
     });
 
+    // Listener para o campo de localização alternar seletores de Câmara e Freezer
+    const locSelect = container.querySelector('#field-location-pereciveis');
+    const chamberSlotsRow = container.querySelector('#row-chamber-slots-pereciveis');
+    const freezerSlotsRow = container.querySelector('#row-freezer-slots-pereciveis');
+    const chamberColSelect = container.querySelector('#field-chamber-col-pereciveis');
+
+    const updateLocationSlots = (locVal) => {
+      if (locVal === 'resfriado' || locVal === 'congelado') {
+        if (chamberSlotsRow) chamberSlotsRow.style.display = 'flex';
+        if (freezerSlotsRow) freezerSlotsRow.style.display = 'none';
+        
+        const count = locVal === 'resfriado' ? 4 : 16;
+        const currentSelected = chamberColSelect ? chamberColSelect.value : '';
+        if (chamberColSelect) {
+          chamberColSelect.innerHTML = '<option value="">Selecione a coluna...</option>' + 
+            Array.from({ length: count }, (_, i) => {
+              const col = i + 1;
+              const pad = col.toString().padStart(2, '0');
+              return `<option value="${col}">Coluna ${pad}</option>`;
+            }).join('');
+          if (currentSelected && parseInt(currentSelected, 10) <= count) {
+            chamberColSelect.value = currentSelected;
+          }
+        }
+      } else if (locVal === 'piso_loja') {
+        if (chamberSlotsRow) chamberSlotsRow.style.display = 'none';
+        if (freezerSlotsRow) freezerSlotsRow.style.display = 'flex';
+      } else {
+        if (chamberSlotsRow) chamberSlotsRow.style.display = 'none';
+        if (freezerSlotsRow) freezerSlotsRow.style.display = 'none';
+      }
+    };
+
+    locSelect?.addEventListener('change', (e) => {
+      updateLocationSlots(e.target.value);
+    });
+
+    // Máscaras de data manual DD/MM/AAAA
+    if (window.BrigadaData?.applyDateMask) {
+      window.BrigadaData.applyDateMask(container.querySelector('#field-startDate-pereciveis'));
+      window.BrigadaData.applyDateMask(container.querySelector('#field-endDate-pereciveis'));
+    }
+
     // Eventos do seletor inteligente de catálogo no modal de Novo Produto Perecível
     const catSearchInput = container.querySelector('#catalog-modal-search-pereciveis');
     const catVoiceBtn = container.querySelector('#catalog-modal-voice-btn-pereciveis');
@@ -1276,10 +1337,16 @@ window.BrigadaPereciveis = {
 
     container.querySelector('#field-id-pereciveis').value = '';
     container.querySelector('#field-plu-pereciveis').value = '';
-    container.querySelector('#field-startDate-pereciveis').value = new Date().toISOString().split('T')[0];
+    container.querySelector('#field-startDate-pereciveis').value = window.BrigadaData.getTodayFormatted();
+    container.querySelector('#field-endDate-pereciveis').value = '';
     container.querySelector('#field-quantity-pereciveis').value = '';
-    container.querySelector('#field-column-pereciveis').value = '';
-    container.querySelector('#field-column-number-pereciveis').value = '';
+    container.querySelector('#field-location-pereciveis').value = '';
+    if (container.querySelector('#field-chamber-col-pereciveis')) container.querySelector('#field-chamber-col-pereciveis').value = '';
+    if (container.querySelector('#field-chamber-level-pereciveis')) container.querySelector('#field-chamber-level-pereciveis').value = '';
+    if (container.querySelector('#field-chamber-pos-pereciveis')) container.querySelector('#field-chamber-pos-pereciveis').value = '';
+    if (container.querySelector('#field-freezer-num-pereciveis')) container.querySelector('#field-freezer-num-pereciveis').value = '';
+    if (container.querySelector('#row-chamber-slots-pereciveis')) container.querySelector('#row-chamber-slots-pereciveis').style.display = 'none';
+    if (container.querySelector('#row-freezer-slots-pereciveis')) container.querySelector('#row-freezer-slots-pereciveis').style.display = 'none';
     
     // Mostra etapa do catálogo e oculta etapa do formulário
     container.querySelector('#product-modal-step-catalog-pereciveis').style.display = 'block';
@@ -1340,12 +1407,54 @@ window.BrigadaPereciveis = {
     container.querySelector('#field-plu-pereciveis').value = product.plu;
     container.querySelector('#field-name-pereciveis').value = product.name;
     container.querySelector('#field-category-pereciveis').value = product.category;
-    container.querySelector('#field-startDate-pereciveis').value = product.startDate || '';
-    container.querySelector('#field-endDate-pereciveis').value = product.endDate;
+    container.querySelector('#field-startDate-pereciveis').value = window.BrigadaData.formatDate(product.startDate);
+    container.querySelector('#field-endDate-pereciveis').value = window.BrigadaData.formatDate(product.endDate);
     container.querySelector('#field-supplier-pereciveis').value = product.supplier || '';
-    container.querySelector('#field-location-pereciveis').value = product.location || '';
-    container.querySelector('#field-column-pereciveis').value = product.column || '';
-    container.querySelector('#field-column-number-pereciveis').value = product.columnNumber || '';
+    
+    // Parse location
+    const loc = product.location || '';
+    const chamberMatch = loc.match(/^(resfriado|congelado)(?::C(\d+)-N(\d+)-([ED]))?$/i);
+    const freezerMatch = loc.match(/^piso_loja:(.+)$/i);
+
+    if (chamberMatch) {
+      container.querySelector('#field-location-pereciveis').value = chamberMatch[1];
+      const chamberSlotsRow = container.querySelector('#row-chamber-slots-pereciveis');
+      const freezerSlotsRow = container.querySelector('#row-freezer-slots-pereciveis');
+      if (chamberSlotsRow) chamberSlotsRow.style.display = 'flex';
+      if (freezerSlotsRow) freezerSlotsRow.style.display = 'none';
+
+      const count = chamberMatch[1] === 'resfriado' ? 4 : 16;
+      const colSelect = container.querySelector('#field-chamber-col-pereciveis');
+      if (colSelect) {
+        colSelect.innerHTML = '<option value="">Selecione a coluna...</option>' + 
+          Array.from({ length: count }, (_, i) => {
+            const col = i + 1;
+            const pad = col.toString().padStart(2, '0');
+            return `<option value="${col}">Coluna ${pad}</option>`;
+          }).join('');
+        if (chamberMatch[2]) colSelect.value = parseInt(chamberMatch[2], 10);
+      }
+      if (chamberMatch[3] && container.querySelector('#field-chamber-level-pereciveis')) {
+        container.querySelector('#field-chamber-level-pereciveis').value = chamberMatch[3];
+      }
+      if (chamberMatch[4] && container.querySelector('#field-chamber-pos-pereciveis')) {
+        container.querySelector('#field-chamber-pos-pereciveis').value = chamberMatch[4].toUpperCase();
+      }
+    } else if (freezerMatch) {
+      container.querySelector('#field-location-pereciveis').value = 'piso_loja';
+      const chamberSlotsRow = container.querySelector('#row-chamber-slots-pereciveis');
+      const freezerSlotsRow = container.querySelector('#row-freezer-slots-pereciveis');
+      if (chamberSlotsRow) chamberSlotsRow.style.display = 'none';
+      if (freezerSlotsRow) freezerSlotsRow.style.display = 'flex';
+      if (container.querySelector('#field-freezer-num-pereciveis')) {
+        container.querySelector('#field-freezer-num-pereciveis').value = freezerMatch[1];
+      }
+    } else {
+      container.querySelector('#field-location-pereciveis').value = loc;
+      if (container.querySelector('#row-chamber-slots-pereciveis')) container.querySelector('#row-chamber-slots-pereciveis').style.display = 'none';
+      if (container.querySelector('#row-freezer-slots-pereciveis')) container.querySelector('#row-freezer-slots-pereciveis').style.display = 'none';
+    }
+
     container.querySelector('#field-unit-pereciveis').value = product.unit || 'kg';
     container.querySelector('#field-quantity-pereciveis').value = product.quantity !== undefined ? product.quantity : '';
     
@@ -1427,16 +1536,37 @@ window.BrigadaPereciveis = {
     const barcode = product?.barcode || '';
     const name = container.querySelector('#field-name-pereciveis').value.trim();
     const category = container.querySelector('#field-category-pereciveis').value;
-    const startDate = container.querySelector('#field-startDate-pereciveis').value;
-    const endDate = container.querySelector('#field-endDate-pereciveis').value;
+    const rawStartDate = container.querySelector('#field-startDate-pereciveis').value.trim();
+    const rawEndDate = container.querySelector('#field-endDate-pereciveis').value.trim();
     const supplier = container.querySelector('#field-supplier-pereciveis').value.trim();
-    const location = container.querySelector('#field-location-pereciveis').value;
+    const locationType = container.querySelector('#field-location-pereciveis').value;
     const unit = container.querySelector('#field-unit-pereciveis').value;
     const qtyVal = container.querySelector('#field-quantity-pereciveis').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
-    const column = container.querySelector('#field-column-pereciveis').value.trim() || null;
-    const colNumVal = container.querySelector('#field-column-number-pereciveis').value;
-    const columnNumber = colNumVal !== '' ? parseInt(colNumVal) : null;
+    
+    const startDate = rawStartDate ? window.BrigadaData.parseDateInput(rawStartDate) : null;
+    const endDate = window.BrigadaData.parseDateInput(rawEndDate);
+    
+    let location = locationType;
+    let column = null;
+    let columnNumber = null;
+
+    if (locationType === 'resfriado' || locationType === 'congelado') {
+      const col = container.querySelector('#field-chamber-col-pereciveis')?.value;
+      const level = container.querySelector('#field-chamber-level-pereciveis')?.value;
+      const pos = container.querySelector('#field-chamber-pos-pereciveis')?.value;
+
+      if (col && level && pos) {
+        location = `${locationType}:C${col}-N${level}-${pos}`;
+        column = level === '1' ? 'Piso' : 'Aéreo';
+        columnNumber = parseInt(col, 10);
+      }
+    } else if (locationType === 'piso_loja') {
+      const fz = container.querySelector('#field-freezer-num-pereciveis')?.value;
+      if (fz) {
+        location = `piso_loja:${fz}`;
+      }
+    }
 
     const selectVal = container.querySelector('#field-annotation-pereciveis').value;
     const textVal = container.querySelector('#field-annotation-text-pereciveis').value.trim();

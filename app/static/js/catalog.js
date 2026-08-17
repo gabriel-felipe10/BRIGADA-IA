@@ -13,9 +13,7 @@ window.BrigadaCatalog = {
     if (str.startsWith('iogurt')) return 'iogurtes';
     if (str.startsWith('laticin')) return 'laticinios';
     if (str.startsWith('frio')) return 'frios';
-    if (str.startsWith('padari')) return 'padaria';
-    if (str.startsWith('hortifrut')) return 'hortifruti';
-    if (str.startsWith('merceari')) return 'mercearia';
+    if (str.startsWith('pereciv')) return 'pereciveis';
     return str;
   },
 
@@ -312,9 +310,7 @@ window.BrigadaCatalog = {
       else if (safeCat === 'iogurtes') icon = '🍦 Iogurtes';
       else if (safeCat === 'laticinios') icon = '🧀 Laticínios';
       else if (safeCat === 'frios') icon = '🥓 Frios';
-      else if (safeCat === 'padaria') icon = '🍞 Padaria';
-      else if (safeCat === 'hortifruti') icon = '🥦 Hortifruti';
-      else if (safeCat === 'mercearia') icon = '🛒 Mercearia';
+      else if (safeCat === 'pereciveis') icon = '🥗 Perecíveis';
       else icon = '📦 ' + (p.category || 'Geral');
 
       return `
