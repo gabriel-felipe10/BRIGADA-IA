@@ -329,23 +329,44 @@ window.BrigadaPereciveis = {
                     <label class="form-label" style="color: #34d399;">Freezer do Piso de Loja</label>
                     <select id="field-freezer-num-pereciveis" class="form-input">
                       <option value="">Geral / Sem freezer específico</option>
-                      <optgroup label="🥛 Iogurtes / Laticínios / Frios">
-                        <option value="FZ01">Freezer 01</option>
-                        <option value="FZ02">Freezer 02</option>
-                        <option value="FZ03">Freezer 03</option>
-                        <option value="FZ04">Freezer 04</option>
-                        <option value="FZ05">Freezer 05</option>
-                        <option value="FZ06">Freezer 06</option>
-                        <option value="FZ07">Freezer 07</option>
-                        <option value="FZ08">Freezer 08</option>
-                        <option value="FZ09">Freezer 09</option>
-                        <option value="FZ10">Freezer 10</option>
-                        <option value="FZ11">Freezer 11</option>
-                        <option value="FZ12">Freezer 12</option>
-                        <option value="FZ13">Freezer 13</option>
-                        <option value="FZ14">Freezer 14</option>
-                        <option value="FZ15">Freezer 15</option>
-                        <option value="FZ16">Freezer 16</option>
+                      <optgroup label="❄️ Produtos Resfriados (Freezers 01 a 34)">
+                        <option value="FZ01">Freezer 01 - Resfriados</option>
+                        <option value="FZ02">Freezer 02 - Resfriados</option>
+                        <option value="FZ03">Freezer 03 - Resfriados</option>
+                        <option value="FZ04">Freezer 04 - Resfriados</option>
+                        <option value="FZ05">Freezer 05 - Resfriados</option>
+                        <option value="FZ06">Freezer 06 - Resfriados</option>
+                        <option value="FZ07">Freezer 07 - Resfriados</option>
+                        <option value="FZ08">Freezer 08 - Resfriados</option>
+                        <option value="FZ09">Freezer 09 - Resfriados</option>
+                        <option value="FZ10">Freezer 10 - Resfriados</option>
+                        <option value="FZ11">Freezer 11 - Resfriados</option>
+                        <option value="FZ12">Freezer 12 - Resfriados</option>
+                        <option value="FZ13">Freezer 13 - Resfriados</option>
+                        <option value="FZ14">Freezer 14 - Resfriados</option>
+                        <option value="FZ15">Freezer 15 - Resfriados</option>
+                        <option value="FZ16">Freezer 16 - Resfriados</option>
+                        <option value="FZ17">Freezer 17 - Resfriados</option>
+                        <option value="FZ18">Freezer 18 - Resfriados</option>
+                        <option value="FZ19">Freezer 19 - Resfriados</option>
+                        <option value="FZ20">Freezer 20 - Resfriados</option>
+                        <option value="FZ21">Freezer 21 - Resfriados</option>
+                        <option value="FZ22">Freezer 22 - Resfriados</option>
+                        <option value="FZ23">Freezer 23 - Resfriados</option>
+                        <option value="FZ24">Freezer 24 - Resfriados</option>
+                        <option value="FZ25">Freezer 25 - Resfriados</option>
+                        <option value="FZ26">Freezer 26 - Resfriados</option>
+                        <option value="FZ27">Freezer 27 - Resfriados</option>
+                        <option value="FZ28">Freezer 28 - Resfriados</option>
+                        <option value="FZ29">Freezer 29 - Resfriados</option>
+                        <option value="FZ30">Freezer 30 - Resfriados</option>
+                        <option value="FZ31">Freezer 31 - Resfriados</option>
+                        <option value="FZ32">Freezer 32 - Resfriados</option>
+                        <option value="FZ33">Freezer 33 - Resfriados</option>
+                        <option value="FZ34">Freezer 34 - Resfriados</option>
+                      </optgroup>
+                      <optgroup label="🧀 Queijos Especiais">
+                        <option value="FZ35">Freezer 35 - Queijos Especiais</option>
                       </optgroup>
                     </select>
                   </div>

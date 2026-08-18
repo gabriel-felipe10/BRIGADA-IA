@@ -2509,11 +2509,22 @@ window.BrigadaChambers = {
           return;
         }
 
-        const catalog = window.BrigadaData.catalog || [];
-        const matches = catalog.filter(c => 
-          String(c.plu || '').toLowerCase().includes(query) || 
-          (c.name || '').toLowerCase().includes(query)
-        ).slice(0, 6);
+        const rawCatalog = window.BrigadaData.catalog || [];
+        
+        const catalog = rawCatalog.filter(c => {
+          if (window.BrigadaData?.isProductAllowedForUser) {
+            return window.BrigadaData.isProductAllowedForUser(c);
+          }
+          return true;
+        });
+
+        const queryNorm = normalize(query);
+        const matches = catalog.filter(c => {
+          const nameNorm = normalize(c.name);
+          const pluStr = String(c.plu || '').toLowerCase();
+          const barcodeStr = String(c.barcode || '').toLowerCase();
+          return pluStr.includes(queryNorm) || nameNorm.includes(queryNorm) || barcodeStr.includes(queryNorm);
+        }).slice(0, 6);
 
         if (matches.length === 0) {
           suggestionsBox.style.display = 'none';

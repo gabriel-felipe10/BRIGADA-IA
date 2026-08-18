@@ -105,11 +105,15 @@ window.BrigadaQuebra = {
       yearOptions += `<option value="${y}" ${selected}>${y}</option>`;
     });
 
-    // Datalist de Produtos do Sistema
+    // Datalist de Produtos do Sistema (filtrado estritamente pelo setor do usuário logado)
     const allProducts = [...(window.BrigadaData.products || []), ...(window.BrigadaData.catalog || [])];
     const uniqueProductsMap = new Map();
     allProducts.forEach(p => {
-      if (p.name && !uniqueProductsMap.has(p.name)) {
+      if (!p.name) return;
+      if (window.BrigadaData?.isProductAllowedForUser && !window.BrigadaData.isProductAllowedForUser(p, user)) {
+        return;
+      }
+      if (!uniqueProductsMap.has(p.name)) {
         uniqueProductsMap.set(p.name, p);
       }
     });
@@ -123,6 +127,8 @@ window.BrigadaQuebra = {
     const origensOptions = this.ORIGENS.map(o => `<option value="${o.name}">${o.id}. ${o.name}</option>`).join('');
     const ocorrenciasOptions = this.OCORRENCIAS.map(o => `<option value="${o.name}">${o.id}. ${o.name}</option>`).join('');
     const motivosOptions = this.MOTIVOS.map(m => `<option value="${m.name}">${m.id}. ${m.name}</option>`).join('');
+    const isPereciveis = allowedCats.some(c => ['laticinios', 'frios', 'iogurtes', 'pereciveis'].includes(c)) && !allowedCats.some(c => ['aves', 'bovino', 'suino', 'pescado'].includes(c));
+    const supplierPlaceholder = isPereciveis ? 'Ex: Betânia / Danone / Nestlé / Elegê / Vigor / Piracanjuba' : 'Ex: Seara / Friboi / Sadia / Perdigão / Mauricéa';
 
     return `
       <style>
@@ -149,6 +155,7 @@ window.BrigadaQuebra = {
           align-items: center;
           gap: 1rem;
           transition: transform 0.2s, border-color 0.2s;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .metric-card-q:hover {
@@ -167,6 +174,11 @@ window.BrigadaQuebra = {
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          width: 48px;
+          height: 48px;
+          border-radius: 10px;
+          background: rgba(56, 189, 248, 0.15);
+          color: var(--primary);
         }
 
         .metric-info-q h4 {
@@ -175,6 +187,7 @@ window.BrigadaQuebra = {
           color: var(--text-secondary);
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          font-size: 0.85rem;
         }
 
         .metric-info-q p {
@@ -288,25 +301,29 @@ window.BrigadaQuebra = {
             text-transform: uppercase;
             text-align: left;
             margin-right: 1rem;
+            padding-right: 1rem;
+            font-size: 0.82rem;
+            letter-spacing: 0.3px;
           }
         }
       </style>
 
-      <div class="panel-header animate-slide-in">
+      <div class="panel-header animate-fade-in">
         <div class="panel-header__left">
-          <h2 class="panel-title">📋 FORMULÁRIO DE AVARIA</h2>
+          <h2 class="panel-title">📋 Formulário de Avaria</h2>
           <p class="panel-subtitle">Sistema de Controle de Avarias, Origem, Ocorrência e Motivos</p>
         </div>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn--primary" id="btn-export-pdf-quebra">
-            <span>🖨️ Imprimir / PDF (Modelo Oficial)</span>
+        <div class="panel-header__right">
+          <button type="button" class="btn btn--outline" id="btn-export-pdf-quebra" style="display: flex; align-items: center; gap: 8px;">
+            <span>📄</span>
+            <span>Exportar Relatório / PDF (Modelo Oficial)</span>
           </button>
         </div>
       </div>
 
-      <!-- Métricas Rápidas -->
+      <!-- Métricas Resumidas de Avarias -->
       <div class="quebra-metrics animate-slide-in" id="quebra-metrics-container">
-        <!-- Renderizado dinamicamente -->
+        <!-- Renderizado dinamicamente por renderHistory -->
       </div>
 
       <div class="quebra-grid animate-slide-in">
@@ -322,7 +339,7 @@ window.BrigadaQuebra = {
             <div class="form-row-2">
               <div class="form-group">
                 <label class="form-label" for="q-supplier">Nome do Fornecedor</label>
-                <input type="text" id="q-supplier" class="form-input" placeholder="Ex: Seara / Friboi / Sadia">
+                <input type="text" id="q-supplier" class="form-input" placeholder="${supplierPlaceholder}">
               </div>
 
               <div class="form-group">
@@ -554,15 +571,52 @@ window.BrigadaQuebra = {
       window.BrigadaData.applyDateMask(occDateInput);
     }
 
-    productNameInput?.addEventListener('change', () => {
-      const nameVal = productNameInput.value.trim();
+    productNameInput?.addEventListener('input', () => {
+      const nameVal = productNameInput.value.trim().toLowerCase();
+      if (!nameVal) {
+        if (previewSpan) previewSpan.textContent = '—';
+        return;
+      }
+      const user = window.BrigadaAuth.currentUser || {};
       const allProducts = [...(window.BrigadaData.products || []), ...(window.BrigadaData.catalog || [])];
-      const match = allProducts.find(p => p.name && p.name.toLowerCase() === nameVal.toLowerCase());
+      const match = allProducts.find(p => {
+        if (!p.name) return false;
+        if (window.BrigadaData?.isProductAllowedForUser && !window.BrigadaData.isProductAllowedForUser(p, user)) {
+          return false;
+        }
+        return p.name.toLowerCase() === nameVal;
+      });
+
       if (match) {
         if (pluInput && match.plu) pluInput.value = match.plu;
+        const suppInput = container.querySelector('#q-supplier');
+        const detectedSupp = match.supplier || (window.BrigadaData?.detectSupplierFromName ? window.BrigadaData.detectSupplierFromName(match.name) : '');
+        if (suppInput && !suppInput.value && detectedSupp) suppInput.value = detectedSupp;
         if (previewSpan) previewSpan.textContent = `✅ Produto localizado (PLU: ${match.plu || 'S/N'})`;
       } else {
         if (previewSpan) previewSpan.textContent = '—';
+      }
+    });
+
+    pluInput?.addEventListener('input', () => {
+      const pluVal = pluInput.value.trim();
+      if (!pluVal) return;
+      const user = window.BrigadaAuth.currentUser || {};
+      const allProducts = [...(window.BrigadaData.products || []), ...(window.BrigadaData.catalog || [])];
+      const match = allProducts.find(p => {
+        if (!p.plu || String(p.plu) !== String(pluVal)) return false;
+        if (window.BrigadaData?.isProductAllowedForUser && !window.BrigadaData.isProductAllowedForUser(p, user)) {
+          return false;
+        }
+        return true;
+      });
+
+      if (match) {
+        if (productNameInput) productNameInput.value = match.name;
+        const suppInput = container.querySelector('#q-supplier');
+        const detectedSupp = match.supplier || (window.BrigadaData?.detectSupplierFromName ? window.BrigadaData.detectSupplierFromName(match.name) : '');
+        if (suppInput && !suppInput.value && detectedSupp) suppInput.value = detectedSupp;
+        if (previewSpan) previewSpan.textContent = `✅ Produto localizado: ${match.name}`;
       }
     });
 
@@ -603,6 +657,7 @@ window.BrigadaQuebra = {
       }
 
       const user = window.BrigadaAuth.currentUser || {};
+      const userSectorName = (user.sector === 'pereciveis' || user.sector === 'perecivel') ? 'Perecíveis' : (user.sector === 'açougue' || user.sector === 'acougue') ? 'Açougue' : (user.sector || 'Geral');
       const payload = {
         supplier,
         plu,
@@ -610,7 +665,7 @@ window.BrigadaQuebra = {
         origin,
         occurrence,
         reason,
-        sector: 'Açougue',
+        sector: userSectorName,
         quantity,
         unit,
         occurrenceDate,
@@ -688,6 +743,23 @@ window.BrigadaQuebra = {
 
   getFilteredList() {
     let list = window.BrigadaData.quebras || [];
+    const user = window.BrigadaAuth.currentUser || {};
+    const isMaster = window.BrigadaAuth?.isSuperAdmin?.() || user?.sector === 'todos';
+
+    if (!isMaster && user.sector) {
+      const userSec = (user.sector || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      list = list.filter(q => {
+        if (!q.sector) return true;
+        const qSec = q.sector.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (userSec.includes('pereciv') || userSec === 'perecivel') {
+          return qSec.includes('pereciv') || qSec === 'perecivel';
+        }
+        if (userSec.includes('acoug') || userSec === 'acougue') {
+          return qSec.includes('acoug') || qSec === 'acougue';
+        }
+        return qSec.includes(userSec);
+      });
+    }
 
     if (this.currentMonth !== 'all') {
       list = list.filter(q => {

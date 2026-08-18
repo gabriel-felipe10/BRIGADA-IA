@@ -515,6 +515,9 @@ window.BrigadaData = {
   // Helper para verificar se é congelado
   isCongelado(product) {
     if (!product) return false;
+    const cat = (product.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    // Categorias de perecíveis são resfriadas por padrão
+    if (['laticinios', 'frios', 'iogurtes', 'pereciveis', 'resfriados', 'queijos_especiais'].includes(cat)) return false;
     const loc = (product.location || '').toLowerCase();
     if (loc.includes('congelado')) return true;
     const name = (product.name || '').toUpperCase();
@@ -525,11 +528,59 @@ window.BrigadaData = {
   // Helper para verificar se é resfriado
   isResfriado(product) {
     if (!product) return false;
+    const cat = (product.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    // Todas as categorias de perecíveis são resfriadas
+    if (['laticinios', 'frios', 'iogurtes', 'pereciveis', 'resfriados', 'queijos_especiais'].includes(cat)) return true;
     const loc = (product.location || '').toLowerCase();
     if (loc.includes('resfriado')) return true;
     const name = (product.name || '').toUpperCase();
     if (/\b(RESF|RESFRIADO|RESFRIADA|RESFRIADOS|RESFRIADAS)\b/.test(name)) return true;
     return false;
+  },
+
+  // Helper para identificar se produto pertence ao Açougue
+  isAçougueProduct(p) {
+    if (!p) return false;
+    const cat = (p.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (['aves', 'suino', 'bovino', 'pescado', 'acougue', 'açougue', 'carnes'].includes(cat)) return true;
+    const name = (p.name || '').toUpperCase();
+    if (/\b(BOV|BOVINO|BOVINA|SUINO|SUINA|SUINOS|SUINAS|AVES|FRANGO|FGO|PESCADO|PEIXE|CARNE|MAMINHA|PICANHA|ALCATRA|FRALDINHA|COSTELA|COXAO|CCOXAO|ACEM|PATINHO|CUPIM|BISTECA|LINGUICA|LING|CARCACA|MOELA|FIGADO|CORACAO|ASA|COXINHA|PEITO|ESPETINHO)\b/.test(name)) {
+      if (!/\b(IOGURTE|QUEIJO|MANTEIGA|REQUEIJAO|LEITE|CHAMYTO|DANONE|BETANIA|ELEGE|VIGOR|PIRACANJUBA|TIROLEZ)\b/.test(name)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  // Helper para identificar se produto pertence a Perecíveis
+  isPereciveisProduct(p) {
+    if (!p) return false;
+    const cat = (p.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (['laticinios', 'frios', 'iogurtes', 'pereciveis', 'resfriados', 'queijos_especiais'].includes(cat)) return true;
+    const name = (p.name || '').toUpperCase();
+    if (/\b(IOGURTE|QUEIJO|MANTEIGA|REQUEIJAO|LEITE|CHAMYTO|DANONE|BETANIA|ELEGE|VIGOR|PIRACANJUBA|TIROLEZ|NINHO|MOLICO|BATAVO|ITAMBE|PRESUNTO|MORTADELA|SALAME|APRESUNTADO|BURITIS|FAIXA AZUL|LEILAC|BEB LACT|CHEDDAR|MUSSARELA|MOZZARELLA|PRATO|PARMESAO|GOUDA|BRIE|RICOTA|MINAS|COALHO|PROVOLONE)\b/.test(name)) {
+      return true;
+    }
+    return false;
+  },
+
+  // Helper unificado para validar se o produto pertence ao setor do usuário ativo
+  isProductAllowedForUser(p, user = null) {
+    if (!p) return false;
+    const activeUser = user || window.BrigadaAuth?.currentUser;
+    if (!activeUser) return true;
+    if (window.BrigadaAuth?.isSuperAdmin?.() || activeUser.sector === 'todos') return true;
+    
+    const userSec = (activeUser.sector || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (userSec.includes('pereciv') || userSec === 'perecivel') {
+      if (this.isAçougueProduct(p) && !this.isPereciveisProduct(p)) return false;
+      return this.isPereciveisProduct(p);
+    }
+    if (userSec.includes('acoug') || userSec === 'acougue') {
+      if (this.isPereciveisProduct(p) && !this.isAçougueProduct(p)) return false;
+      return this.isAçougueProduct(p);
+    }
+    return true;
   },
 
   // Calcula status de validade de um produto

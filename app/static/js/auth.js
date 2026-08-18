@@ -75,11 +75,16 @@ window.BrigadaAuth = {
     if (!this.currentUser) return false;
     if (this.isPromotor()) return false; // Promotor só acessa conciliação
     if (this.isKiosk()) return true; // Kiosk can view catalog of any sector
-    const email = this.currentUser.email.toLowerCase();
-    if (email === 'admin@brigada.com' || email === 'marcos@brigada.com' || this.isSuperAdmin()) {
+    const email = (this.currentUser.email || '').toLowerCase();
+    if (email === 'admin@brigada.com' || email === 'marcos@brigada.com' || this.isSuperAdmin() || this.isGestao()) {
       return true;
     }
-    return this.currentUser.sector === sector || this.currentUser.sector === 'todos';
+    const userSec = (this.currentUser.sector || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const targetSec = (sector || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (userSec === 'todos') return true;
+    if (userSec.includes('pereciv') && targetSec.includes('pereciv')) return true;
+    if (userSec.includes('acoug') && targetSec.includes('acoug')) return true;
+    return userSec === targetSec;
   },
 
   // Retorna rigorosamente as categorias permitidas de acordo com o setor do usuário logado e câmara

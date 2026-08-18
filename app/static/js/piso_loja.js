@@ -13,8 +13,8 @@ window.BrigadaPisoLoja = {
   allocatingSearch: '',
   allocatingCategory: 'all',
   
-  // Esquema Oficial de Verificação de Validade (Ciclo Único - Domingo a Sábado | 31 Freezers)
-  SCHEDULE: [
+  // Esquema Oficial de Verificação do Açougue (31 Freezers)
+  SCHEDULE_AÇOUGUE: [
     { dayIndex: 0, dayKey: 'domingo', dayName: 'Domingo', short: 'Dom', freezers: [42, 43, 44, 45, 46], color: '#38bdf8' },
     { dayIndex: 1, dayKey: 'segunda', dayName: 'Segunda', short: 'Seg', freezers: [47, 48, 34, 35], color: '#a855f7' },
     { dayIndex: 2, dayKey: 'terca', dayName: 'Terça', short: 'Ter', freezers: [36, 37, 38, 39, 40], color: '#f97316' },
@@ -23,6 +23,38 @@ window.BrigadaPisoLoja = {
     { dayIndex: 5, dayKey: 'sexta', dayName: 'Sexta', short: 'Sex', freezers: [25, 26, 27, 28], color: '#ec4899' },
     { dayIndex: 6, dayKey: 'sabado', dayName: 'Sábado', short: 'Sáb', freezers: [29, 30, 31, 32], color: '#6366f1' }
   ],
+
+  // Esquema Oficial de Verificação de Perecíveis (35 Freezers - 5 por dia)
+  SCHEDULE_PERECIVEIS: [
+    { dayIndex: 0, dayKey: 'domingo', dayName: 'Domingo', short: 'Dom', freezers: [1, 2, 3, 4, 5], color: '#38bdf8' },
+    { dayIndex: 1, dayKey: 'segunda', dayName: 'Segunda', short: 'Seg', freezers: [6, 7, 8, 9, 10], color: '#a855f7' },
+    { dayIndex: 2, dayKey: 'terca', dayName: 'Terça', short: 'Ter', freezers: [11, 12, 13, 14, 15], color: '#f97316' },
+    { dayIndex: 3, dayKey: 'quarta', dayName: 'Quarta', short: 'Qua', freezers: [16, 17, 18, 19, 20], color: '#f59e0b' },
+    { dayIndex: 4, dayKey: 'quinta', dayName: 'Quinta', short: 'Qui', freezers: [21, 22, 23, 24, 25], color: '#10b981' },
+    { dayIndex: 5, dayKey: 'sexta', dayName: 'Sexta', short: 'Sex', freezers: [26, 27, 28, 29, 30], color: '#ec4899' },
+    { dayIndex: 6, dayKey: 'sabado', dayName: 'Sábado', short: 'Sáb', freezers: [31, 32, 33, 34, 35], color: '#6366f1' }
+  ],
+
+  get SCHEDULE() {
+    const user = window.BrigadaAuth?.currentUser;
+    const sector = (user?.sector || '').toLowerCase();
+    if (sector === 'pereciveis' || sector === 'perecivel') {
+      return this.SCHEDULE_PERECIVEIS;
+    }
+    if (sector === 'açougue' || sector === 'acougue') {
+      return this.SCHEDULE_AÇOUGUE;
+    }
+    if (this.selectedSector === 'pereciveis') {
+      return this.SCHEDULE_PERECIVEIS;
+    }
+    if (this.selectedSector === 'açougue') {
+      return this.SCHEDULE_AÇOUGUE;
+    }
+    if (window.BrigadaAuth?.hasSectorAccess && window.BrigadaAuth.hasSectorAccess('pereciveis') && !window.BrigadaAuth.hasSectorAccess('açougue')) {
+      return this.SCHEDULE_PERECIVEIS;
+    }
+    return this.SCHEDULE_AÇOUGUE;
+  },
 
   getScheduleForFreezer(freezerNum) {
     return this.SCHEDULE.find(s => s.freezers.includes(freezerNum)) || null;
@@ -33,40 +65,77 @@ window.BrigadaPisoLoja = {
     return this.SCHEDULE.find(s => s.dayIndex === todayIndex) || this.SCHEDULE[1];
   },
 
-  // Configuração dos freezers com categorias
-  FREEZERS: [
-    { num: 17, category: 'aves' },
-    { num: 18, category: 'aves' },
-    { num: 19, category: 'aves' },
-    { num: 20, category: 'aves' },
-    { num: 21, category: 'aves' },
-    { num: 22, category: 'aves' },
-    { num: 23, category: 'aves' },
-    { num: 24, category: 'aves' },
-    { num: 25, category: 'aves' },
-    { num: 26, category: 'bovino' },
-    { num: 27, category: 'bovino' },
-    { num: 28, category: 'bovino' },
-    { num: 29, category: 'aves' },
-    { num: 30, category: 'aves' },
-    { num: 31, category: 'aves' },
-    { num: 32, category: 'aves' },
-    { num: 34, category: 'suino' },
-    { num: 35, category: 'suino' },
-    { num: 36, category: 'misto' },
-    { num: 37, category: 'misto' },
-    { num: 38, category: 'misto' },
-    { num: 39, category: 'misto' },
-    { num: 40, category: 'bovino' },
-    { num: 41, category: 'bovino' },
-    { num: 42, category: 'pescado' },
-    { num: 43, category: 'pescado' },
-    { num: 44, category: 'pescado' },
-    { num: 45, category: 'pescado' },
-    { num: 46, category: 'pescado' },
-    { num: 47, category: 'pescado' },
-    { num: 48, category: 'pescado' },
+  // Configuração dos freezers do Açougue (31 Freezers)
+  FREEZERS_AÇOUGUE: [
+    { num: 17, category: 'aves', sector: 'açougue' },
+    { num: 18, category: 'aves', sector: 'açougue' },
+    { num: 19, category: 'aves', sector: 'açougue' },
+    { num: 20, category: 'aves', sector: 'açougue' },
+    { num: 21, category: 'aves', sector: 'açougue' },
+    { num: 22, category: 'aves', sector: 'açougue' },
+    { num: 23, category: 'aves', sector: 'açougue' },
+    { num: 24, category: 'aves', sector: 'açougue' },
+    { num: 25, category: 'aves', sector: 'açougue' },
+    { num: 26, category: 'bovino', sector: 'açougue' },
+    { num: 27, category: 'bovino', sector: 'açougue' },
+    { num: 28, category: 'bovino', sector: 'açougue' },
+    { num: 29, category: 'aves', sector: 'açougue' },
+    { num: 30, category: 'aves', sector: 'açougue' },
+    { num: 31, category: 'aves', sector: 'açougue' },
+    { num: 32, category: 'aves', sector: 'açougue' },
+    { num: 34, category: 'suino', sector: 'açougue' },
+    { num: 35, category: 'suino', sector: 'açougue' },
+    { num: 36, category: 'misto', sector: 'açougue' },
+    { num: 37, category: 'misto', sector: 'açougue' },
+    { num: 38, category: 'misto', sector: 'açougue' },
+    { num: 39, category: 'misto', sector: 'açougue' },
+    { num: 40, category: 'bovino', sector: 'açougue' },
+    { num: 41, category: 'bovino', sector: 'açougue' },
+    { num: 42, category: 'pescado', sector: 'açougue' },
+    { num: 43, category: 'pescado', sector: 'açougue' },
+    { num: 44, category: 'pescado', sector: 'açougue' },
+    { num: 45, category: 'pescado', sector: 'açougue' },
+    { num: 46, category: 'pescado', sector: 'açougue' },
+    { num: 47, category: 'pescado', sector: 'açougue' },
+    { num: 48, category: 'pescado', sector: 'açougue' },
   ],
+
+  // Configuração dos freezers de Perecíveis (34 Resfriados + 1 Queijos Especiais = 35 Freezers)
+  FREEZERS_PERECIVEIS: [
+    ...Array.from({ length: 34 }, (_, i) => ({
+      num: i + 1,
+      category: 'resfriados',
+      sector: 'pereciveis',
+      name: `Freezer ${String(i + 1).padStart(2, '0')}`
+    })),
+    {
+      num: 35,
+      category: 'queijos_especiais',
+      sector: 'pereciveis',
+      name: 'Freezer 35'
+    }
+  ],
+
+  get FREEZERS() {
+    const user = window.BrigadaAuth?.currentUser;
+    const sector = user?.sector;
+    if (sector === 'pereciveis' || sector === 'perecivel') {
+      return this.FREEZERS_PERECIVEIS;
+    }
+    if (sector === 'açougue' || sector === 'acougue') {
+      return this.FREEZERS_AÇOUGUE;
+    }
+    if (this.selectedSector === 'pereciveis') {
+      return this.FREEZERS_PERECIVEIS;
+    }
+    if (this.selectedSector === 'açougue') {
+      return this.FREEZERS_AÇOUGUE;
+    }
+    if (window.BrigadaAuth?.hasSectorAccess && window.BrigadaAuth.hasSectorAccess('pereciveis') && !window.BrigadaAuth.hasSectorAccess('açougue')) {
+      return this.FREEZERS_PERECIVEIS;
+    }
+    return this.FREEZERS_AÇOUGUE;
+  },
 
   FREEZER_CATEGORY_LABELS: {
     aves: '🐔 Aves',
@@ -74,6 +143,12 @@ window.BrigadaPisoLoja = {
     suino: '🐷 Suínos',
     misto: '🥩 Bovino / Suíno / Aves',
     pescado: '🐟 Pescado',
+    resfriados: '❄️ Produtos Resfriados (01 a 34)',
+    queijos_especiais: '🧀 Queijos Especiais (35)',
+    laticinios: '🧀 Laticínios',
+    frios: '🥓 Frios',
+    iogurtes: '🍦 Iogurtes',
+    pereciveis: '🥗 Perecíveis',
   },
 
   // Simple inline icons matching the emoji/SVG pattern
@@ -385,7 +460,7 @@ window.BrigadaPisoLoja = {
           const freezerNum = fz.num;
           const displayNum = displayCounter;
           const productsInThisFreezer = this.getProductsInFreezer(freezerNum).length;
-          const catColor = {pescado:'#38bdf8',aves:'#f59e0b',bovino:'#ef4444',suino:'#a855f7',misto:'#f97316'}[cat] || '#10b981';
+          const catColor = {pescado:'#38bdf8',aves:'#f59e0b',bovino:'#ef4444',suino:'#a855f7',misto:'#f97316',resfriados:'#06b6d4',queijos_especiais:'#eab308',laticinios:'#10b981',frios:'#ec4899',iogurtes:'#a855f7',pereciveis:'#10b981'}[cat] || '#10b981';
           
           const sched = this.getScheduleForFreezer(freezerNum);
           const isTodaySched = sched && sched.dayIndex === todaySched.dayIndex;
@@ -458,7 +533,7 @@ window.BrigadaPisoLoja = {
                   </div>
                 ` : ''}
 
-                <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Freezer ${freezerNum.toString().padStart(2, '0')} de 31</div>
+                <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem; font-family: monospace; background: rgba(128,128,128,0.1); display: inline-block; padding: 2px 8px; border-radius: 4px;">Freezer ${freezerNum.toString().padStart(2, '0')} de ${this.FREEZERS.length}</div>
                 
                 ${alertBadgesHTML}
                 
@@ -481,11 +556,13 @@ window.BrigadaPisoLoja = {
         }).join('');
 
         freezerSectionsHTML += `
-          <div style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid ${{pescado:'rgba(56,189,248,0.3)',aves:'rgba(245,158,11,0.3)',bovino:'rgba(239,68,68,0.3)',suino:'rgba(168,85,247,0.3)',misto:'rgba(249,115,22,0.3)'}[cat] || 'rgba(16,185,129,0.3)'};"> 
-              ${catLabel}
-            </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem;">
+          <div class="chamber-section" style="margin-bottom: 2rem;">
+            <div class="section-header" style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px; padding-bottom: 0.5rem; border-bottom: 2px solid ${{pescado:'rgba(56,189,248,0.3)',aves:'rgba(245,158,11,0.3)',bovino:'rgba(239,68,68,0.3)',suino:'rgba(168,85,247,0.3)',misto:'rgba(249,115,22,0.3)'}[cat] || 'rgba(16,185,129,0.3)'};"> 
+                ${catLabel}
+              </h3>
+            </div>
+            <div class="chambers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;">
               ${sectionCards}
             </div>
           </div>
@@ -595,8 +672,8 @@ window.BrigadaPisoLoja = {
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.6rem;">🗓️</span>
                 <div>
-                  <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">Esquema de Verificação de Validade (31 Freezers)</h3>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 2px 0 0 0;">Ciclo único de Domingo a Sábado • Sequência: 42–48 ➔ 34–41 ➔ 17–25 ➔ 26–32</p>
+                  <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">Esquema de Verificação de Validade (${this.FREEZERS.length} Freezers)</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 2px 0 0 0;">Ciclo único de Domingo a Sábado • ${this.FREEZERS.length} freezers organizados por dia</p>
                 </div>
               </div>
 
@@ -612,7 +689,7 @@ window.BrigadaPisoLoja = {
             <!-- Abas de Filtro por Dia da Semana -->
             <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; flex-wrap: wrap;" id="sched-day-tabs">
               <button type="button" class="cat-tab ${this.filterScheduleDay === 'all' ? 'cat-tab--active' : ''}" data-sched-day="all" style="font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer;">
-                🔘 Todos (31)
+                🔘 Todos (${this.FREEZERS.length})
               </button>
               <button type="button" class="cat-tab ${this.filterScheduleDay === 'today' ? 'cat-tab--active' : ''}" data-sched-day="today" style="font-size: 0.8rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border-color: #10b981; color: ${this.filterScheduleDay === 'today' ? '#ffffff' : '#10b981'}; background: ${this.filterScheduleDay === 'today' ? '#10b981' : 'rgba(16,185,129,0.12)'}; cursor: pointer;">
                 🎯 Hoje (${todaySched.dayName})
@@ -977,12 +1054,23 @@ window.BrigadaPisoLoja = {
     const existing = document.getElementById('add-product-piso-modal');
     if (existing) existing.remove();
 
-    const freezerObj = this.FREEZERS.find(f => f.num === freezerNum) || { num: freezerNum, category: 'aves' };
-    const defaultCat = freezerObj.category === 'misto' ? 'bovino' : freezerObj.category;
+    const freezerObj = this.FREEZERS.find(f => f.num === freezerNum) || { num: freezerNum, category: 'resfriados', sector: 'pereciveis' };
+    const allowedCats = this.getAllowedCategories();
+    
+    let defaultCat = freezerObj.category;
+    if (defaultCat === 'misto') defaultCat = 'bovino';
+    if (defaultCat === 'resfriados' || defaultCat === 'queijos_especiais') defaultCat = 'laticinios';
+    if (!allowedCats.includes(defaultCat)) {
+      defaultCat = allowedCats[0] || 'laticinios';
+    }
+
+    const isPereciveisUser = allowedCats.some(c => ['laticinios', 'frios', 'iogurtes', 'pereciveis'].includes(c)) && !allowedCats.some(c => ['aves', 'bovino', 'suino', 'pescado'].includes(c));
+    const namePlaceholder = isPereciveisUser ? 'Ex: Iogurte Betânia 170g, Queijo Mussarela...' : 'Ex: Frango Inteiro Congelado, Peito Sadia...';
+    const supplierPlaceholder = isPereciveisUser ? 'Ex: Betânia, Danone, Nestlé, Elegê, Vigor, Piracanjuba, Tirolez...' : 'Ex: Friboi, Seara, Sadia, Perdigão, Mauricéa...';
+
     const freezerStr = `Freezer ${freezerNum.toString().padStart(2, '0')}`;
     const today = new Date().toISOString().split('T')[0];
 
-    const allowedCats = this.getAllowedCategories();
     const catOptions = [
       { val: 'aves', label: '🐔 Aves' },
       { val: 'bovino', label: '🐮 Bovino' },
@@ -1035,7 +1123,7 @@ window.BrigadaPisoLoja = {
               <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
                 Descrição / Nome do Produto <span style="color: #ef4444;">*</span>
               </label>
-              <input type="text" id="add-piso-name" class="form-input" placeholder="Ex: Frango Inteiro Congelado" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              <input type="text" id="add-piso-name" class="form-input" placeholder="${namePlaceholder}" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
             </div>
 
             <!-- Categoria e Unidade -->
@@ -1084,7 +1172,7 @@ window.BrigadaPisoLoja = {
               <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
                 Fornecedor / Marca
               </label>
-              <input type="text" id="add-piso-supplier" class="form-input" placeholder="Ex: Friboi, Seara, Sadia, Perdigão, Mauricéa..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              <input type="text" id="add-piso-supplier" class="form-input" placeholder="${supplierPlaceholder}" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
             </div>
 
             <!-- Botões de Ação -->
@@ -1149,11 +1237,23 @@ window.BrigadaPisoLoja = {
           return;
         }
 
-        const catalog = window.BrigadaData.catalog || [];
-        const matches = catalog.filter(c => 
-          String(c.plu || '').toLowerCase().includes(query) || 
-          (c.name || '').toLowerCase().includes(query)
-        ).slice(0, 6);
+        const rawCatalog = window.BrigadaData.catalog || [];
+        
+        // Filtrar catálogo estritamente pelo setor do usuário
+        const catalog = rawCatalog.filter(c => {
+          if (window.BrigadaData?.isProductAllowedForUser) {
+            return window.BrigadaData.isProductAllowedForUser(c);
+          }
+          return true;
+        });
+
+        const queryNorm = normalize(query);
+        const matches = catalog.filter(c => {
+          const nameNorm = normalize(c.name);
+          const pluStr = String(c.plu || '').toLowerCase();
+          const barcodeStr = String(c.barcode || '').toLowerCase();
+          return pluStr.includes(queryNorm) || nameNorm.includes(queryNorm) || barcodeStr.includes(queryNorm);
+        }).slice(0, 6);
 
         if (matches.length === 0) {
           suggestionsBox.style.display = 'none';
@@ -1164,7 +1264,7 @@ window.BrigadaPisoLoja = {
           <div class="catalog-sugg-row" data-plu="${m.plu}" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; background: #16152b; transition: background 0.15s ease;">
             <div>
               <div style="font-weight: 700; color: #ffffff;">${m.name}</div>
-              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">PLU: <b style="color: #38bdf8;">${m.plu}</b> • Setor: ${m.category}</div>
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">PLU: <b style="color: #38bdf8;">${m.plu}</b> • Setor: ${this.catMap[m.category] || m.category}</div>
             </div>
             <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">Selecionar ↵</span>
           </div>

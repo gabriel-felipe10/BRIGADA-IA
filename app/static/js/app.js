@@ -1557,7 +1557,7 @@ window.BrigadaRouter = {
       window.BrigadaProductList.render(container);
     } else if (page === 'chambers') {
       window.BrigadaChambers.render(container);
-    } else if (page === 'piso-loja') {
+    } else if (page === 'piso-loja' || page === 'piso_loja') {
       if (window.BrigadaPisoLoja) {
         window.BrigadaPisoLoja.render(container);
       } else {
