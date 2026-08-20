@@ -19,6 +19,7 @@ window.BrigadaChambers = {
   directorySearch: '',
   directoryFilter: 'all',
   filterScheduleDay: 'all', // 'all', 'today', 'domingo', 'segunda', etc.
+  filterColumn: 'all', // 'all', '1', '2', ..., 'alerts', 'occupied', 'empty'
 
   // Esquema Oficial de Verificação de Validade — Câmara Congelada (Ciclo Único - Domingo a Sábado | 16 Colunas)
   SCHEDULE_CONGELADA: [
@@ -39,6 +40,36 @@ window.BrigadaChambers = {
   getTodayScheduleCongelada() {
     const todayIndex = new Date().getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
     return this.SCHEDULE_CONGELADA.find(s => s.dayIndex === todayIndex) || this.SCHEDULE_CONGELADA[1];
+  },
+
+  // ── Gerenciamento de Posições Marcadas como Vazia (Regra: Esquerda ➔ Direita) ──
+  getEmptySlots() {
+    try {
+      const stored = localStorage.getItem('brigada_chamber_empty_slots');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  isSlotMarkedEmpty(chamber, column, level, position) {
+    if (!chamber || !column) return false;
+    const key = `${chamber}:C${column}:N${level}:${position}`;
+    return this.getEmptySlots().includes(key);
+  },
+
+  setSlotMarkedEmpty(chamber, column, level, position, isEmpty) {
+    if (!chamber || !column) return;
+    const key = `${chamber}:C${column}:N${level}:${position}`;
+    let list = this.getEmptySlots();
+    if (isEmpty) {
+      if (!list.includes(key)) list.push(key);
+    } else {
+      list = list.filter(k => k !== key);
+    }
+    try {
+      localStorage.setItem('brigada_chamber_empty_slots', JSON.stringify(list));
+    } catch (e) {}
   },
 
   CHAMBER_CONFIGS: {
@@ -564,20 +595,69 @@ window.BrigadaChambers = {
 
     const todaySched = this.getTodayScheduleCongelada();
 
-    // Determine filtered columns if viewing Câmara Congelada with day filter
-    let activeColumns = Array.from({ length: config.columnsCount }, (_, i) => i + 1);
-    if (isCongelada) {
+    // Calcula dados detalhados de cada coluna para filtros e badges
+    const colInfoList = Array.from({ length: config.columnsCount }, (_, i) => {
+      const colNum = i + 1;
+      const alerts = this.getColumnAlerts(this.selectedChamber, colNum);
+      const occupiedSlots = new Set();
+      let totalItems = 0;
+      products.forEach(p => {
+        const parsed = this.parseLocation(p.location);
+        if (parsed && parsed.chamber === this.selectedChamber && parsed.column === colNum) {
+          occupiedSlots.add(`N${parsed.level}-${parsed.position}`);
+          totalItems++;
+        }
+      });
+      return {
+        colNum,
+        occupied: occupiedSlots.size,
+        items: totalItems,
+        alerts,
+        hasAlerts: alerts.hasAny
+      };
+    });
+
+    const alertColsCount = colInfoList.filter(c => c.hasAlerts).length;
+    const occupiedColsCount = colInfoList.filter(c => c.occupied > 0).length;
+    const emptyColsCount = colInfoList.filter(c => c.occupied === 0).length;
+
+    // Determina colunas ativas baseadas no filtro de dia (Câmara Congelada) e filtro de coluna
+    let baseColumns = Array.from({ length: config.columnsCount }, (_, i) => i + 1);
+    if (isCongelada && this.filterScheduleDay !== 'all') {
       if (this.filterScheduleDay === 'today') {
-        activeColumns = todaySched.columns;
-      } else if (this.filterScheduleDay !== 'all') {
+        baseColumns = todaySched.columns;
+      } else {
         const matchingSched = this.SCHEDULE_CONGELADA.find(s => s.dayKey === this.filterScheduleDay);
         if (matchingSched) {
-          activeColumns = matchingSched.columns;
+          baseColumns = matchingSched.columns;
         }
       }
     }
 
-    const columnCardsHTML = activeColumns.map(colNum => {
+    let activeColumns = baseColumns;
+    if (this.filterColumn === 'alerts') {
+      activeColumns = baseColumns.filter(colNum => colInfoList[colNum - 1].hasAlerts);
+    } else if (this.filterColumn === 'occupied') {
+      activeColumns = baseColumns.filter(colNum => colInfoList[colNum - 1].occupied > 0);
+    } else if (this.filterColumn === 'empty') {
+      activeColumns = baseColumns.filter(colNum => colInfoList[colNum - 1].occupied === 0);
+    } else if (this.filterColumn !== 'all') {
+      const targetCol = parseInt(this.filterColumn, 10);
+      if (!isNaN(targetCol)) {
+        activeColumns = [targetCol];
+      }
+    }
+
+    const columnCardsHTML = activeColumns.length === 0 ? `
+      <div style="grid-column: 1 / -1; padding: 3rem 2rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: 12px;">
+        <div style="font-size: 2.5rem; margin-bottom: 8px;">🔍</div>
+        <h4 style="color: var(--text-primary); margin: 0 0 6px 0; font-size: 1.1rem; font-weight: 700;">Nenhuma coluna encontrada</h4>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0 0 1.25rem 0;">Nenhuma coluna corresponde ao filtro selecionado.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-reset-filters-empty" style="cursor: pointer; padding: 7px 16px; border-radius: 8px; font-weight: 600;">
+          Mostrar Todas as Colunas
+        </button>
+      </div>
+    ` : activeColumns.map(colNum => {
       return this.renderColumnCard(this.selectedChamber, colNum, config.columnsCount, themeColor, isResfriada ? 'Resfriada' : 'Congelada');
     }).join('');
 
@@ -660,12 +740,39 @@ window.BrigadaChambers = {
           align-items: center;
           gap: 4px;
         }
+        .col-chip-btn {
+          font-size: 0.8rem;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+          background: rgba(255,255,255,0.04);
+          color: var(--text-secondary);
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          white-space: nowrap;
+        }
+        .col-chip-btn:hover {
+          background: rgba(255,255,255,0.1);
+          color: var(--text-primary);
+          border-color: var(--primary, #6366f1);
+        }
+        .col-chip-btn--active {
+          background: var(--primary, #6366f1) !important;
+          color: #ffffff !important;
+          border-color: var(--primary, #6366f1) !important;
+          font-weight: 800 !important;
+          box-shadow: 0 2px 10px rgba(99,102,241,0.4);
+        }
       </style>
     `;
 
     const scheduleBannerHTML = isCongelada ? `
       <!-- Painel do Esquema de Verificação de Validade — Câmara Congelada -->
-      <div class="glass-panel" style="padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; border-radius: 12px; border: 1px solid var(--glass-border); background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);">
+      <div class="glass-panel" style="padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; border-radius: 12px; border: 1px solid var(--glass-border); background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.6rem;">🗓️</span>
@@ -687,7 +794,7 @@ window.BrigadaChambers = {
         <!-- Abas de Filtro por Dia da Semana -->
         <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; flex-wrap: wrap;" id="chamber-sched-day-tabs">
           <button type="button" class="cat-tab ${this.filterScheduleDay === 'all' ? 'cat-tab--active' : ''}" data-sched-day="all" style="font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer;">
-            🔘 Todas (16)
+            🔘 Todas as Escalas (16)
           </button>
           <button type="button" class="cat-tab ${this.filterScheduleDay === 'today' ? 'cat-tab--active' : ''}" data-sched-day="today" style="font-size: 0.8rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border-color: #10b981; color: ${this.filterScheduleDay === 'today' ? '#ffffff' : '#10b981'}; background: ${this.filterScheduleDay === 'today' ? '#10b981' : 'rgba(16,185,129,0.12)'}; cursor: pointer;">
             🎯 Hoje (${todaySched.dayName})
@@ -704,6 +811,24 @@ window.BrigadaChambers = {
         </div>
       </div>
     ` : '';
+
+    // Barra de Filtro de Colunas (Apenas Pílulas Rápidas e Limpas)
+    const columnFilterBarHTML = `
+      <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;" id="chamber-col-chips">
+        <button type="button" class="col-chip-btn ${this.filterColumn === 'all' ? 'col-chip-btn--active' : ''}" data-col-filter="all">
+          Todas
+        </button>
+
+        ${colInfoList.map(c => {
+          const isColActive = this.filterColumn === String(c.colNum);
+          return `
+            <button type="button" class="col-chip-btn ${isColActive ? 'col-chip-btn--active' : ''}" data-col-filter="${c.colNum}">
+              Coluna ${c.colNum.toString().padStart(2, '0')}
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
 
     return `
       <div class="chambers-page">
@@ -723,6 +848,8 @@ window.BrigadaChambers = {
 
         ${scheduleBannerHTML}
 
+        ${columnFilterBarHTML}
+
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           ${columnCardsHTML}
         </div>
@@ -731,6 +858,7 @@ window.BrigadaChambers = {
       </div>
     `;
   },
+
 
   // ── Rack de Armazenamento da Coluna Selecionada (Layout Vertical de 4 Níveis) ──
   buildRackViewHTML() {
@@ -758,11 +886,16 @@ window.BrigadaChambers = {
       </div>
     ` : '';
 
-    // Graphical Rack Level Rows
+    // Graphical Rack Level Rows (Regra: Esquerda primeiro ➔ depois Direita ➔ Opção Deixar Vazio)
     const rackRowsHTML = Array.from({ length: 4 }, (_, i) => {
       const level = 4 - i; // levels from 4 (top) to 1 (ground)
       const leftProducts = this.getProductAt(colNum, level, 'esquerda');
       const rightProducts = this.getProductAt(colNum, level, 'direita');
+      const isLeftEmptyMarked = this.isSlotMarkedEmpty(this.selectedChamber, colNum, level, 'esquerda');
+      const isRightEmptyMarked = this.isSlotMarkedEmpty(this.selectedChamber, colNum, level, 'direita');
+
+      // Regra: Esquerda precisa estar preenchida com produtos ou marcada como "Deixar Vazio"
+      const isLeftResolved = (leftProducts && leftProducts.length > 0) || isLeftEmptyMarked;
 
       const isPiso = level === 1;
       const levelTypeTag = isPiso ? '📦 Piso' : level === 4 ? '🏗️ Aéreo (Topo)' : '🏗️ Aéreo';
@@ -774,13 +907,61 @@ window.BrigadaChambers = {
         const sideName = isLeft ? 'Esquerda' : 'Direita';
         const hasItems = prods && prods.length > 0;
         const countTag = hasItems ? `<span style="font-size: 0.8rem; font-weight: 600; opacity: 0.85; margin-left: 4px;">(${prods.length} ${prods.length === 1 ? 'item' : 'itens'})</span>` : '';
+        const isMarkedEmpty = isLeft ? isLeftEmptyMarked : isRightEmptyMarked;
 
+        // 1. Se já tem itens alocados
+        if (hasItems) {
+          return `
+            <div class="pallet-empty-actions" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+              <button type="button" class="pallet-slot-btn pallet-slot-btn--add" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.92rem; font-weight: 700; cursor: pointer; padding: 10px 16px; border-radius: 8px;" title="Adicionar e alocar produto no Nível ${level} (${sideName})">
+                <span style="font-size: 1.15rem; color: #10b981; font-weight: 800;">➕</span>
+                <span>Adicionar Item à ${sideName}</span>
+                ${countTag}
+              </button>
+            </div>
+          `;
+        }
+
+        // 2. Se foi marcado como VAZIO intencionalmente
+        if (isMarkedEmpty) {
+          return `
+            <div style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 14px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.22); border-radius: 8px; box-sizing: border-box;">
+              <span style="font-size: 0.84rem; color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                <span>⚪</span> <span>${sideName}: Vazio</span>
+              </span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button type="button" class="btn btn--outline btn-sm" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="padding: 5px 10px; font-size: 0.78rem; font-weight: 700; color: #10b981; border-color: rgba(16,185,129,0.4); cursor: pointer; border-radius: 6px;" title="Adicionar produto nesta posição">
+                  ➕ Adicionar
+                </button>
+                <button type="button" class="btn btn--ghost btn-sm" data-action="unmark-slot-empty" data-level="${level}" data-pos="${position}" style="padding: 5px 8px; font-size: 0.78rem; color: var(--text-tertiary); cursor: pointer; border-radius: 6px;" title="Restaurar opção de preenchimento">
+                  ✕
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        // 3. Se for o Lado Direito e a Esquerda AINDA NÃO foi resolvida (regra: esquerda primeiro!)
+        if (!isLeft && !isLeftResolved) {
+          return `
+            <div style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center;">
+              <button type="button" class="pallet-slot-btn" data-action="locked-slot-alert" data-level="${level}" style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.84rem; font-weight: 600; cursor: pointer; opacity: 0.45; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.18); color: var(--text-tertiary); padding: 8px 14px; border-radius: 8px;" title="Preencha ou deixe a Esquerda vazia primeiro">
+                <span>🔒</span>
+                <span>Adicionar à Direita (Preencha Esquerda 1º)</span>
+              </button>
+            </div>
+          `;
+        }
+
+        // 4. Posição disponível para adicionar item ou deixar vazio
         return `
-          <div class="pallet-empty-actions" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-            <button type="button" class="pallet-slot-btn pallet-slot-btn--add" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.92rem; font-weight: 700; cursor: pointer; padding: 10px 16px; border-radius: 8px;" title="Adicionar e alocar produto diretamente no Nível ${level} (${sideName})">
-              <span style="font-size: 1.15rem; color: #10b981; font-weight: 800;">➕</span>
-              <span>Adicionar Item à ${sideName}</span>
-              ${countTag}
+          <div style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="pallet-slot-btn pallet-slot-btn--add" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="flex: 1; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.88rem; font-weight: 700; cursor: pointer; padding: 8px 12px; border-radius: 8px;" title="Adicionar e alocar produto diretamente no Nível ${level} (${sideName})">
+              <span style="font-size: 1.1rem; color: #10b981; font-weight: 800;">➕</span>
+              <span>Adicionar à ${sideName}</span>
+            </button>
+            <button type="button" class="btn btn--outline btn-sm" data-action="mark-slot-empty" data-level="${level}" data-pos="${position}" style="padding: 8px 12px; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); border: 1px dashed rgba(255,255,255,0.25); border-radius: 8px; cursor: pointer; white-space: nowrap; height: 48px; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.02);" title="Marcar como vazio se não tiver o que colocar">
+              ⚪ Deixar Vazio
             </button>
           </div>
         `;
@@ -826,6 +1007,7 @@ window.BrigadaChambers = {
         </div>
       `;
     }).join('');
+
 
     const prevCol = colNum > 1 ? colNum - 1 : null;
     const nextCol = colNum < config.columnsCount ? colNum + 1 : null;
@@ -875,7 +1057,29 @@ window.BrigadaChambers = {
 
         ${alertBannerHTML}
 
-        <!-- 1. Tabela Principal de Produtos Alocados na Coluna (Estilo Idêntico ao Piso de Loja) -->
+        <!-- 1. Estrutura Vertical de Paletes (Rack Gráfico) -->
+        <div class="glass-panel" style="padding: 1.5rem; max-width: 960px; margin: 0 auto 2rem auto;">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>🏗️ Estrutura Vertical da Coluna (Rack de Paletes)</span>
+              </h3>
+              <p style="font-size:0.8rem; color:var(--text-secondary); margin: 0;">4 Níveis Verticais de Armazenagem • 8 Posições (Esquerda / Direita)</p>
+            </div>
+          </div>
+
+          <div class="rack-container">
+            ${rackRowsHTML}
+            
+            <div class="rack-legs-row">
+              <div class="rack-leg"></div>
+              <div class="rack-leg middle"></div>
+              <div class="rack-leg"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Tabela Principal de Produtos Alocados na Coluna (Estilo Idêntico ao Piso de Loja) -->
         <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
           <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -909,7 +1113,7 @@ window.BrigadaChambers = {
                     <td colspan="7" class="empty-state" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">
                       <div style="font-size: 2rem; margin-bottom: 8px;">❄️</div>
                       Nenhum produto alocado nesta coluna ainda.<br>
-                      <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" ou utilize a estrutura abaixo para cadastrar itens.</small>
+                      <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" ou utilize a estrutura acima para cadastrar itens.</small>
                     </td>
                   </tr>
                 ` : colProducts.map(p => {
@@ -960,28 +1164,6 @@ window.BrigadaChambers = {
                 }).join('')}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <!-- 2. Estrutura Vertical de Paletes (Rack Gráfico) -->
-        <div class="glass-panel" style="padding: 1.5rem; max-width: 960px; margin: 0 auto 2rem auto;">
-          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px;">
-            <div>
-              <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 6px;">
-                <span>🏗️ Estrutura Vertical da Coluna (Rack de Paletes)</span>
-              </h3>
-              <p style="font-size:0.8rem; color:var(--text-secondary); margin: 0;">4 Níveis Verticais de Armazenagem • 8 Posições (Esquerda / Direita)</p>
-            </div>
-          </div>
-
-          <div class="rack-container">
-            ${rackRowsHTML}
-            
-            <div class="rack-legs-row">
-              <div class="rack-leg"></div>
-              <div class="rack-leg middle"></div>
-              <div class="rack-leg"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -1304,6 +1486,8 @@ window.BrigadaChambers = {
       resfriadaCard.addEventListener('click', () => {
         this.selectedChamber = 'Câmara Resfriada';
         this.selectedColumn = null;
+        this.filterColumn = 'all';
+        this.filterScheduleDay = 'all';
         this.render(this.container);
       });
     }
@@ -1314,6 +1498,8 @@ window.BrigadaChambers = {
       congeladaCard.addEventListener('click', () => {
         this.selectedChamber = 'Câmara Congelada';
         this.selectedColumn = null;
+        this.filterColumn = 'all';
+        this.filterScheduleDay = 'all';
         this.render(this.container);
       });
     }
@@ -1324,6 +1510,8 @@ window.BrigadaChambers = {
       backToChambersBtn.addEventListener('click', () => {
         this.selectedChamber = null;
         this.selectedColumn = null;
+        this.filterColumn = 'all';
+        this.filterScheduleDay = 'all';
         this.render(this.container);
       });
     }
@@ -1352,9 +1540,51 @@ window.BrigadaChambers = {
     this.container.querySelectorAll('#chamber-sched-day-tabs .cat-tab[data-sched-day]').forEach(el => {
       el.addEventListener('click', (e) => {
         this.filterScheduleDay = e.currentTarget.dataset.schedDay;
+        this.filterColumn = 'all';
         this.render(this.container);
       });
     });
+
+    // Filtro de Colunas: Dropdown Select
+    const colFilterSelect = this.container.querySelector('#chamber-col-filter-select');
+    if (colFilterSelect) {
+      colFilterSelect.addEventListener('change', (e) => {
+        this.filterColumn = e.target.value;
+        if (this.filterColumn !== 'all' && !['alerts', 'occupied', 'empty'].includes(this.filterColumn)) {
+          this.filterScheduleDay = 'all';
+        }
+        this.render(this.container);
+      });
+    }
+
+    // Filtro de Colunas: Chips / Botões de Coluna
+    this.container.querySelectorAll('#chamber-col-chips [data-col-filter]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        this.filterColumn = e.currentTarget.dataset.colFilter;
+        if (this.filterColumn !== 'all' && !['alerts', 'occupied', 'empty'].includes(this.filterColumn)) {
+          this.filterScheduleDay = 'all';
+        }
+        this.render(this.container);
+      });
+    });
+
+    // Botões de Limpar Filtros
+    const resetFiltersBtn = this.container.querySelector('#btn-reset-chamber-filters');
+    if (resetFiltersBtn) {
+      resetFiltersBtn.addEventListener('click', () => {
+        this.filterColumn = 'all';
+        this.filterScheduleDay = 'all';
+        this.render(this.container);
+      });
+    }
+    const resetEmptyBtn = this.container.querySelector('#btn-reset-filters-empty');
+    if (resetEmptyBtn) {
+      resetEmptyBtn.addEventListener('click', () => {
+        this.filterColumn = 'all';
+        this.filterScheduleDay = 'all';
+        this.render(this.container);
+      });
+    }
 
     // Navegador de Colunas (Anterior / Próxima)
     this.container.querySelectorAll('[data-action="nav-col"][data-col]').forEach(btn => {
@@ -1465,6 +1695,41 @@ window.BrigadaChambers = {
         const level = parseInt(el.dataset.level, 10);
         const position = el.dataset.pos;
         this.openAddNewProductModal(this.selectedColumn, level, position);
+      });
+    });
+
+    // Marcar Posição como Vazia
+    this.container.querySelectorAll('[data-action="mark-slot-empty"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const level = parseInt(btn.dataset.level, 10);
+        const pos = btn.dataset.pos;
+        this.setSlotMarkedEmpty(this.selectedChamber, this.selectedColumn, level, pos, true);
+        window.BrigadaUI?.showToast?.(`Posição ${pos === 'esquerda' ? 'Esquerda' : 'Direita'} (Nível ${level}) marcada como vazia.`, 'info');
+        this.render(this.container);
+      });
+    });
+
+    // Desmarcar Posição Vazia
+    this.container.querySelectorAll('[data-action="unmark-slot-empty"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const level = parseInt(btn.dataset.level, 10);
+        const pos = btn.dataset.pos;
+        this.setSlotMarkedEmpty(this.selectedChamber, this.selectedColumn, level, pos, false);
+        this.render(this.container);
+      });
+    });
+
+    // Alerta de Posição Bloqueada (Regra: Esquerda primeiro)
+    this.container.querySelectorAll('[data-action="locked-slot-alert"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast('Regra de Alocação: Preencha primeiro o lado Esquerdo ou clique em "Deixar Vazio".', 'warning');
+        } else {
+          alert('Regra de Alocação: Preencha primeiro o lado Esquerdo ou clique em "Deixar Vazio" antes de adicionar à Direita.');
+        }
       });
     });
 
@@ -2845,6 +3110,7 @@ window.BrigadaChambers = {
           location: locString
         });
 
+        this.setSlotMarkedEmpty(this.selectedChamber, col, lvl, pos, false);
         window.BrigadaUI.showToast('Produto cadastrado e alocado com sucesso!', 'success');
         close();
         this.render(this.container);
