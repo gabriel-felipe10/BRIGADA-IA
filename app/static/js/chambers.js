@@ -940,12 +940,18 @@ window.BrigadaChambers = {
                       <td><strong>${window.BrigadaData.formatDate(p.endDate)}</strong></td>
                       <td><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
                       <td>
-                        <div style="display: inline-flex; gap: 6px;">
+                        <div style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
                           <button class="btn btn-outline btn-sm" data-action="edit-product-col-table" data-id="${p.id}" data-col="${colNum}" data-lvl="${lvl}" data-pos="${pos}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                             ✏️ Editar
                           </button>
+                          <button class="btn btn-outline btn-sm" data-action="relocate-product-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #a78bfa; border-color: rgba(167,139,250,0.35);" title="Realocar Produto">
+                            🔄 Realocar
+                          </button>
                           <button class="btn btn-danger btn-sm" data-action="deallocate-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem;" title="Desalocar Produto">
-                            🗑️ Desalocar
+                            📤 Desalocar
+                          </button>
+                          <button class="btn btn-danger btn-sm" data-action="delete-product-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);" title="Excluir Produto Permanentemente">
+                            🗑️ Excluir
                           </button>
                         </div>
                       </td>
@@ -1400,6 +1406,22 @@ window.BrigadaChambers = {
       });
     });
 
+    // Realocar Produto na Tabela da Coluna
+    this.container.querySelectorAll('[data-action="relocate-product-col-table"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        this.openRelocateModal(prodId);
+      });
+    });
+
+    // Excluir Produto Permanentemente na Tabela da Coluna
+    this.container.querySelectorAll('[data-action="delete-product-col-table"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        this.deleteProductPermanently(prodId);
+      });
+    });
+
     // Ver Detalhes / Composição do Palete
     this.container.querySelectorAll('[data-action="view-pallet"]').forEach(el => {
       el.addEventListener('click', (e) => {
@@ -1641,7 +1663,13 @@ window.BrigadaChambers = {
               <button class="btn btn-outline btn-sm" data-action="edit-item-in-pallet" data-id="${p.id}" title="Editar este produto" style="padding: 4px 8px; color: #38bdf8; border-color: rgba(56,189,248,0.35); font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
                 ✏️
               </button>
-              <button class="btn btn-outline btn-sm" data-action="remove-item-from-pallet" data-id="${p.id}" title="Remover apenas este item do palete" style="padding: 4px 8px; color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 0.78rem; cursor: pointer;">
+              <button class="btn btn-outline btn-sm" data-action="relocate-item-in-pallet" data-id="${p.id}" title="Realocar para outra coluna/posição" style="padding: 4px 8px; color: #a78bfa; border-color: rgba(167,139,250,0.35); font-size: 0.78rem; cursor: pointer;">
+                🔄
+              </button>
+              <button class="btn btn-outline btn-sm" data-action="remove-item-from-pallet" data-id="${p.id}" title="Desalocar este item para piso de loja" style="padding: 4px 8px; color: #f59e0b; border-color: rgba(245,158,11,0.3); font-size: 0.78rem; cursor: pointer;">
+                📤
+              </button>
+              <button class="btn btn-outline btn-sm" data-action="delete-item-in-pallet" data-id="${p.id}" title="Excluir este produto permanentemente" style="padding: 4px 8px; color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 0.78rem; cursor: pointer;">
                 🗑️
               </button>
             </div>
@@ -1747,11 +1775,19 @@ window.BrigadaChambers = {
       });
     });
 
-    // Remover Item Individual do Palete
+    // Realocar Item do Palete
+    overlay.querySelectorAll('[data-action="relocate-item-in-pallet"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        this.openRelocateModal(prodId);
+      });
+    });
+
+    // Remover Item Individual do Palete (Desalocar)
     overlay.querySelectorAll('[data-action="remove-item-from-pallet"]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const prodId = parseInt(btn.dataset.id, 10);
-        if (confirm('Tem certeza que deseja remover este item deste palete?')) {
+        if (confirm('Tem certeza que deseja desalocar este item deste palete?')) {
           await this.deallocateProduct(prodId, false);
           // Atualiza o modal do palete se ainda houver outros itens
           const remaining = this.getProductAt(col, lvl, pos);
@@ -1762,6 +1798,14 @@ window.BrigadaChambers = {
           }
           this.render(this.container);
         }
+      });
+    });
+
+    // Excluir Item Permanentemente
+    overlay.querySelectorAll('[data-action="delete-item-in-pallet"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        await this.deleteProductPermanently(prodId);
       });
     });
 
@@ -2292,6 +2336,193 @@ window.BrigadaChambers = {
     }
   },
 
+  // ── Exclusão Permanente de Produto ──
+  async deleteProductPermanently(productId) {
+    const p = (window.BrigadaData.products || []).find(item => item.id === productId);
+    const prodName = p ? p.name : 'este produto';
+    const prodPlu = p ? ` (PLU: ${p.plu})` : '';
+    if (confirm(`Tem certeza que deseja EXCLUIR permanentemente ${prodName}${prodPlu} do sistema?\n\nEsta ação não poderá ser desfeita.`)) {
+      try {
+        await window.BrigadaData.deleteProduct(productId, {
+          annotation: 'Excluído diretamente pelo mapa de Câmaras Frias',
+          editor: window.BrigadaAuth?.currentUser?.name || 'Sistema'
+        });
+        window.BrigadaUI.showToast('Produto excluído com sucesso!', 'success');
+        this.closeModal('pallet-details-modal');
+        this.render(this.container);
+      } catch (err) {
+        window.BrigadaUI.showToast('Erro ao excluir produto: ' + err.message, 'error');
+      }
+    }
+  },
+
+  // ── Modal de Realocação Direta de Produto ──
+  openRelocateModal(productId) {
+    this.closeModal('relocate-product-modal');
+    this.closeModal('pallet-details-modal');
+
+    const p = (window.BrigadaData.products || []).find(item => item.id === productId);
+    if (!p) {
+      window.BrigadaUI.showToast('Produto não encontrado.', 'error');
+      return;
+    }
+
+    const parsed = this.parseLocation(p.location) || {
+      chamber: this.selectedChamber === 'Câmara Resfriada' ? 'resfriado' : 'congelado',
+      column: this.selectedColumn || 1,
+      level: 1,
+      position: 'esquerda'
+    };
+
+    const isResf = parsed.chamber === 'resfriado';
+    const currChamberName = isResf ? 'Câmara Resfriada' : 'Câmara Congelada';
+    const currSideLabel = parsed.position === 'esquerda' ? 'Esquerda (E)' : 'Direita (D)';
+    const currLvlLabel = parsed.level === 1 ? '📦 Piso (Nível 1)' : `🏗️ Aéreo (Nível ${parsed.level})`;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay modal-overlay--visible';
+    overlay.id = 'relocate-product-modal';
+
+    overlay.innerHTML = `
+      <div class="modal" style="max-width: 520px; width: 92%; transform: translateY(0); margin-top: 4vh;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+          <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span>🔄</span>
+            <span>Realocar Produto</span>
+          </h3>
+          <button class="modal-close" id="modal-close-relocate" style="background: none; border: none; font-size: 1.25rem; color: var(--text-secondary); cursor: pointer;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1.5rem;">
+          <!-- Informações do Produto Atual -->
+          <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="color: var(--text-primary); font-size: 0.95rem;">${p.name}</strong>
+              <span class="plu-badge">${p.plu}</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+              <span>Estoque: <b>${p.quantity} ${p.unit || 'kg'}</b></span>
+              <span>Validade: <b>${window.BrigadaData.formatDate(p.endDate)}</b></span>
+            </div>
+            <div style="font-size: 0.76rem; color: #a78bfa; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-color);">
+              📍 <b>Posição Atual:</b> ${currChamberName} • Coluna ${String(parsed.column).padStart(2, '0')} • ${currLvlLabel} • ${currSideLabel}
+            </div>
+          </div>
+
+          <form id="form-relocate-prod" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Nova Câmara -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Câmara de Destino <span style="color: #ef4444;">*</span>
+              </label>
+              <select id="relocate-chamber" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                <option value="resfriado" ${parsed.chamber === 'resfriado' ? 'selected' : ''}>❄️ Câmara Resfriada (4 Colunas)</option>
+                <option value="congelado" ${parsed.chamber === 'congelado' ? 'selected' : ''}>🥶 Câmara Congelada (16 Colunas)</option>
+              </select>
+            </div>
+
+            <!-- Nova Coluna -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                Coluna de Destino <span style="color: #ef4444;">*</span>
+              </label>
+              <select id="relocate-column" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+              </select>
+            </div>
+
+            <!-- Nível e Posição (Lado Esquerdo / Direito) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Nível / Altura <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="relocate-level" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="1" ${parsed.level === 1 ? 'selected' : ''}>📦 Nível 1 — Piso</option>
+                  <option value="2" ${parsed.level === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
+                  <option value="3" ${parsed.level === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
+                  <option value="4" ${parsed.level === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Lado / Posição <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="relocate-position" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="esquerda" ${parsed.position === 'esquerda' ? 'selected' : ''}>⬅️ Lado Esquerdo (E)</option>
+                  <option value="direita" ${parsed.position === 'direita' ? 'selected' : ''}>➡️ Lado Direito (D)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+              <button type="button" class="btn btn--outline" id="btn-cancel-relocate" style="padding: 8px 16px;">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn--primary" id="btn-submit-relocate" style="padding: 8px 20px; font-weight: 700; background: #a78bfa; border-color: #8b5cf6; color: #fff;">
+                ✓ Confirmar Realocação
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const chamberSelect = overlay.querySelector('#relocate-chamber');
+    const colSelect = overlay.querySelector('#relocate-column');
+
+    const populateCols = () => {
+      const selectedChamb = chamberSelect.value;
+      const count = selectedChamb === 'resfriado' ? 4 : 16;
+      colSelect.innerHTML = Array.from({ length: count }, (_, i) => {
+        const colNum = i + 1;
+        const pad = String(colNum).padStart(2, '0');
+        const isSel = colNum === parsed.column;
+        return `<option value="${colNum}" ${isSel ? 'selected' : ''}>Coluna ${pad}</option>`;
+      }).join('');
+    };
+
+    populateCols();
+    chamberSelect.addEventListener('change', populateCols);
+
+    const close = () => this.closeModal('relocate-product-modal');
+    overlay.querySelector('#modal-close-relocate').addEventListener('click', close);
+    overlay.querySelector('#btn-cancel-relocate').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target.id === 'relocate-product-modal') close();
+    });
+
+    const form = overlay.querySelector('#form-relocate-prod');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetChamber = chamberSelect.value;
+      const targetCol = parseInt(colSelect.value, 10);
+      const targetLvl = parseInt(overlay.querySelector('#relocate-level').value, 10);
+      const targetPos = overlay.querySelector('#relocate-position').value;
+
+      const locString = this.formatLocation(targetChamber, targetCol, targetLvl, targetPos);
+      const colLabel = targetLvl === 1 ? 'Piso' : 'Aéreo';
+
+      try {
+        await window.BrigadaData.updateProduct(productId, {
+          location: locString,
+          column: colLabel,
+          columnNumber: targetCol
+        });
+        const targetChamberName = targetChamber === 'resfriado' ? 'Câmara Resfriada' : 'Câmara Congelada';
+        const targetPosLabel = targetPos === 'esquerda' ? 'Esquerda (E)' : 'Direita (D)';
+        const targetLvlLabel = targetLvl === 1 ? 'Piso' : `Nível ${targetLvl}`;
+        window.BrigadaUI.showToast(`Produto realocado para ${targetChamberName} • Col. ${String(targetCol).padStart(2, '0')} (${targetLvlLabel} • ${targetPosLabel})!`, 'success');
+        close();
+        this.render(this.container);
+      } catch (err) {
+        window.BrigadaUI.showToast('Erro ao realocar produto: ' + err.message, 'error');
+      }
+    });
+  },
+
   startVoiceSearch(inputEl, callback) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -2504,11 +2735,12 @@ window.BrigadaChambers = {
     if (pluInput && suggestionsBox) {
       pluInput.addEventListener('input', () => {
         const query = (pluInput.value || '').trim().toLowerCase();
-        if (!query || query.length < 2) {
+        if (!query || query.length < 1) {
           suggestionsBox.style.display = 'none';
           return;
         }
 
+        const normalize = str => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const rawCatalog = window.BrigadaData.catalog || [];
         
         const catalog = rawCatalog.filter(c => {

@@ -1554,7 +1554,8 @@ window.BrigadaPereciveis = {
       }
     }
     const plu = container.querySelector('#field-plu-pereciveis').value.trim();
-    const barcode = product?.barcode || '';
+    const existingProduct = this.editingId ? window.BrigadaData.products.find(p => p.id === this.editingId) : null;
+    const barcode = existingProduct?.barcode || '';
     const name = container.querySelector('#field-name-pereciveis').value.trim();
     const category = container.querySelector('#field-category-pereciveis').value;
     const rawStartDate = container.querySelector('#field-startDate-pereciveis').value.trim();

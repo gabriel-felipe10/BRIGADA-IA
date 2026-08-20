@@ -267,19 +267,8 @@ window.BrigadaProducts = {
                   </div>
                 </div>
                 <div class="form-row">
-                  <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                      <label class="form-label" style="margin-bottom: 0;">Fornecedor</label>
-                      <button type="button" class="btn btn--ghost btn--sm" id="btn-open-supplier-modal" style="font-size: 0.72rem; padding: 2px 6px; color: #38bdf8;">
-                        🏢 Selecionar da Lista
-                      </button>
-                    </div>
-                    <div style="position: relative; display: flex; align-items: center;">
-                      <input type="text" id="field-supplier" class="form-input" placeholder="Ex: Seara, Friboi, Sadia..." autocomplete="off">
-                      <button type="button" id="btn-quick-supplier-picker" class="btn btn--ghost" style="position: absolute; right: 4px; padding: 4px 8px; font-size: 0.9rem;" title="Abrir Lista de Fornecedores">🏢</button>
-                    </div>
-                  </div>
-                  <div class="form-group">
+                  <input type="hidden" id="field-supplier" value="">
+                  <div class="form-group" style="width: 100%;">
                     <label class="form-label">Localização *</label>
                     <select id="field-location" class="form-input" required>
                       <option value="">Selecione...</option>
@@ -1563,7 +1552,8 @@ window.BrigadaProducts = {
       }
     }
     const plu = container.querySelector('#field-plu').value.trim();
-    const barcode = product?.barcode || '';
+    const existingProduct = this.editingId ? window.BrigadaData.products.find(p => p.id === this.editingId) : null;
+    const barcode = existingProduct?.barcode || '';
     const name = container.querySelector('#field-name').value.trim();
     const category = container.querySelector('#field-category').value;
     const rawStartDate = container.querySelector('#field-startDate').value.trim();

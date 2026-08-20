@@ -449,14 +449,35 @@ def get_catalog():
         logger.debug("Buscando catálogo no Supabase")
         response = supabase.table("catalogo_produtos").select("*").execute()
         
+        # Mapa de normalização para garantir que as categorias do Supabase
+        # correspondam aos valores esperados pelo front-end (select options)
+        category_normalize = {
+            "aves": "aves",
+            "bovino": "bovino",
+            "bovinos": "bovino",
+            "suino": "suino",
+            "suínos": "suino",
+            "suinos": "suino",
+            "pescado": "pescado",
+            "pescados": "pescado",
+            "frios": "frios",
+            "laticinios": "laticinios",
+            "laticínios": "laticinios",
+            "iogurtes": "iogurtes",
+            "pereciveis": "pereciveis",
+            "perecíveis": "pereciveis",
+        }
+        
         catalog = []
         for p in response.data:
+            raw_cat = (p.get("category") or "").strip()
+            normalized_cat = category_normalize.get(raw_cat.lower(), raw_cat.lower())
             catalog.append({
                 "id": p.get("id"),
                 "plu": p.get("plu"),
                 "barcode": p.get("barcode"),
                 "name": p.get("name"),
-                "category": p.get("category"),
+                "category": normalized_cat,
                 "createdAt": p.get("created_at")
             })
             

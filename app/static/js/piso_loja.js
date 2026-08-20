@@ -1232,11 +1232,12 @@ window.BrigadaPisoLoja = {
     if (pluInput && suggestionsBox) {
       pluInput.addEventListener('input', () => {
         const query = (pluInput.value || '').trim().toLowerCase();
-        if (!query || query.length < 2) {
+        if (!query || query.length < 1) {
           suggestionsBox.style.display = 'none';
           return;
         }
 
+        const normalize = str => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const rawCatalog = window.BrigadaData.catalog || [];
         
         // Filtrar catálogo estritamente pelo setor do usuário
