@@ -945,16 +945,24 @@ window.BrigadaData = {
       let locType = 'outro';
 
       if (item.location) {
-        const chamberMatch = item.location.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
-        const freezerMatch = item.location.match(/^piso_loja:(FZ\d+|\d+)$/);
+        const chamberMatch = item.location.match(/^(resfriado|congelado|laticinios|pereciveis):C(\d+)-N(\d+)-([ED])(?::(full|misto))?/i);
+        const freezerMatch = item.location.match(/^piso_loja:(FZ\d+|\d+)$/i);
         
         if (chamberMatch) {
           isChamber = true;
           locType = 'camara';
-          const type = chamberMatch[1] === 'resfriado' ? '❄️ Câmara Resfriada' : '🥶 Câmara Congelada';
-          const pos = chamberMatch[4] === 'E' ? 'Esquerda' : 'Direita';
-          locationDesc = `${type} (Coluna ${chamberMatch[2]}, Nível ${chamberMatch[3]} - ${pos})`;
-          shortLoc = `${chamberMatch[1] === 'resfriado' ? '❄️ Resf' : '🥶 Cong'} C${chamberMatch[2]}`;
+          const chKey = chamberMatch[1].toLowerCase();
+          const chMap = {
+            resfriado: '❄️ Câmara Resfriada',
+            congelado: '🥶 Câmara Congelada',
+            laticinios: '🧀 Câmara de Laticínios',
+            pereciveis: '🥗 Câmara de Perecíveis'
+          };
+          const type = chMap[chKey] || '❄️ Câmara Fria';
+          const pos = chamberMatch[4].toUpperCase() === 'E' ? 'Esquerda' : 'Direita';
+          const pType = chamberMatch[5] === 'misto' ? ' • 🔀 Misto' : '';
+          locationDesc = `${type} (Col. ${chamberMatch[2]}, Nível ${chamberMatch[3]} - ${pos}${pType})`;
+          shortLoc = `${chKey === 'resfriado' ? '❄️ Resf' : chKey === 'congelado' ? '🥶 Cong' : '❄️ Câm'} C${chamberMatch[2]}`;
         } else if (freezerMatch) {
           isPiso = true;
           locType = 'piso';

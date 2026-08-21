@@ -635,11 +635,7 @@ window.BrigadaProducts = {
                   ✏️<span class="btn-label">Editar</span>
                 </button>
               ` : ''}
-              ${(locChamberMatch || locFreezerMatch) && canEditThis ? `
-                <button class="btn-icon" data-action="${locChamberMatch ? 'deallocate-chamber' : 'deallocate-freezer'}" data-id="${p.id}" title="Desalocar da posição">
-                  📦↩️<span class="btn-label">Desalocar</span>
-                </button>
-              ` : ''}
+
               ${canDeleteThis ? `
                 <button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir Produto">
                   🗑️<span class="btn-label">Excluir</span>

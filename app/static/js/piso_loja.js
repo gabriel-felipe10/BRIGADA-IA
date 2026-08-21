@@ -374,8 +374,8 @@ window.BrigadaPisoLoja = {
               <button class="btn btn-outline btn-sm" data-action="edit-product-piso" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                 ✏️ Editar
               </button>
-              <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;" title="Desalocar Produto">
-                🗑️ Desalocar
+              <button class="btn btn-danger btn-sm" data-action="delete-product-piso" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);" title="Excluir Produto">
+                🗑️ Excluir
               </button>
             </div>
           </td>
@@ -818,8 +818,8 @@ window.BrigadaPisoLoja = {
                             <button class="btn btn-outline btn-sm" data-action="edit-product-piso" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                               ✏️ Editar
                             </button>
-                            <button class="btn btn-danger btn-sm" data-action="deallocate" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem;" title="Desalocar Produto">
-                              🗑️ Desalocar
+                            <button class="btn btn-danger btn-sm" data-action="delete-product-piso" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);" title="Excluir Produto">
+                              🗑️ Excluir
                             </button>
                           </div>
                         </td>
@@ -1471,19 +1471,27 @@ window.BrigadaPisoLoja = {
       });
     });
 
-    // Deallocate
-    this.container.querySelectorAll('[data-action="deallocate"]').forEach(btn => {
+    // Excluir Produto do Freezer
+    this.container.querySelectorAll('[data-action="delete-product-piso"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        if (confirm("Tem certeza que deseja desalocar este produto do freezer?")) {
-          const id = parseInt(e.currentTarget.dataset.id, 10);
-          if (window.BrigadaData && window.BrigadaData.updateProduct) {
+        const id = parseInt(e.currentTarget.dataset.id, 10);
+        const p = (window.BrigadaData.products || []).find(item => item.id === id);
+        const prodName = p ? p.name : 'este produto';
+        if (confirm(`Tem certeza que deseja EXCLUIR permanentemente ${prodName} do sistema?\n\nEsta ação não poderá ser desfeita.`)) {
+          if (window.BrigadaData && window.BrigadaData.deleteProduct) {
             try {
-              await window.BrigadaData.updateProduct(id, { location: 'piso_loja' });
-              if (window.BrigadaUI && window.BrigadaUI.toast) {
-                window.BrigadaUI.toast('Produto desalocado do freezer.', 'info');
+              await window.BrigadaData.deleteProduct(id, {
+                annotation: 'Excluído diretamente pelo Piso de Loja',
+                editor: window.BrigadaAuth?.currentUser?.name || 'Sistema'
+              });
+              if (window.BrigadaUI && window.BrigadaUI.showToast) {
+                window.BrigadaUI.showToast('Produto excluído com sucesso!', 'success');
               }
             } catch (err) {
-              console.error('Erro ao desalocar produto:', err);
+              console.error('Erro ao excluir produto:', err);
+              if (window.BrigadaUI && window.BrigadaUI.showToast) {
+                window.BrigadaUI.showToast('Erro ao excluir produto: ' + err.message, 'error');
+              }
             }
           }
           this.render(this.container);

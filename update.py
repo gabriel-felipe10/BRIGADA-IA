@@ -1,10 +1,9 @@
-﻿import re
+import re
 
 files = [
     'app/static/js/dashboard.js',
     'app/static/js/hortifruti.js',
     'app/static/js/mercearia.js',
-    'app/static/js/padaria.js',
     'app/static/js/pereciveis.js',
     'app/static/js/products.js'
 ]
@@ -39,7 +38,6 @@ for file in files:
         suffix = ''
         if 'hortifruti' in file: suffix = '-hortifruti'
         elif 'mercearia' in file: suffix = '-mercearia'
-        elif 'padaria' in file: suffix = '-padaria'
         elif 'pereciveis' in file: suffix = '-pereciveis'
         
         new_content = replace_block(content, suffix)

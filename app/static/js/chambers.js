@@ -124,22 +124,32 @@ window.BrigadaChambers = {
   // Parse location coordinates
   parseLocation(locationStr) {
     if (!locationStr) return null;
-    const match = locationStr.match(/^(resfriado|congelado):C(\d+)-N(\d+)-([ED])$/);
+    const match = locationStr.match(/^(resfriado|congelado|laticinios|pereciveis):C(\d+)-N(\d+)-([ED])(?::(full|misto))?$/i);
     if (match) {
+      const chKey = match[1].toLowerCase();
+      const chMap = {
+        resfriado: 'Câmara Resfriada',
+        congelado: 'Câmara Congelada',
+        laticinios: 'Câmara de Laticínios',
+        pereciveis: 'Câmara de Perecíveis'
+      };
       return {
-        chamber: match[1] === 'resfriado' ? 'Câmara Resfriada' : 'Câmara Congelada',
+        chamberKey: chKey,
+        chamber: chMap[chKey] || (chKey === 'resfriado' ? 'Câmara Resfriada' : 'Câmara Congelada'),
         column: parseInt(match[2], 10),
         level: parseInt(match[3], 10),
-        position: match[4] === 'E' ? 'esquerda' : 'direita'
+        position: match[4].toUpperCase() === 'E' ? 'esquerda' : 'direita',
+        palletType: match[5] ? match[5].toLowerCase() : 'full'
       };
     }
     return null;
   },
 
   // Format coordinates to location string
-  formatLocation(chamberId, column, level, position) {
+  formatLocation(chamberId, column, level, position, palletType = 'full') {
     const posCode = position === 'esquerda' ? 'E' : 'D';
-    return `${chamberId}:C${column}-N${level}-${posCode}`;
+    const typeCode = palletType === 'misto' ? 'misto' : 'full';
+    return `${chamberId}:C${column}-N${level}-${posCode}:${typeCode}`;
   },
 
   // Dynamic canvas mock photo generator
@@ -530,9 +540,6 @@ window.BrigadaChambers = {
             <button class="btn btn-primary btn-sm" data-dir-action="zoom" data-chamber="${parsed.chamber}" data-col="${parsed.column}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;">
               👁️ Ver Rack
             </button>
-            <button class="btn btn-danger btn-sm" data-dir-action="deallocate" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; margin-left: 4px;">
-              🗑️ Desalocar
-            </button>
           </td>
         </tr>
       `;
@@ -860,7 +867,7 @@ window.BrigadaChambers = {
   },
 
 
-  // ── Rack de Armazenamento da Coluna Selecionada (Layout Vertical de 4 Níveis) ──
+  // ── Rack de Armazenamento da Coluna Selecionada ──
   buildRackViewHTML() {
     const config = this.CHAMBER_CONFIGS[this.selectedChamber];
     const isResfriada = this.selectedChamber === 'Câmara Resfriada';
@@ -885,129 +892,6 @@ window.BrigadaChambers = {
         </div>
       </div>
     ` : '';
-
-    // Graphical Rack Level Rows (Regra: Esquerda primeiro ➔ depois Direita ➔ Opção Deixar Vazio)
-    const rackRowsHTML = Array.from({ length: 4 }, (_, i) => {
-      const level = 4 - i; // levels from 4 (top) to 1 (ground)
-      const leftProducts = this.getProductAt(colNum, level, 'esquerda');
-      const rightProducts = this.getProductAt(colNum, level, 'direita');
-      const isLeftEmptyMarked = this.isSlotMarkedEmpty(this.selectedChamber, colNum, level, 'esquerda');
-      const isRightEmptyMarked = this.isSlotMarkedEmpty(this.selectedChamber, colNum, level, 'direita');
-
-      // Regra: Esquerda precisa estar preenchida com produtos ou marcada como "Deixar Vazio"
-      const isLeftResolved = (leftProducts && leftProducts.length > 0) || isLeftEmptyMarked;
-
-      const isPiso = level === 1;
-      const levelTypeTag = isPiso ? '📦 Piso' : level === 4 ? '🏗️ Aéreo (Topo)' : '🏗️ Aéreo';
-      const levelColor = isPiso ? '#10b981' : level === 4 ? '#a855f7' : '#38bdf8';
-      const levelBg = isPiso ? 'rgba(16,185,129,0.15)' : level === 4 ? 'rgba(168,85,247,0.15)' : 'rgba(56,189,248,0.15)';
-
-      const renderSlot = (prods, position) => {
-        const isLeft = position === 'esquerda';
-        const sideName = isLeft ? 'Esquerda' : 'Direita';
-        const hasItems = prods && prods.length > 0;
-        const countTag = hasItems ? `<span style="font-size: 0.8rem; font-weight: 600; opacity: 0.85; margin-left: 4px;">(${prods.length} ${prods.length === 1 ? 'item' : 'itens'})</span>` : '';
-        const isMarkedEmpty = isLeft ? isLeftEmptyMarked : isRightEmptyMarked;
-
-        // 1. Se já tem itens alocados
-        if (hasItems) {
-          return `
-            <div class="pallet-empty-actions" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-              <button type="button" class="pallet-slot-btn pallet-slot-btn--add" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.92rem; font-weight: 700; cursor: pointer; padding: 10px 16px; border-radius: 8px;" title="Adicionar e alocar produto no Nível ${level} (${sideName})">
-                <span style="font-size: 1.15rem; color: #10b981; font-weight: 800;">➕</span>
-                <span>Adicionar Item à ${sideName}</span>
-                ${countTag}
-              </button>
-            </div>
-          `;
-        }
-
-        // 2. Se foi marcado como VAZIO intencionalmente
-        if (isMarkedEmpty) {
-          return `
-            <div style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 14px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.22); border-radius: 8px; box-sizing: border-box;">
-              <span style="font-size: 0.84rem; color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                <span>⚪</span> <span>${sideName}: Vazio</span>
-              </span>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <button type="button" class="btn btn--outline btn-sm" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="padding: 5px 10px; font-size: 0.78rem; font-weight: 700; color: #10b981; border-color: rgba(16,185,129,0.4); cursor: pointer; border-radius: 6px;" title="Adicionar produto nesta posição">
-                  ➕ Adicionar
-                </button>
-                <button type="button" class="btn btn--ghost btn-sm" data-action="unmark-slot-empty" data-level="${level}" data-pos="${position}" style="padding: 5px 8px; font-size: 0.78rem; color: var(--text-tertiary); cursor: pointer; border-radius: 6px;" title="Restaurar opção de preenchimento">
-                  ✕
-                </button>
-              </div>
-            </div>
-          `;
-        }
-
-        // 3. Se for o Lado Direito e a Esquerda AINDA NÃO foi resolvida (regra: esquerda primeiro!)
-        if (!isLeft && !isLeftResolved) {
-          return `
-            <div style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center;">
-              <button type="button" class="pallet-slot-btn" data-action="locked-slot-alert" data-level="${level}" style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.84rem; font-weight: 600; cursor: pointer; opacity: 0.45; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.18); color: var(--text-tertiary); padding: 8px 14px; border-radius: 8px;" title="Preencha ou deixe a Esquerda vazia primeiro">
-                <span>🔒</span>
-                <span>Adicionar à Direita (Preencha Esquerda 1º)</span>
-              </button>
-            </div>
-          `;
-        }
-
-        // 4. Posição disponível para adicionar item ou deixar vazio
-        return `
-          <div style="width: 100%; height: 100%; min-height: 48px; display: flex; align-items: center; gap: 8px;">
-            <button type="button" class="pallet-slot-btn pallet-slot-btn--add" data-action="add-new-trigger" data-level="${level}" data-pos="${position}" style="flex: 1; height: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.88rem; font-weight: 700; cursor: pointer; padding: 8px 12px; border-radius: 8px;" title="Adicionar e alocar produto diretamente no Nível ${level} (${sideName})">
-              <span style="font-size: 1.1rem; color: #10b981; font-weight: 800;">➕</span>
-              <span>Adicionar à ${sideName}</span>
-            </button>
-            <button type="button" class="btn btn--outline btn-sm" data-action="mark-slot-empty" data-level="${level}" data-pos="${position}" style="padding: 8px 12px; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); border: 1px dashed rgba(255,255,255,0.25); border-radius: 8px; cursor: pointer; white-space: nowrap; height: 48px; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.02);" title="Marcar como vazio se não tiver o que colocar">
-              ⚪ Deixar Vazio
-            </button>
-          </div>
-        `;
-      };
-
-      const dividerHTML = level === 1 ? `
-        <div style="display: flex; align-items: center; gap: 12px; margin: 14px 0 8px 0;">
-          <div style="height: 1px; flex: 1; background: linear-gradient(90deg, transparent, rgba(16,185,129,0.5), transparent);"></div>
-          <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.12); padding: 3px 12px; border-radius: 12px; border: 1px solid rgba(16,185,129,0.3);">
-            ⬇️ Nível 1 — Piso (Chão)
-          </span>
-          <div style="height: 1px; flex: 1; background: linear-gradient(90deg, transparent, rgba(16,185,129,0.5), transparent);"></div>
-        </div>
-      ` : (level === 4 ? `
-        <div style="display: flex; align-items: center; gap: 12px; margin: 0 0 8px 0;">
-          <div style="height: 1px; flex: 1; background: linear-gradient(90deg, transparent, rgba(56,189,248,0.5), transparent);"></div>
-          <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 3px 12px; border-radius: 12px; border: 1px solid rgba(56,189,248,0.3);">
-            ⬆️ Níveis 2, 3 e 4 — Estrutura Aérea
-          </span>
-          <div style="height: 1px; flex: 1; background: linear-gradient(90deg, transparent, rgba(56,189,248,0.5), transparent);"></div>
-        </div>
-      ` : '');
-
-      return `
-        ${dividerHTML}
-        <div class="rack-level-row" style="margin-bottom: 8px;">
-          <div class="rack-level-label" style="min-width: 95px;">
-            <span class="level-num" style="color: ${levelColor}; font-weight: 700;">Nível ${level}</span>
-            <span class="level-tag" style="background: ${levelBg}; color: ${levelColor}; font-weight: 600; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">${levelTypeTag}</span>
-          </div>
-
-          <div class="rack-shelves-container">
-            <div class="pallet-slot ${leftProducts.length > 0 ? 'occupied' : 'empty'}" data-level="${level}" data-pos="esquerda">
-              ${renderSlot(leftProducts, 'esquerda')}
-            </div>
-
-            <div class="pallet-slot ${rightProducts.length > 0 ? 'occupied' : 'empty'}" data-level="${level}" data-pos="direita">
-              ${renderSlot(rightProducts, 'direita')}
-            </div>
-          </div>
-
-          <div class="rack-shelf-beam" style="background: ${isPiso ? '#10b981' : '#f59e0b'};"></div>
-        </div>
-      `;
-    }).join('');
-
 
     const prevCol = colNum > 1 ? colNum - 1 : null;
     const nextCol = colNum < config.columnsCount ? colNum + 1 : null;
@@ -1057,29 +941,7 @@ window.BrigadaChambers = {
 
         ${alertBannerHTML}
 
-        <!-- 1. Estrutura Vertical de Paletes (Rack Gráfico) -->
-        <div class="glass-panel" style="padding: 1.5rem; max-width: 960px; margin: 0 auto 2rem auto;">
-          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px;">
-            <div>
-              <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 6px;">
-                <span>🏗️ Estrutura Vertical da Coluna (Rack de Paletes)</span>
-              </h3>
-              <p style="font-size:0.8rem; color:var(--text-secondary); margin: 0;">4 Níveis Verticais de Armazenagem • 8 Posições (Esquerda / Direita)</p>
-            </div>
-          </div>
-
-          <div class="rack-container">
-            ${rackRowsHTML}
-            
-            <div class="rack-legs-row">
-              <div class="rack-leg"></div>
-              <div class="rack-leg middle"></div>
-              <div class="rack-leg"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. Tabela Principal de Produtos Alocados na Coluna (Estilo Idêntico ao Piso de Loja) -->
+        <!-- Tabela Principal de Produtos Alocados na Coluna (Estilo Idêntico ao Piso de Loja) -->
         <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
           <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -1113,7 +975,7 @@ window.BrigadaChambers = {
                     <td colspan="7" class="empty-state" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">
                       <div style="font-size: 2rem; margin-bottom: 8px;">❄️</div>
                       Nenhum produto alocado nesta coluna ainda.<br>
-                      <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" ou utilize a estrutura acima para cadastrar itens.</small>
+                      <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" para cadastrar itens nesta coluna.</small>
                     </td>
                   </tr>
                 ` : colProducts.map(p => {
@@ -1126,11 +988,15 @@ window.BrigadaChambers = {
                   const parsed = this.parseLocation(p.location);
                   const lvl = parsed ? parsed.level : 1;
                   const pos = parsed ? parsed.position : 'esquerda';
+                  const palletType = parsed ? (parsed.palletType || 'full') : 'full';
                   const sideLabel = pos === 'esquerda' ? 'Lado Esquerdo' : 'Lado Direito';
                   const isPiso = lvl === 1;
                   const levelBadge = isPiso
-                    ? `<span style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">📦 Piso • ${sideLabel}</span>`
-                    : `<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">🏗️ Nível ${lvl} • ${sideLabel}</span>`;
+                    ? `<span style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">📦 Piso • ${sideLabel}</span>`
+                    : `<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">🏗️ Nível ${lvl} • ${sideLabel}</span>`;
+                  const palletBadge = palletType === 'misto'
+                    ? `<span style="background: rgba(168,85,247,0.18); color: #c084fc; border: 1px solid rgba(168,85,247,0.4); font-weight: 700; font-size: 0.72rem; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">🔀 Palete Misto</span>`
+                    : `<span style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); font-weight: 700; font-size: 0.72rem; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">📦 Palete Full</span>`;
 
                   return `
                     <tr style="${rowStyle}">
@@ -1139,7 +1005,12 @@ window.BrigadaChambers = {
                         <div onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; font-weight: 600; color: var(--text-primary);" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-primary)'" title="Ver detalhes">${p.name}</div>
                         <div style="font-size:0.7rem; color:var(--text-tertiary);">${this.catMap[p.category] || p.category || ''} ${p.supplier ? `• 🏢 ${p.supplier}` : ''}</div>
                       </td>
-                      <td>${levelBadge}</td>
+                      <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                          ${levelBadge}
+                          ${palletBadge}
+                        </div>
+                      </td>
                       <td><strong>${p.quantity}</strong> ${p.unit || 'kg'}</td>
                       <td><strong>${window.BrigadaData.formatDate(p.endDate)}</strong></td>
                       <td><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
@@ -1147,12 +1018,6 @@ window.BrigadaChambers = {
                         <div style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
                           <button class="btn btn-outline btn-sm" data-action="edit-product-col-table" data-id="${p.id}" data-col="${colNum}" data-lvl="${lvl}" data-pos="${pos}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                             ✏️ Editar
-                          </button>
-                          <button class="btn btn-outline btn-sm" data-action="relocate-product-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #a78bfa; border-color: rgba(167,139,250,0.35);" title="Realocar Produto">
-                            🔄 Realocar
-                          </button>
-                          <button class="btn btn-danger btn-sm" data-action="deallocate-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem;" title="Desalocar Produto">
-                            📤 Desalocar
                           </button>
                           <button class="btn btn-danger btn-sm" data-action="delete-product-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);" title="Excluir Produto Permanentemente">
                             🗑️ Excluir
@@ -1625,25 +1490,6 @@ window.BrigadaChambers = {
       });
     });
 
-    // Desalocar Produto na Tabela da Coluna
-    this.container.querySelectorAll('[data-action="deallocate-col-table"]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (confirm('Tem certeza que deseja desalocar este produto da câmara?')) {
-          const prodId = parseInt(btn.dataset.id, 10);
-          await this.deallocateProduct(prodId, true);
-          this.render(this.container);
-        }
-      });
-    });
-
-    // Realocar Produto na Tabela da Coluna
-    this.container.querySelectorAll('[data-action="relocate-product-col-table"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const prodId = parseInt(btn.dataset.id, 10);
-        this.openRelocateModal(prodId);
-      });
-    });
-
     // Excluir Produto Permanentemente na Tabela da Coluna
     this.container.querySelectorAll('[data-action="delete-product-col-table"]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1834,9 +1680,6 @@ window.BrigadaChambers = {
             <button class="btn btn-primary btn-sm" data-dir-action="zoom" data-chamber="${parsed.chamber}" data-col="${parsed.column}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;">
               👁️ Ver Rack
             </button>
-            <button class="btn btn-danger btn-sm" data-dir-action="deallocate" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; margin-left: 4px;">
-              🗑️ Desalocar
-            </button>
           </td>
         </tr>
       `;
@@ -1851,15 +1694,6 @@ window.BrigadaChambers = {
         this.selectedChamber = btn.dataset.chamber;
         this.selectedColumn = parseInt(btn.dataset.col, 10);
         this.render(this.container);
-      });
-    });
-
-    tbody.querySelectorAll('[data-dir-action="deallocate"]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const prodId = parseInt(btn.dataset.id, 10);
-        if (confirm('Tem certeza que deseja desalocar este item?')) {
-          await this.deallocateProduct(prodId);
-        }
       });
     });
   },
@@ -1928,12 +1762,6 @@ window.BrigadaChambers = {
               <button class="btn btn-outline btn-sm" data-action="edit-item-in-pallet" data-id="${p.id}" title="Editar este produto" style="padding: 4px 8px; color: #38bdf8; border-color: rgba(56,189,248,0.35); font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
                 ✏️
               </button>
-              <button class="btn btn-outline btn-sm" data-action="relocate-item-in-pallet" data-id="${p.id}" title="Realocar para outra coluna/posição" style="padding: 4px 8px; color: #a78bfa; border-color: rgba(167,139,250,0.35); font-size: 0.78rem; cursor: pointer;">
-                🔄
-              </button>
-              <button class="btn btn-outline btn-sm" data-action="remove-item-from-pallet" data-id="${p.id}" title="Desalocar este item para piso de loja" style="padding: 4px 8px; color: #f59e0b; border-color: rgba(245,158,11,0.3); font-size: 0.78rem; cursor: pointer;">
-                📤
-              </button>
               <button class="btn btn-outline btn-sm" data-action="delete-item-in-pallet" data-id="${p.id}" title="Excluir este produto permanentemente" style="padding: 4px 8px; color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 0.78rem; cursor: pointer;">
                 🗑️
               </button>
@@ -1997,11 +1825,7 @@ window.BrigadaChambers = {
           </div>
 
           <!-- Bottom Actions -->
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; flex-wrap: wrap; gap: 8px;">
-            <button class="btn btn-danger btn-sm" id="btn-pallet-modal-deallocate-all" style="display: inline-flex; align-items: center; gap: 6px;">
-              ${this.icons.Trash2}
-              <span>Desalocar Todo o Palete (${prods.length} itens)</span>
-            </button>
+          <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; flex-wrap: wrap; gap: 8px;">
             <button class="btn btn-outline btn-sm" id="btn-pallet-modal-close-bottom">
               Fechar
             </button>
@@ -2040,50 +1864,15 @@ window.BrigadaChambers = {
       });
     });
 
-    // Realocar Item do Palete
-    overlay.querySelectorAll('[data-action="relocate-item-in-pallet"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const prodId = parseInt(btn.dataset.id, 10);
-        this.openRelocateModal(prodId);
-      });
-    });
+
 
     // Remover Item Individual do Palete (Desalocar)
-    overlay.querySelectorAll('[data-action="remove-item-from-pallet"]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const prodId = parseInt(btn.dataset.id, 10);
-        if (confirm('Tem certeza que deseja desalocar este item deste palete?')) {
-          await this.deallocateProduct(prodId, false);
-          // Atualiza o modal do palete se ainda houver outros itens
-          const remaining = this.getProductAt(col, lvl, pos);
-          if (remaining.length > 0) {
-            this.openPalletModal(col, lvl, pos);
-          } else {
-            this.closeModal('pallet-details-modal');
-          }
-          this.render(this.container);
-        }
-      });
-    });
-
     // Excluir Item Permanentemente
     overlay.querySelectorAll('[data-action="delete-item-in-pallet"]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const prodId = parseInt(btn.dataset.id, 10);
         await this.deleteProductPermanently(prodId);
       });
-    });
-
-    // Desalocar Todo o Palete
-    document.getElementById('btn-pallet-modal-deallocate-all')?.addEventListener('click', async () => {
-      if (confirm(`Tem certeza que deseja desalocar TODOS os ${prods.length} itens deste palete?`)) {
-        this.closeModal('pallet-details-modal');
-        for (const p of prods) {
-          await this.deallocateProduct(p.id, false);
-        }
-        window.BrigadaUI.showToast('Palete inteiro desalocado com sucesso!', 'success');
-        this.render(this.container);
-      }
     });
   },
 
@@ -2621,172 +2410,7 @@ window.BrigadaChambers = {
     }
   },
 
-  // ── Modal de Realocação Direta de Produto ──
-  openRelocateModal(productId) {
-    this.closeModal('relocate-product-modal');
-    this.closeModal('pallet-details-modal');
 
-    const p = (window.BrigadaData.products || []).find(item => item.id === productId);
-    if (!p) {
-      window.BrigadaUI.showToast('Produto não encontrado.', 'error');
-      return;
-    }
-
-    const parsed = this.parseLocation(p.location) || {
-      chamber: this.selectedChamber === 'Câmara Resfriada' ? 'resfriado' : 'congelado',
-      column: this.selectedColumn || 1,
-      level: 1,
-      position: 'esquerda'
-    };
-
-    const isResf = parsed.chamber === 'resfriado';
-    const currChamberName = isResf ? 'Câmara Resfriada' : 'Câmara Congelada';
-    const currSideLabel = parsed.position === 'esquerda' ? 'Esquerda (E)' : 'Direita (D)';
-    const currLvlLabel = parsed.level === 1 ? '📦 Piso (Nível 1)' : `🏗️ Aéreo (Nível ${parsed.level})`;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay modal-overlay--visible';
-    overlay.id = 'relocate-product-modal';
-
-    overlay.innerHTML = `
-      <div class="modal" style="max-width: 520px; width: 92%; transform: translateY(0); margin-top: 4vh;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
-          <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <span>🔄</span>
-            <span>Realocar Produto</span>
-          </h3>
-          <button class="modal-close" id="modal-close-relocate" style="background: none; border: none; font-size: 1.25rem; color: var(--text-secondary); cursor: pointer;">✕</button>
-        </div>
-
-        <div class="modal-body" style="padding: 1.5rem;">
-          <!-- Informações do Produto Atual -->
-          <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <strong style="color: var(--text-primary); font-size: 0.95rem;">${p.name}</strong>
-              <span class="plu-badge">${p.plu}</span>
-            </div>
-            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-              <span>Estoque: <b>${p.quantity} ${p.unit || 'kg'}</b></span>
-              <span>Validade: <b>${window.BrigadaData.formatDate(p.endDate)}</b></span>
-            </div>
-            <div style="font-size: 0.76rem; color: #a78bfa; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-color);">
-              📍 <b>Posição Atual:</b> ${currChamberName} • Coluna ${String(parsed.column).padStart(2, '0')} • ${currLvlLabel} • ${currSideLabel}
-            </div>
-          </div>
-
-          <form id="form-relocate-prod" style="display: flex; flex-direction: column; gap: 1rem;">
-            <!-- Nova Câmara -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Câmara de Destino <span style="color: #ef4444;">*</span>
-              </label>
-              <select id="relocate-chamber" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                <option value="resfriado" ${parsed.chamber === 'resfriado' ? 'selected' : ''}>❄️ Câmara Resfriada (4 Colunas)</option>
-                <option value="congelado" ${parsed.chamber === 'congelado' ? 'selected' : ''}>🥶 Câmara Congelada (16 Colunas)</option>
-              </select>
-            </div>
-
-            <!-- Nova Coluna -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Coluna de Destino <span style="color: #ef4444;">*</span>
-              </label>
-              <select id="relocate-column" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-              </select>
-            </div>
-
-            <!-- Nível e Posição (Lado Esquerdo / Direito) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Nível / Altura <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="relocate-level" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  <option value="1" ${parsed.level === 1 ? 'selected' : ''}>📦 Nível 1 — Piso</option>
-                  <option value="2" ${parsed.level === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
-                  <option value="3" ${parsed.level === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
-                  <option value="4" ${parsed.level === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Lado / Posição <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="relocate-position" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  <option value="esquerda" ${parsed.position === 'esquerda' ? 'selected' : ''}>⬅️ Lado Esquerdo (E)</option>
-                  <option value="direita" ${parsed.position === 'direita' ? 'selected' : ''}>➡️ Lado Direito (D)</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-              <button type="button" class="btn btn--outline" id="btn-cancel-relocate" style="padding: 8px 16px;">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn--primary" id="btn-submit-relocate" style="padding: 8px 20px; font-weight: 700; background: #a78bfa; border-color: #8b5cf6; color: #fff;">
-                ✓ Confirmar Realocação
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    const chamberSelect = overlay.querySelector('#relocate-chamber');
-    const colSelect = overlay.querySelector('#relocate-column');
-
-    const populateCols = () => {
-      const selectedChamb = chamberSelect.value;
-      const count = selectedChamb === 'resfriado' ? 4 : 16;
-      colSelect.innerHTML = Array.from({ length: count }, (_, i) => {
-        const colNum = i + 1;
-        const pad = String(colNum).padStart(2, '0');
-        const isSel = colNum === parsed.column;
-        return `<option value="${colNum}" ${isSel ? 'selected' : ''}>Coluna ${pad}</option>`;
-      }).join('');
-    };
-
-    populateCols();
-    chamberSelect.addEventListener('change', populateCols);
-
-    const close = () => this.closeModal('relocate-product-modal');
-    overlay.querySelector('#modal-close-relocate').addEventListener('click', close);
-    overlay.querySelector('#btn-cancel-relocate').addEventListener('click', close);
-    overlay.addEventListener('click', (e) => {
-      if (e.target.id === 'relocate-product-modal') close();
-    });
-
-    const form = overlay.querySelector('#form-relocate-prod');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const targetChamber = chamberSelect.value;
-      const targetCol = parseInt(colSelect.value, 10);
-      const targetLvl = parseInt(overlay.querySelector('#relocate-level').value, 10);
-      const targetPos = overlay.querySelector('#relocate-position').value;
-
-      const locString = this.formatLocation(targetChamber, targetCol, targetLvl, targetPos);
-      const colLabel = targetLvl === 1 ? 'Piso' : 'Aéreo';
-
-      try {
-        await window.BrigadaData.updateProduct(productId, {
-          location: locString,
-          column: colLabel,
-          columnNumber: targetCol
-        });
-        const targetChamberName = targetChamber === 'resfriado' ? 'Câmara Resfriada' : 'Câmara Congelada';
-        const targetPosLabel = targetPos === 'esquerda' ? 'Esquerda (E)' : 'Direita (D)';
-        const targetLvlLabel = targetLvl === 1 ? 'Piso' : `Nível ${targetLvl}`;
-        window.BrigadaUI.showToast(`Produto realocado para ${targetChamberName} • Col. ${String(targetCol).padStart(2, '0')} (${targetLvlLabel} • ${targetPosLabel})!`, 'success');
-        close();
-        this.render(this.container);
-      } catch (err) {
-        window.BrigadaUI.showToast('Erro ao realocar produto: ' + err.message, 'error');
-      }
-    });
-  },
 
   startVoiceSearch(inputEl, callback) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2829,7 +2453,7 @@ window.BrigadaChambers = {
     recognition.start();
   },
 
-  // ── Modal de Cadastro Direto de Novo Produto na Posição ──
+  // ── Modal de Cadastro Inteligente por Catálogo de Novo Produto na Posição ──
   openAddNewProductModal(col, lvl, pos) {
     this.closeModal('add-product-chamber-modal');
     this.closeModal('allocation-modal');
@@ -2837,9 +2461,6 @@ window.BrigadaChambers = {
     const isResfriada = this.selectedChamber === 'Câmara Resfriada';
     const chamberIcon = isResfriada ? '❄️' : '🥶';
     const chamberId = isResfriada ? 'resfriado' : 'congelado';
-    const posLetter = pos === 'esquerda' ? 'E' : 'D';
-    const posLabel = pos === 'esquerda' ? 'Esquerda (E)' : 'Direita (D)';
-    const levelLabel = lvl === 1 ? '📦 Piso (Nível 1)' : `🏗️ Aéreo (Nível ${lvl})`;
     const today = new Date().toISOString().split('T')[0];
 
     const allowedCats = window.BrigadaAuth.getAllowedCategoriesForUser(this.selectedChamber);
@@ -2858,104 +2479,204 @@ window.BrigadaChambers = {
     overlay.className = 'modal-overlay modal-overlay--visible';
     overlay.id = 'add-product-chamber-modal';
 
+    let currentCatFilter = 'all';
+    let currentSearch = '';
+
     overlay.innerHTML = `
-      <div class="modal" style="max-width: 540px; width: 92%; transform: translateY(0); margin-top: 4vh;">
+      <div class="modal" style="max-width: 580px; width: 92%; transform: translateY(0); margin-top: 3vh;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
-          <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <span>➕</span>
-            <span>Adicionar Novo Produto na Posição</span>
+          <h3 class="modal-title" id="chamber-modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span>${chamberIcon}</span>
+            <span>Novo Produto — ${this.selectedChamber}</span>
           </h3>
           <button class="modal-close" id="modal-close-add-chamber" style="background: none; border: none; font-size: 1.25rem; color: var(--text-secondary); cursor: pointer;">✕</button>
         </div>
 
-        <div class="modal-body" style="padding: 1.5rem;">
-          <!-- Destino Info Banner -->
-          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-            <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Destino da Alocação:</span>
-            <span style="font-weight: 700; color: #38bdf8; font-size: 0.88rem;">
-              ${chamberIcon} ${this.selectedChamber} • Col. ${col.toString().padStart(2, '0')} • ${levelLabel} • Pos. ${posLetter}
-            </span>
+        <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+          <!-- ETAPA 1: Seleção Inteligente por Catálogo -->
+          <div id="chamber-modal-step-catalog">
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 12px;">
+              Selecione o produto do catálogo abaixo para preenchimento ágil:
+            </p>
+
+            <div class="search-box" style="width: 100%; margin-bottom: 0.75rem; display: flex; align-items: center; position: relative;">
+              <span class="search-icon" style="position: absolute; left: 12px; color: var(--text-secondary);">🔍</span>
+              <input type="text" id="chamber-catalog-search" class="search-input" placeholder="Buscar por produto ou PLU..." autocomplete="off" style="width: 100%; padding: 9px 40px 9px 36px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              <button type="button" id="chamber-catalog-voice-btn" class="search-mic-btn" style="position: absolute; right: 10px; background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size: 1rem;" title="Buscar por voz">🎙️</button>
+            </div>
+
+            <div class="cat-quick-tabs" id="chamber-catalog-tabs" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button type="button" class="cat-tab cat-tab--sm cat-tab--active" data-cat="all" style="cursor: pointer;">Todos</button>
+              ${catOptions.map(c => `
+                <button type="button" class="cat-tab cat-tab--sm" data-cat="${c.val}" style="cursor: pointer;">${c.label}</button>
+              `).join('')}
+            </div>
+
+            <div class="table-scroll" style="max-height: 260px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px;">
+              <table class="data-table" style="margin: 0; width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 75px; text-transform: uppercase; font-size: 0.75rem;">PLU</th>
+                    <th style="text-transform: uppercase; font-size: 0.75rem;">PRODUTO</th>
+                    <th style="width: 95px; text-align: right; text-transform: uppercase; font-size: 0.75rem;">AÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="chamber-catalog-tbody">
+                  <!-- Gerado dinamicamente -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px;">
+              <span id="chamber-catalog-count" style="font-size: 0.8rem; color: var(--text-secondary);">0 produtos disponíveis</span>
+              <button type="button" class="btn btn--outline btn--sm" id="btn-switch-manual-chamber" style="font-weight: 600; cursor: pointer; border-radius: 6px;">
+                ✍️ Preenchimento Manual
+              </button>
+            </div>
           </div>
 
-          <form id="form-add-chamber-prod" style="display: flex; flex-direction: column; gap: 1rem;">
-            <!-- Autocomplete / Busca Rápida no Catálogo -->
-            <div class="form-group" style="position: relative;">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                PLU / Código do Produto <span style="font-size: 0.75rem; color: #38bdf8; font-weight: normal;">(ou busque pelo nome)</span>
-              </label>
-              <div style="position: relative; display: flex; align-items: center;">
-                <input type="text" id="add-chamber-plu" class="form-input" placeholder="Digite PLU ou nome para auto-preencher..." autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+          <!-- ETAPA 2: Formulário de Preenchimento do Lote / Alocação -->
+          <div id="chamber-modal-step-form" style="display: none;">
+            <!-- Card do Produto Selecionado -->
+            <div id="chamber-selected-catalog-card" style="display: none; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
+              <div>
+                <div id="chamber-selected-name" style="font-weight: 700; font-size: 0.98rem; color: var(--text-primary);">Nome do Produto</div>
+                <div style="display: flex; gap: 8px; font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                  <span>PLU: <b id="chamber-selected-plu" style="color: #38bdf8;">000000</b></span>
+                  <span>•</span>
+                  <span>Categoria: <b id="chamber-selected-cat">Aves</b></span>
+                </div>
               </div>
-              <div id="add-chamber-catalog-suggestions" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #16152b; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 9999; box-shadow: 0 16px 40px rgba(0,0,0,0.95);"></div>
-            </div>
-
-            <!-- Nome do Produto -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Descrição / Nome do Produto <span style="color: #ef4444;">*</span>
-              </label>
-              <input type="text" id="add-chamber-name" class="form-input" placeholder="Ex: Alcatra Bovina Bife 1kg" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-            </div>
-
-            <!-- Categoria e Unidade -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Categoria <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="add-chamber-category" class="form-input" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  ${catOptions.map(o => `<option value="${o.val}">${o.label}</option>`).join('')}
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Unidade
-                </label>
-                <select id="add-chamber-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  <option value="kg" selected>kg</option>
-                  <option value="un">un</option>
-                  <option value="cx">cx</option>
-                  <option value="pct">pct</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Quantidade e Validade -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Quantidade <span style="color: #ef4444;">*</span>
-                </label>
-                <input type="number" id="add-chamber-quantity" class="form-input" value="1" min="0.1" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Data de Validade (DD/MM/AAAA) <span style="color: #ef4444;">*</span>
-                </label>
-                <input type="text" id="add-chamber-enddate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-              </div>
-            </div>
-
-            <!-- Fornecedor / Marca -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Fornecedor / Marca
-              </label>
-              <input type="text" id="add-chamber-supplier" class="form-input" placeholder="Ex: Friboi, Seara, Sadia, Perdigão..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-            </div>
-
-            <!-- Botões de Ação -->
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-              <button type="button" class="btn btn--outline" id="btn-cancel-add-chamber" style="padding: 8px 16px;">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn--primary" id="btn-submit-add-chamber" style="padding: 8px 20px; font-weight: 700;">
-                ✓ Cadastrar e Alocar
+              <button type="button" class="btn btn--ghost btn--sm" id="btn-back-to-chamber-catalog" style="font-size: 0.78rem; padding: 4px 8px; color: #38bdf8; cursor: pointer;">
+                ← Trocar Produto
               </button>
             </div>
-          </form>
+
+            <form id="form-add-chamber-prod" style="display: flex; flex-direction: column; gap: 1rem;">
+              <!-- Campos Manuais (somente se clicou em Preenchimento Manual) -->
+              <div id="chamber-manual-fields-row" style="display: none;">
+                <div class="form-group" style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Código PLU / EAN *
+                  </label>
+                  <input type="text" id="add-chamber-plu" class="form-input" placeholder="Ex: 52629" autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Nome do Produto *
+                  </label>
+                  <input type="text" id="add-chamber-name" class="form-input" placeholder="Ex: ASA DE FGO FORMOSO CONG" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                </div>
+              </div>
+
+              <!-- Destino / Posição de Armazenagem & Tipo do Palete -->
+              <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 0.82rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>📍 Local de Alocação:</span>
+                  <span>${chamberIcon} ${this.selectedChamber} • Coluna ${col.toString().padStart(2, '0')}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div class="form-group">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                      Nível de Armazenagem *
+                    </label>
+                    <select id="add-chamber-level" class="form-input" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                      <option value="1" ${lvl === 1 ? 'selected' : ''}>📦 Nível 1 — Piso (Chão)</option>
+                      <option value="2" ${lvl === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
+                      <option value="3" ${lvl === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
+                      <option value="4" ${lvl === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                      Posição / Lado *
+                    </label>
+                    <select id="add-chamber-position" class="form-input" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                      <option value="esquerda" ${pos === 'esquerda' ? 'selected' : ''}>⬅️ Lado Esquerdo (E)</option>
+                      <option value="direita" ${pos === 'direita' ? 'selected' : ''}>➡️ Lado Direito (D)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Tipo do Palete (Full ou Misto) -->
+                <div class="form-group" style="margin-top: 2px;">
+                  <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                    Estrutura / Tipo do Palete *
+                  </label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); transition: all 0.2s;">
+                      <input type="radio" name="add-chamber-pallet-type" value="full" checked style="cursor: pointer;" />
+                      <span>📦 Palete Full</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); transition: all 0.2s;">
+                      <input type="radio" name="add-chamber-pallet-type" value="misto" style="cursor: pointer;" />
+                      <span>🔀 Palete Misto</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Categoria e Unidade -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Categoria *
+                  </label>
+                  <select id="add-chamber-category" class="form-input" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    ${catOptions.map(o => `<option value="${o.val}">${o.label}</option>`).join('')}
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Unidade
+                  </label>
+                  <select id="add-chamber-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    <option value="kg" selected>kg</option>
+                    <option value="un">un</option>
+                    <option value="cx">cx</option>
+                    <option value="pct">pct</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Quantidade e Validade -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Quantidade *
+                  </label>
+                  <input type="number" id="add-chamber-quantity" class="form-input" value="1" min="0.1" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                </div>
+
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Data de Validade (DD/MM/AAAA) *
+                  </label>
+                  <input type="text" id="add-chamber-enddate" class="form-input" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                </div>
+              </div>
+
+              <!-- Fornecedor / Marca -->
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Fornecedor / Marca
+                </label>
+                <input type="text" id="add-chamber-supplier" class="form-input" placeholder="Ex: Friboi, Seara, Sadia, Perdigão..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+
+              <!-- Botões de Ação -->
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                <button type="button" class="btn btn--outline" id="btn-cancel-add-chamber" style="padding: 8px 16px; cursor: pointer;">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn--primary" id="btn-submit-add-chamber" style="padding: 8px 20px; font-weight: 700; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer;">
+                  ✓ Cadastrar e Alocar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     `;
@@ -2975,94 +2696,186 @@ window.BrigadaChambers = {
       if (e.target.id === 'add-product-chamber-modal') close();
     });
 
-    // Auto-preenchimento e busca no catálogo
-    const pluInput = overlay.querySelector('#add-chamber-plu');
-    const nameInput = overlay.querySelector('#add-chamber-name');
-    const catSelect = overlay.querySelector('#add-chamber-category');
-    const unitSelect = overlay.querySelector('#add-chamber-unit');
-    const supplierInput = overlay.querySelector('#add-chamber-supplier');
-    const suggestionsBox = overlay.querySelector('#add-chamber-catalog-suggestions');
+    // Renderização do Catálogo
+    const renderCatalogList = () => {
+      const tbody = overlay.querySelector('#chamber-catalog-tbody');
+      const countEl = overlay.querySelector('#chamber-catalog-count');
+      if (!tbody) return;
 
-    const handleCatalogItemSelect = (catItem) => {
-      pluInput.value = catItem.plu || '';
-      nameInput.value = catItem.name || '';
-      if (catItem.category && catSelect.querySelector(`option[value="${catItem.category.toLowerCase()}"]`)) {
-        catSelect.value = catItem.category.toLowerCase();
-      }
-      if (catItem.unit && unitSelect.querySelector(`option[value="${catItem.unit.toLowerCase()}"]`)) {
-        unitSelect.value = catItem.unit.toLowerCase();
-      }
-      const supp = catItem.supplier || (window.BrigadaData ? window.BrigadaData.detectSupplierFromName(catItem.name) : '');
-      if (supp) supplierInput.value = supp;
-      suggestionsBox.style.display = 'none';
-    };
+      const rawCatalog = window.BrigadaData?.catalog || [];
+      const normalize = str => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const q = normalize(currentSearch);
 
-    if (pluInput && suggestionsBox) {
-      pluInput.addEventListener('input', () => {
-        const query = (pluInput.value || '').trim().toLowerCase();
-        if (!query || query.length < 1) {
-          suggestionsBox.style.display = 'none';
-          return;
+      const filtered = rawCatalog.filter(p => {
+        const pCat = normalize(p.category);
+        if (allowedCats.length > 0) {
+          const isAllowed = allowedCats.some(ac => pCat.includes(normalize(ac)) || normalize(ac).includes(pCat));
+          if (!isAllowed) return false;
         }
 
-        const normalize = str => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const rawCatalog = window.BrigadaData.catalog || [];
-        
-        const catalog = rawCatalog.filter(c => {
-          if (window.BrigadaData?.isProductAllowedForUser) {
-            return window.BrigadaData.isProductAllowedForUser(c);
-          }
-          return true;
-        });
-
-        const queryNorm = normalize(query);
-        const matches = catalog.filter(c => {
-          const nameNorm = normalize(c.name);
-          const pluStr = String(c.plu || '').toLowerCase();
-          const barcodeStr = String(c.barcode || '').toLowerCase();
-          return pluStr.includes(queryNorm) || nameNorm.includes(queryNorm) || barcodeStr.includes(queryNorm);
-        }).slice(0, 6);
-
-        if (matches.length === 0) {
-          suggestionsBox.style.display = 'none';
-          return;
+        if (currentCatFilter !== 'all') {
+          if (!pCat.includes(normalize(currentCatFilter)) && !normalize(currentCatFilter).includes(pCat)) return false;
         }
 
-        suggestionsBox.innerHTML = matches.map(m => `
-          <div class="catalog-sugg-row" data-plu="${m.plu}" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; background: #16152b; transition: background 0.15s ease;">
-            <div>
-              <div style="font-weight: 700; color: #ffffff;">${m.name}</div>
-              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">PLU: <b style="color: #38bdf8;">${m.plu}</b> • Setor: ${m.category}</div>
-            </div>
-            <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">Selecionar ↵</span>
-          </div>
-        `).join('');
-
-        suggestionsBox.style.display = 'block';
-
-        suggestionsBox.querySelectorAll('.catalog-sugg-row').forEach(row => {
-          row.addEventListener('mouseenter', () => {
-            row.style.background = 'rgba(56, 189, 248, 0.15)';
-          });
-          row.addEventListener('mouseleave', () => {
-            row.style.background = '#16152b';
-          });
-          row.addEventListener('click', () => {
-            const found = catalog.find(c => String(c.plu) === String(row.dataset.plu));
-            if (found) handleCatalogItemSelect(found);
-          });
-        });
+        if (q) {
+          const full = `${normalize(p.name)} ${normalize(String(p.plu || ''))} ${normalize(p.barcode || '')}`;
+          return q.split(/\s+/).every(t => full.includes(t));
+        }
+        return true;
       });
 
-      // Fechar sugestões ao clicar fora
-      document.addEventListener('click', (e) => {
-        if (!pluInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-          suggestionsBox.style.display = 'none';
-        }
+      if (countEl) {
+        countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'produto disponível' : 'produtos disponíveis'}`;
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+              Nenhum produto encontrado no catálogo do setor.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.slice(0, 80).map(p => {
+        const catName = this.catMap[(p.category || '').toLowerCase()] || p.category || 'Geral';
+        return `
+          <tr>
+            <td style="font-family: monospace; font-weight: 700; color: #38bdf8; vertical-align: middle; padding: 8px 12px;">${p.plu || '—'}</td>
+            <td style="vertical-align: middle; padding: 8px 12px;">
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">${p.name}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 1px;">${catName}</div>
+            </td>
+            <td style="text-align: right; vertical-align: middle; padding: 8px 12px;">
+              <button type="button" class="btn btn--primary btn--sm" data-action="select-chamber-cat-item" data-plu="${p.plu || ''}" data-name="${(p.name || '').replace(/"/g, '&quot;')}" data-cat="${p.category || ''}" data-unit="${p.unit || 'kg'}" data-supplier="${(p.supplier || '').replace(/"/g, '&quot;')}" style="padding: 5px 14px; font-weight: 600; cursor: pointer; border-radius: 6px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);">
+                Selecionar
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('[data-action="select-chamber-cat-item"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const plu = btn.dataset.plu;
+          const name = btn.dataset.name;
+          const cat = btn.dataset.cat;
+          const unit = btn.dataset.unit;
+          const supplier = btn.dataset.supplier || (window.BrigadaData?.detectSupplierFromName ? window.BrigadaData.detectSupplierFromName(name) : '');
+
+          overlay.querySelector('#add-chamber-plu').value = plu;
+          overlay.querySelector('#add-chamber-name').value = name;
+          if (cat && overlay.querySelector(`#add-chamber-category option[value="${cat.toLowerCase()}"]`)) {
+            overlay.querySelector('#add-chamber-category').value = cat.toLowerCase();
+          }
+          if (unit && overlay.querySelector(`#add-chamber-unit option[value="${unit.toLowerCase()}"]`)) {
+            overlay.querySelector('#add-chamber-unit').value = unit.toLowerCase();
+          }
+          if (supplier) {
+            overlay.querySelector('#add-chamber-supplier').value = supplier;
+          }
+
+          overlay.querySelector('#chamber-selected-name').textContent = name;
+          overlay.querySelector('#chamber-selected-plu').textContent = plu || '—';
+          overlay.querySelector('#chamber-selected-cat').textContent = this.catMap[(cat || '').toLowerCase()] || cat || 'Geral';
+          overlay.querySelector('#chamber-selected-catalog-card').style.display = 'flex';
+          overlay.querySelector('#chamber-manual-fields-row').style.display = 'none';
+
+          overlay.querySelector('#chamber-modal-step-catalog').style.display = 'none';
+          overlay.querySelector('#chamber-modal-step-form').style.display = 'block';
+
+          overlay.querySelector('#add-chamber-enddate')?.focus();
+        });
+      });
+    };
+
+    // Inicializa catálogo
+    renderCatalogList();
+
+    // Busca no catálogo
+    const searchInput = overlay.querySelector('#chamber-catalog-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        currentSearch = searchInput.value;
+        renderCatalogList();
       });
     }
 
-    // Auto-detect supplier on name blur
+    // Abas de categoria
+    overlay.querySelectorAll('#chamber-catalog-tabs .cat-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        overlay.querySelectorAll('#chamber-catalog-tabs .cat-tab').forEach(t => t.classList.remove('cat-tab--active'));
+        tab.classList.add('cat-tab--active');
+        currentCatFilter = tab.dataset.cat;
+        renderCatalogList();
+      });
+    });
+
+    // Busca por voz
+    const voiceBtn = overlay.querySelector('#chamber-catalog-voice-btn');
+    if (voiceBtn) {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        voiceBtn.style.display = 'none';
+      } else {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recog = new SpeechRec();
+        recog.lang = 'pt-BR';
+        recog.continuous = false;
+        recog.interimResults = false;
+
+        recog.onstart = () => {
+          voiceBtn.style.color = '#ef4444';
+          voiceBtn.title = 'Ouvindo... Fale agora';
+        };
+        recog.onresult = (ev) => {
+          const transcript = ev.results[0][0].transcript;
+          if (searchInput) {
+            searchInput.value = transcript;
+            currentSearch = transcript;
+            renderCatalogList();
+          }
+        };
+        recog.onerror = recog.onend = () => {
+          voiceBtn.style.color = 'var(--text-secondary)';
+          voiceBtn.title = 'Buscar por voz';
+        };
+
+        voiceBtn.addEventListener('click', () => {
+          try { recog.start(); } catch (e) { recog.stop(); }
+        });
+      }
+    }
+
+    // Preenchimento manual
+    overlay.querySelector('#btn-switch-manual-chamber').addEventListener('click', () => {
+      overlay.querySelector('#chamber-selected-catalog-card').style.display = 'none';
+      overlay.querySelector('#chamber-manual-fields-row').style.display = 'block';
+      overlay.querySelector('#add-chamber-plu').value = '';
+      overlay.querySelector('#add-chamber-name').value = '';
+
+      overlay.querySelector('#chamber-modal-step-catalog').style.display = 'none';
+      overlay.querySelector('#chamber-modal-step-form').style.display = 'block';
+      overlay.querySelector('#add-chamber-plu')?.focus();
+    });
+
+    // Trocar produto (voltar ao catálogo)
+    overlay.querySelector('#btn-back-to-chamber-catalog').addEventListener('click', () => {
+      overlay.querySelector('#chamber-modal-step-form').style.display = 'none';
+      overlay.querySelector('#chamber-modal-step-catalog').style.display = 'block';
+      renderCatalogList();
+    });
+
+    // Submissão do formulário
+    const form = overlay.querySelector('#form-add-chamber-prod');
+    const nameInput = overlay.querySelector('#add-chamber-name');
+    const pluInput = overlay.querySelector('#add-chamber-plu');
+    const catSelect = overlay.querySelector('#add-chamber-category');
+    const unitSelect = overlay.querySelector('#add-chamber-unit');
+    const supplierInput = overlay.querySelector('#add-chamber-supplier');
+
+    // Auto-detect supplier on manual name blur
     nameInput.addEventListener('blur', () => {
       if (!supplierInput.value && nameInput.value && window.BrigadaData?.detectSupplierFromName) {
         const detected = window.BrigadaData.detectSupplierFromName(nameInput.value);
@@ -3070,8 +2883,6 @@ window.BrigadaChambers = {
       }
     });
 
-    // Submissão do formulário
-    const form = overlay.querySelector('#form-add-chamber-prod');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -3094,7 +2905,10 @@ window.BrigadaChambers = {
         return;
       }
 
-      const locString = this.formatLocation(chamberId, col, lvl, pos);
+      const chosenLvl = parseInt(overlay.querySelector('#add-chamber-level')?.value, 10) || lvl || 1;
+      const chosenPos = overlay.querySelector('#add-chamber-position')?.value || pos || 'esquerda';
+      const chosenType = overlay.querySelector('input[name="add-chamber-pallet-type"]:checked')?.value || 'full';
+      const locString = this.formatLocation(chamberId, col, chosenLvl, chosenPos, chosenType);
       window.BrigadaUI.showToast('Cadastrando e adicionando produto...', 'info');
 
       try {
@@ -3110,7 +2924,7 @@ window.BrigadaChambers = {
           location: locString
         });
 
-        this.setSlotMarkedEmpty(this.selectedChamber, col, lvl, pos, false);
+        this.setSlotMarkedEmpty(this.selectedChamber, col, chosenLvl, chosenPos, false);
         window.BrigadaUI.showToast('Produto cadastrado e alocado com sucesso!', 'success');
         close();
         this.render(this.container);
@@ -3149,6 +2963,11 @@ window.BrigadaChambers = {
       { val: 'pereciveis', label: '🥗 Perecíveis' }
     ].filter(opt => allowedCats.length === 0 || allowedCats.includes(opt.val));
 
+    const currentParsed = this.parseLocation(product.location);
+    const currentPalletType = currentParsed?.palletType || 'full';
+    const currentChamberKey = currentParsed?.chamberKey || (isResfriada ? 'resfriado' : 'congelado');
+    const currentCol = currentParsed?.column || col || 1;
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay modal-overlay--visible';
     overlay.id = 'edit-product-chamber-modal';
@@ -3170,6 +2989,71 @@ window.BrigadaChambers = {
         <div class="modal-body" style="padding: 1.25rem 1.5rem;">
           <form id="form-edit-chamber-prod" style="display: flex; flex-direction: column; gap: 12px;">
             
+            <!-- Câmara e Coluna de Armazenagem -->
+            <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Câmara <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="edit-chamber-select" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); font-weight: 600;">
+                  <option value="congelado" ${currentChamberKey === 'congelado' ? 'selected' : ''}>🥶 Câmara Congelada</option>
+                  <option value="resfriado" ${currentChamberKey === 'resfriado' ? 'selected' : ''}>❄️ Câmara Resfriada</option>
+                  <option value="laticinios" ${currentChamberKey === 'laticinios' ? 'selected' : ''}>🧀 Câmara de Laticínios</option>
+                  <option value="pereciveis" ${currentChamberKey === 'pereciveis' ? 'selected' : ''}>🥗 Câmara de Perecíveis</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Coluna <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="edit-chamber-column" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                </select>
+              </div>
+            </div>
+
+            <!-- Nível e Posição (Lado) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Nível de Armazenagem <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="edit-chamber-level" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="1" ${lvl === 1 ? 'selected' : ''}>📦 Nível 1 — Piso (Chão)</option>
+                  <option value="2" ${lvl === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
+                  <option value="3" ${lvl === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
+                  <option value="4" ${lvl === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Posição / Lado <span style="color: #ef4444;">*</span>
+                </label>
+                <select id="edit-chamber-position" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  <option value="esquerda" ${pos === 'esquerda' ? 'selected' : ''}>⬅️ Lado Esquerdo (E)</option>
+                  <option value="direita" ${pos === 'direita' ? 'selected' : ''}>➡️ Lado Direito (D)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tipo do Palete (Full ou Misto) -->
+            <div class="form-group">
+              <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                Estrutura / Tipo do Palete *
+              </label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+                  <input type="radio" name="edit-chamber-pallet-type" value="full" ${currentPalletType !== 'misto' ? 'checked' : ''} style="cursor: pointer;" />
+                  <span>📦 Palete Full</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+                  <input type="radio" name="edit-chamber-pallet-type" value="misto" ${currentPalletType === 'misto' ? 'checked' : ''} style="cursor: pointer;" />
+                  <span>🔀 Palete Misto</span>
+                </label>
+              </div>
+            </div>
+
             <!-- PLU e Sugestões -->
             <div class="form-group" style="position: relative;">
               <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
@@ -3251,6 +3135,24 @@ window.BrigadaChambers = {
 
     document.body.appendChild(overlay);
 
+    const chamberSelect = overlay.querySelector('#edit-chamber-select');
+    const colSelect = overlay.querySelector('#edit-chamber-column');
+
+    const updateColOptions = () => {
+      const selectedChamber = chamberSelect.value;
+      const count = selectedChamber === 'congelado' ? 16 : 4;
+      const prevVal = parseInt(colSelect.value, 10) || currentCol;
+      colSelect.innerHTML = Array.from({ length: count }, (_, i) => {
+        const cNum = i + 1;
+        const pad = String(cNum).padStart(2, '0');
+        const isSel = cNum === Math.min(prevVal, count);
+        return `<option value="${cNum}" ${isSel ? 'selected' : ''}>Coluna ${pad}</option>`;
+      }).join('');
+    };
+
+    updateColOptions();
+    chamberSelect.addEventListener('change', updateColOptions);
+
     // Aplica máscara de data DD/MM/AAAA
     const endDateInput = overlay.querySelector('#edit-chamber-enddate');
     if (window.BrigadaData?.applyDateMask && endDateInput) {
@@ -3259,7 +3161,9 @@ window.BrigadaChambers = {
 
     const closeAndReturn = () => {
       overlay.remove();
-      this.openPalletModal(col, lvl, pos);
+      if (document.getElementById('pallet-details-modal')) {
+        this.openPalletModal(col, lvl, pos);
+      }
     };
 
     overlay.querySelector('#modal-close-edit-chamber').addEventListener('click', closeAndReturn);
@@ -3280,6 +3184,14 @@ window.BrigadaChambers = {
       const qtyVal = parseFloat(overlay.querySelector('#edit-chamber-quantity').value) || 1;
       const rawEndVal = overlay.querySelector('#edit-chamber-enddate').value.trim();
       const suppVal = overlay.querySelector('#edit-chamber-supplier').value.trim();
+
+      const chosenChamber = chamberSelect.value;
+      const chosenCol = parseInt(colSelect.value, 10) || 1;
+      const chosenLvl = parseInt(overlay.querySelector('#edit-chamber-level')?.value, 10) || lvl || 1;
+      const chosenPos = overlay.querySelector('#edit-chamber-position')?.value || pos || 'esquerda';
+      const chosenType = overlay.querySelector('input[name="edit-chamber-pallet-type"]:checked')?.value || 'full';
+      const newLoc = this.formatLocation(chosenChamber, chosenCol, chosenLvl, chosenPos, chosenType);
+      const colLabel = chosenLvl === 1 ? 'Piso' : 'Aéreo';
 
       const parsedEndDate = window.BrigadaData.parseDateInput(rawEndVal);
       if (!parsedEndDate) {
@@ -3302,12 +3214,17 @@ window.BrigadaChambers = {
           unit: unitVal,
           quantity: qtyVal,
           endDate: parsedEndDate,
-          supplier: suppVal || null
+          supplier: suppVal || null,
+          location: newLoc,
+          column: colLabel,
+          columnNumber: chosenCol
         });
 
         window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');
         overlay.remove();
-        this.openPalletModal(col, lvl, pos);
+        if (document.getElementById('pallet-details-modal')) {
+          this.openPalletModal(chosenCol, chosenLvl, chosenPos);
+        }
         this.render(this.container);
       } catch (err) {
         console.error(err);
