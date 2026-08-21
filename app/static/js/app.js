@@ -646,13 +646,13 @@ window.BrigadaUI = {
 
                   <div style="display: flex; flex-direction: column; gap: 0.45rem;">
                     ${dist.sameDate.map(item => `
-                      <div style="display: flex; justify-content: space-between; align-items: center; background: ${item.isCurrent ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.04)'}; border: 1px solid ${item.isCurrent ? '#10b981' : 'rgba(255,255,255,0.1)'}; padding: 0.6rem 0.85rem; border-radius: 8px;">
+                      <div ${!item.isCurrent ? `onclick="window.BrigadaUI.showProductView('${item.id}')" role="button" tabindex="0" title="Clique para abrir os detalhes deste lote"` : ''} style="display: flex; justify-content: space-between; align-items: center; background: ${item.isCurrent ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.04)'}; border: 1px solid ${item.isCurrent ? '#10b981' : 'rgba(255,255,255,0.1)'}; padding: 0.6rem 0.85rem; border-radius: 8px; ${!item.isCurrent ? 'cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);' : ''}" ${!item.isCurrent ? `onmouseover="this.style.background='rgba(56,189,248,0.12)'; this.style.borderColor='#38bdf8'; this.style.transform='translateY(-1px)';" onmouseout="this.style.background='rgba(255,255,255,0.04)'; this.style.borderColor='rgba(255,255,255,0.1)'; this.style.transform='none';"` : ''}>
                         <div style="display: flex; align-items: center; gap: 8px;">
                           <span style="font-size: 1.1rem;">${item.isChamber ? '🥶' : item.isPiso ? '🏪' : '📍'}</span>
                           <div>
-                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                               ${item.locationDesc}
-                              ${item.isCurrent ? `<span style="font-size: 0.68rem; background: #10b981; color: #fff; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">LOTE CONSULTADO</span>` : ''}
+                              ${item.isCurrent ? `<span style="font-size: 0.68rem; background: #10b981; color: #fff; font-weight: 700; padding: 1px 6px; border-radius: 4px;">LOTE CONSULTADO</span>` : `<span style="font-size: 0.68rem; background: rgba(56,189,248,0.2); color: #38bdf8; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🔍 Ver Lote</span>`}
                             </div>
                             <div style="font-size: 0.72rem; color: var(--text-secondary);">Cadastrado em: ${window.BrigadaData.formatDate(item.startDate)}</div>
                           </div>
@@ -677,14 +677,25 @@ window.BrigadaUI = {
                   <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-tertiary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
                     📅 Outras Validades Cadastradas deste Produto (${dist.otherDates.length} outro${dist.otherDates.length > 1 ? 's' : ''}):
                   </div>
-                  <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; flex-direction: column; gap: 0.45rem;">
                     ${dist.otherDates.map(item => `
-                      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 0.45rem 0.75rem; border-radius: 6px;">
-                        <div>
-                          <span style="font-weight: 600; font-size: 0.82rem; color: var(--text-primary);">${item.locationDesc}</span>
-                          <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 8px;">Validade: <b style="color:var(--text-primary);">${window.BrigadaData.formatDate(item.endDate)}</b></span>
+                      <div onclick="window.BrigadaUI.showProductView('${item.id}')" role="button" tabindex="0" title="Clique para abrir e ver os detalhes deste lote (validade ${window.BrigadaData.formatDate(item.endDate)})" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 0.6rem 0.85rem; border-radius: 8px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onmouseover="this.style.background='rgba(56,189,248,0.12)'; this.style.borderColor='#38bdf8'; this.style.transform='translateY(-1px)';" onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='var(--glass-border)'; this.style.transform='none';">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 1.1rem;">${item.isChamber ? '🥶' : item.isPiso ? '🏪' : '📍'}</span>
+                          <div>
+                            <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                              <span>${item.locationDesc}</span>
+                              <span style="font-size: 0.68rem; background: rgba(56,189,248,0.2); color: #38bdf8; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🔍 Ver Lote</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                              Validade: <b style="color: #38bdf8;">${window.BrigadaData.formatDate(item.endDate)}</b>
+                              ${item.startDate ? `<span style="margin-left: 6px; font-size: 0.7rem; color: var(--text-tertiary);">| Cadastrado em: ${window.BrigadaData.formatDate(item.startDate)}</span>` : ''}
+                            </div>
+                          </div>
                         </div>
-                        <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">${item.quantity} ${item.unit}</span>
+                        <div style="text-align: right; white-space: nowrap;">
+                          <strong style="font-size: 1rem; color: var(--text-primary);">${item.quantity} ${item.unit}</strong>
+                        </div>
                       </div>
                     `).join('')}
                   </div>
