@@ -88,6 +88,9 @@ window.BrigadaPereciveis = {
           <button class="btn btn--primary" id="btn-export-pdf-pereciveis" title="Exportar para PDF">
             <span>📄</span> PDF
           </button>
+          <button class="btn btn--primary" id="btn-share-pereciveis" title="Compartilhar Relatório de Validades via WhatsApp / Web Share" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399;">
+            <span>📲</span> Compartilhar
+          </button>
           ${canAddProduct ? `
           <button class="btn btn--primary" id="btn-add-product-pereciveis">
             <span>＋</span> Novo Produto
@@ -788,6 +791,32 @@ window.BrigadaPereciveis = {
         if (action === 'clear-expired') {
           window.BrigadaData.setExpiredAction(id, null).then(() => this.renderTable(container));
         }
+        if (action === 'print-cracha') {
+          const p = window.BrigadaData.products.find(x => x.id === id);
+          if (p && window.BrigadaCracha) {
+            window.BrigadaCracha.printCracha({
+              productName: p.name,
+              quantity: p.quantity || 1,
+              consincoCode: p.plu || '',
+              expiryDate: p.endDate ? window.BrigadaData.formatDate(p.endDate) : '--/--/--',
+              notes: p.location || '',
+              createdBy: p.createdBy || window.BrigadaAuth.currentUser?.name || 'Felipe'
+            });
+          }
+        }
+        if (action === 'share-cracha') {
+          const p = window.BrigadaData.products.find(x => x.id === id);
+          if (p && window.BrigadaCracha) {
+            window.BrigadaCracha.shareCracha({
+              productName: p.name,
+              quantity: p.quantity || 1,
+              consincoCode: p.plu || '',
+              expiryDate: p.endDate ? window.BrigadaData.formatDate(p.endDate) : '--/--/--',
+              notes: p.location || '',
+              createdBy: p.createdBy || window.BrigadaAuth.currentUser?.name || 'Felipe'
+            });
+          }
+        }
         if (action === 'view-rack') {
           const chamber = btn.dataset.chamber;
           const col = parseInt(btn.dataset.col, 10);
@@ -908,10 +937,11 @@ window.BrigadaPereciveis = {
       this.openAddModal(container);
     });
 
-    // Export / Import / Rebaixar buttons
+    // Export / Import / Rebaixar / Share buttons
     container.querySelector('#btn-request-reduction-pereciveis')?.addEventListener('click', () => this.requestReduction(container));
     container.querySelector('#btn-export-excel-pereciveis')?.addEventListener('click', () => this.exportExcel());
     container.querySelector('#btn-export-pdf-pereciveis')?.addEventListener('click', () => this.exportPDF());
+    container.querySelector('#btn-share-pereciveis')?.addEventListener('click', () => this.shareProducts());
     container.querySelector('#btn-import-csv-pereciveis')?.addEventListener('click', () => {
       container.querySelector('#import-file-input-pereciveis')?.click();
     });
@@ -1773,6 +1803,52 @@ window.BrigadaPereciveis = {
       `;
     }).join('');
 
+    if (window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const nowStr = new Date().toLocaleDateString('pt-BR');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BRIGADA-IA — Relatório de Produtos (Perecíveis)', 14, 13);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Data: ${nowStr} | Total: ${products.length} itens`, 14, 28);
+
+      doc.autoTable({
+        startY: 32,
+        head: [['PLU', 'Produto', 'Qtd', 'Categoria', 'Validade', 'Status', 'Local']],
+        body: products.map(p => {
+          const s = window.BrigadaData.getProductStatus(p);
+          return [
+            p.plu || '—',
+            p.name || '—',
+            `${p.quantity || 0} ${p.unit || 'un'}`,
+            catMap[p.category] || p.category || '—',
+            window.BrigadaData.formatDate ? window.BrigadaData.formatDate(p.endDate) : p.endDate,
+            s.label || s.text || 'OK',
+            p.location || '—'
+          ];
+        }),
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        bodyStyles: { fontSize: 7.5, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 10, right: 10 },
+        styles: { cellPadding: 2.2 }
+      });
+
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+      window.BrigadaUI.showToast('PDF gerado com sucesso!', 'success');
+      return;
+    }
+
     const printContent = `
       <div class="print-container">
         <style>
@@ -1780,29 +1856,13 @@ window.BrigadaPereciveis = {
           .print-container .header { text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #6366f1; }
           .print-container .header h1 { font-size:20px; color:#6366f1; margin-bottom:4px; }
           .print-container .header p { color:#64748b; font-size:12px; }
-          .print-container .summary { display:flex; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
-          .print-container .summary-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 16px; text-align:center; }
-          .print-container .summary-item .num { font-size:18px; font-weight:800; }
-          .print-container .summary-item .label { font-size:9px; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
-          .print-container .num-total { color:#6366f1; }
-          .print-container .num-ok { color:#22c55e; }
-          .print-container .num-warn { color:#f59e0b; }
-          .print-container .num-exp { color:#ef4444; }
           .print-container table { width:100%; border-collapse:collapse; margin-top:8px; }
           .print-container th { background:#6366f1; color:#fff; padding:8px 6px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
           .print-container td { padding:6px; border-bottom:1px solid #e2e8f0; font-size:11px; color:#1e293b; }
-          .print-container tr:nth-child(even) td { background:#f8fafc; }
-          .print-container .footer { margin-top:20px; text-align:center; color:#94a3b8; font-size:9px; border-top:1px solid #e2e8f0; padding-top:12px; }
         </style>
         <div class="header">
           <h1>🛡️ BRIGADA-IA — Relatório de Produtos</h1>
           <p>Gerado em ${now} · Setor de Perecíveis</p>
-        </div>
-        <div class="summary">
-          <div class="summary-item"><div class="num num-total">${stats.total}</div><div class="label">Total</div></div>
-          <div class="summary-item"><div class="num num-ok">${stats.ok}</div><div class="label">OK</div></div>
-          <div class="summary-item"><div class="num num-warn">${stats.expiresSoon}</div><div class="label">Atenção</div></div>
-          <div class="summary-item"><div class="num num-exp">${stats.expired}</div><div class="label">Vencidos</div></div>
         </div>
         <table>
           <thead>
@@ -1810,11 +1870,10 @@ window.BrigadaPereciveis = {
           </thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="footer">BRIGADA-IA v1.0 · Brigada de Validade · ${products.length} produtos listados</div>
       </div>`;
 
     window.BrigadaUI.printContent(printContent);
-    window.BrigadaUI.showToast('Visualização de impressão aberta! Use "Salvar como PDF" se desejar.', 'success');
+    window.BrigadaUI.showToast('Visualização de impressão aberta!', 'success');
   },
 
   // ── Import CSV ────────────────────────────────────────────────────────────
@@ -1928,4 +1987,67 @@ window.BrigadaPereciveis = {
     this.renderTable(container);
     window.BrigadaUI.showToast(`Importação concluída: ${imported} adicionados, ${skipped} ignorados.`, imported > 0 ? 'success' : 'error');
   },
+
+  shareProducts() {
+    const checkboxes = document.querySelectorAll('.select-product-checkbox-pereciveis:checked');
+    const ids = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+    let products = this.getFilteredProducts();
+    if (ids.length > 0) {
+      products = products.filter(p => ids.includes(p.id));
+    }
+    if (products.length === 0) {
+      window.BrigadaUI.showToast('Nenhum produto para compartilhar em PDF.', 'error');
+      return;
+    }
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      this.exportPDF();
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const now = new Date().toLocaleDateString('pt-BR');
+
+    // Header Indigo
+    doc.setFillColor(99, 102, 241);
+    doc.rect(0, 0, 210, 20, 'F');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BRIGADA-IA — Relatório de Validades (Perecíveis)', 14, 13);
+
+    // Subheader
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Data: ${now} | Total de Itens: ${products.length}`, 14, 28);
+
+    const catMap = { iogurtes: 'Iogurtes', laticinios: 'Laticínios', frios: 'Frios', pereciveis: 'Perecíveis' };
+
+    doc.autoTable({
+      startY: 32,
+      head: [['PLU', 'Produto', 'Qtd', 'Categoria', 'Validade', 'Status', 'Local']],
+      body: products.map(p => {
+        const s = window.BrigadaData.getProductStatus(p);
+        return [
+          p.plu || '—',
+          p.name || '—',
+          `${p.quantity || 0} ${p.unit || 'un'}`,
+          catMap[p.category] || p.category || '—',
+          window.BrigadaData.formatDate ? window.BrigadaData.formatDate(p.endDate) : p.endDate,
+          s.label || s.text || 'OK',
+          p.location || '—'
+        ];
+      }),
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 7.5, textColor: [30, 41, 59] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 10, right: 10 },
+      styles: { cellPadding: 2.2 }
+    });
+
+    window.BrigadaUI.shareDocPDF(doc, `relatorio_pereciveis_${new Date().toISOString().split('T')[0]}.pdf`, 'Relatório de Validades - Perecíveis');
+  }
 };

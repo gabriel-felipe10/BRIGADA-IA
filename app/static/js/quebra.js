@@ -127,7 +127,7 @@ window.BrigadaQuebra = {
     const origensOptions = this.ORIGENS.map(o => `<option value="${o.name}">${o.id}. ${o.name}</option>`).join('');
     const ocorrenciasOptions = this.OCORRENCIAS.map(o => `<option value="${o.name}">${o.id}. ${o.name}</option>`).join('');
     const motivosOptions = this.MOTIVOS.map(m => `<option value="${m.name}">${m.id}. ${m.name}</option>`).join('');
-    const isPereciveis = allowedCats.some(c => ['laticinios', 'frios', 'iogurtes', 'pereciveis'].includes(c)) && !allowedCats.some(c => ['aves', 'bovino', 'suino', 'pescado'].includes(c));
+    const isPereciveis = (user.sector || '').toLowerCase().includes('pereciv');
     const supplierPlaceholder = isPereciveis ? 'Ex: Betânia / Danone / Nestlé / Elegê / Vigor / Piracanjuba' : 'Ex: Seara / Friboi / Sadia / Perdigão / Mauricéa';
 
     return `
@@ -872,14 +872,25 @@ window.BrigadaQuebra = {
           <td data-label="Ocorrência"><span class="badge badge--expired">${item.occurrence || 'Vencimento'}</span></td>
           <td data-label="Motivo"><span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #818cf8;">${item.reason || 'Qualidade'}</span></td>
           <td data-label="Responsável">${item.responsibleName || '—'}</td>
-          <td data-label="Ações" style="text-align: right;">
-            <button class="btn-icon btn-icon--delete btn-delete-quebra" data-id="${item.id}" title="Excluir Registro">
-              🗑️<span class="btn-label">Excluir</span>
-            </button>
+          <td data-label="Ações" style="text-align: right; white-space: nowrap;">
+            <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
+              <button class="btn-icon btn-share-quebra" data-id="${item.id}" title="Compartilhar Avaria via WhatsApp" style="color: #10b981; padding: 4px 8px; font-size: 0.9rem;">
+                📲<span class="btn-label">Compartilhar</span>
+              </button>
+              <button class="btn-icon btn-icon--delete btn-delete-quebra" data-id="${item.id}" title="Excluir Registro" style="color: #ef4444; padding: 4px 8px; font-size: 0.9rem;">
+                🗑️<span class="btn-label">Excluir</span>
+              </button>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+
+    tbody.querySelectorAll('.btn-share-quebra').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.exportPDF(true);
+      });
+    });
 
     tbody.querySelectorAll('.btn-delete-quebra').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -892,7 +903,7 @@ window.BrigadaQuebra = {
     });
   },
 
-  exportPDF() {
+  exportPDF(isShare = false) {
     const list = this.getFilteredList();
     if (list.length === 0) {
       alert('Nenhum registro para exportar.');
@@ -901,6 +912,46 @@ window.BrigadaQuebra = {
 
     const todayStr = new Date().toLocaleDateString('pt-BR');
     const firstSupplier = list[0]?.supplier || '';
+
+    if (isShare && window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, 297, 18, 'F');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FORMULÁRIO DE AVARIA — BRIGADA-IA', 14, 12);
+
+      doc.setFontSize(9);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Data: ${todayStr} | Fornecedor: ${firstSupplier || 'Geral'} | Total: ${list.length} registros`, 14, 25);
+
+      doc.autoTable({
+        startY: 28,
+        head: [['Código', 'Descrição do Produto', 'Quantidade/Peso', 'Origem', 'Ocorrência', 'Motivo', 'Responsável']],
+        body: list.map(item => [
+          item.plu || '—',
+          item.productName || '—',
+          `${item.quantity || 0} ${item.unit || 'kg'}`,
+          item.origin || '—',
+          item.occurrence || '—',
+          item.reason || '—',
+          item.responsibleName || '—'
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 10, right: 10 },
+        styles: { cellPadding: 2.2 }
+      });
+
+      window.BrigadaUI.shareDocPDF(doc, `formulario_avaria_${new Date().toISOString().split('T')[0]}.pdf`, 'Formulário de Avaria');
+      return;
+    }
 
     const rowsCount = Math.max(list.length, 18);
     const tableRows = [];
@@ -1037,6 +1088,11 @@ window.BrigadaQuebra = {
 
       </div>
     `;
+
+    if (isShare && window.BrigadaUI && window.BrigadaUI.sharePDF) {
+      window.BrigadaUI.sharePDF(printHTML, `formulario_avaria_${new Date().toISOString().split('T')[0]}.pdf`, 'Formulário de Avaria');
+      return;
+    }
 
     if (window.BrigadaUI && window.BrigadaUI.printContent) {
       window.BrigadaUI.printContent(printHTML);

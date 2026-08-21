@@ -556,7 +556,8 @@ window.BrigadaDashboard = {
           </div>
           <div class="modal-footer">
             <button class="btn btn--ghost" id="btn-cancel-top10">Fechar</button>
-            <button class="btn btn--primary" id="btn-print-top10">🖨️ Imprimir</button>
+            <button class="btn btn--secondary" id="btn-print-top10">🖨️ Imprimir</button>
+            <button class="btn btn--primary" id="btn-share-top10" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399;">📲 Compartilhar PDF</button>
           </div>
         </div>
       </div>
@@ -720,9 +721,12 @@ window.BrigadaDashboard = {
     // Modal close
     container.querySelector('#modal-close')?.addEventListener('click', () => this.closeModal(container));
     
-    // Print button
+    // Print & Share button
     container.querySelector('#btn-print-top10')?.addEventListener('click', () => {
       this.printTop10(container.querySelector('#top10-modal-title').textContent, this.currentTop10Data);
+    });
+    container.querySelector('#btn-share-top10')?.addEventListener('click', () => {
+      this.shareTop10(container.querySelector('#top10-modal-title').textContent, this.currentTop10Data);
     });
     container.querySelector('#btn-cancel-modal')?.addEventListener('click', () => this.closeModal(container));
 
@@ -1612,9 +1616,93 @@ window.BrigadaDashboard = {
     }
   },
 
+  shareTop10(title, dataList) {
+    if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para compartilhar.', 'error');
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      this.printTop10(title, dataList);
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const nowStr = new Date().toLocaleDateString('pt-BR');
+
+    doc.setFillColor(99, 102, 241);
+    doc.rect(0, 0, 210, 20, 'F');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`BRIGADA-IA — ${title}`, 14, 13);
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${nowStr} | Total: ${dataList.length} itens listados`, 14, 28);
+
+    doc.autoTable({
+      startY: 32,
+      head: [['Posição', 'PLU', 'Produto', 'Ação', 'Qtd. Total']],
+      body: dataList.map((item, index) => [
+        `${index + 1}º`,
+        item.plu || '—',
+        item.name || '—',
+        item.action === 'quebra' ? 'Quebra' : 'Troca',
+        String(item.count || 0)
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+      styles: { cellPadding: 2.5 }
+    });
+
+    window.BrigadaUI.shareDocPDF(doc, `top10_${new Date().toISOString().split('T')[0]}.pdf`, title);
+  },
+
   printTop10(title, dataList) {
     if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para imprimir.', 'error');
     
+    if (window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const nowStr = new Date().toLocaleDateString('pt-BR');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`BRIGADA-IA — ${title}`, 14, 13);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Gerado em: ${nowStr} | Total: ${dataList.length} itens listados`, 14, 28);
+
+      doc.autoTable({
+        startY: 32,
+        head: [['Posição', 'PLU', 'Produto', 'Ação', 'Qtd. Total']],
+        body: dataList.map((item, index) => [
+          `${index + 1}º`,
+          item.plu || '—',
+          item.name || '—',
+          item.action === 'quebra' ? 'Quebra' : 'Troca',
+          String(item.count || 0)
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 },
+        styles: { cellPadding: 2.5 }
+      });
+
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+      return;
+    }
+
     const dateStr = new Date().toLocaleString('pt-BR');
     
     const printContent = `

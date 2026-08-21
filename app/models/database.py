@@ -103,6 +103,20 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS crachas (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_name     TEXT NOT NULL,
+            quantity         REAL NOT NULL,
+            consinco_code    TEXT,
+            expiry_date      TEXT NOT NULL,
+            barcode          TEXT,
+            created_by       TEXT NOT NULL,
+            notes            TEXT,
+            created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     # Migração para bases SQLite já existentes
     try:
         cursor.execute("ALTER TABLE produtos_sem_nota ADD COLUMN signature TEXT")
@@ -137,6 +151,11 @@ def init_db():
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_quebras_date
         ON quebras(occurrence_date DESC)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_crachas_date
+        ON crachas(expiry_date DESC)
     """)
 
     conn.commit()

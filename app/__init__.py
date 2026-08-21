@@ -40,6 +40,7 @@ def create_app():
     from app.routes.settings import settings_bp
     from app.routes.produtos_sem_nota import produtos_sem_nota_bp
     from app.routes.quebras import quebras_bp
+    from app.routes.crachas import crachas_bp
     from app.routes.bible import bible_bp
 
     app.register_blueprint(api_bp)
@@ -50,9 +51,10 @@ def create_app():
     app.register_blueprint(settings_bp)
     app.register_blueprint(produtos_sem_nota_bp)
     app.register_blueprint(quebras_bp)
+    app.register_blueprint(crachas_bp)
     app.register_blueprint(bible_bp)
 
-    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota, quebras, bible")
+    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota, quebras, crachas, bible")
     logger.info("🛡️  BRIGADA-IA pronta para receber requisições")
 
     return app

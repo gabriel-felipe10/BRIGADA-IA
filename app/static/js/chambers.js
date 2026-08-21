@@ -1016,6 +1016,9 @@ window.BrigadaChambers = {
                       <td><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
                       <td>
                         <div style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
+                          <button class="btn btn-outline btn-sm" data-action="cracha-product-col-table" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.35); display: inline-flex; align-items: center; gap: 4px;" title="Gerar Crachá com Informações do Produto">
+                            🏷️ Crachá
+                          </button>
                           <button class="btn btn-outline btn-sm" data-action="edit-product-col-table" data-id="${p.id}" data-col="${colNum}" data-lvl="${lvl}" data-pos="${pos}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                             ✏️ Editar
                           </button>
@@ -1479,6 +1482,14 @@ window.BrigadaChambers = {
       });
     }
 
+    // Gerar Crachá na Tabela da Coluna
+    this.container.querySelectorAll('[data-action="cracha-product-col-table"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        window.BrigadaUI.generateCrachaFromProduct(prodId);
+      });
+    });
+
     // Editar Produto na Tabela da Coluna
     this.container.querySelectorAll('[data-action="edit-product-col-table"]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1759,6 +1770,9 @@ window.BrigadaChambers = {
             </span>
 
             <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="btn btn-outline btn-sm" data-action="cracha-item-in-pallet" data-id="${p.id}" title="Gerar Crachá deste produto" style="padding: 4px 8px; color: #818cf8; border-color: rgba(99,102,241,0.35); font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
+                🏷️
+              </button>
               <button class="btn btn-outline btn-sm" data-action="edit-item-in-pallet" data-id="${p.id}" title="Editar este produto" style="padding: 4px 8px; color: #38bdf8; border-color: rgba(56,189,248,0.35); font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
                 ✏️
               </button>
@@ -1857,6 +1871,13 @@ window.BrigadaChambers = {
     });
 
     // Editar Item do Palete
+    overlay.querySelectorAll('[data-action="cracha-item-in-pallet"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prodId = parseInt(btn.dataset.id, 10);
+        window.BrigadaUI.generateCrachaFromProduct(prodId);
+      });
+    });
+
     overlay.querySelectorAll('[data-action="edit-item-in-pallet"]').forEach(btn => {
       btn.addEventListener('click', () => {
         const prodId = parseInt(btn.dataset.id, 10);

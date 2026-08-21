@@ -570,18 +570,20 @@ window.BrigadaProdutosSemNota = {
         <td data-label="Responsável" style="padding: 12px 16px; color: var(--text-primary); font-weight: 500;">${item.responsibleName || '—'}</td>
         <td data-label="Assinatura" class="hide-mobile" style="padding: 12px 16px; font-size: 0.9rem;">${sigIndicator}</td>
         <td data-label="Registrado Por" class="hide-mobile" style="padding: 12px 16px; color: var(--text-secondary); font-size: 0.9rem;">${window.BrigadaData.getUserNameByEmail(item.createdBy)}</td>
-        <td style="padding: 6px 12px; text-align: center;">
-          <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: center;">
-            <button class="btn-icon btn-print-sn" data-id="${item.id}" title="Imprimir Comprovante">🖨️<span class="btn-label">Imprimir</span></button>
-            <button class="btn-icon btn-icon--delete btn-delete-sn" data-id="${item.id}" title="Excluir Registro">🗑️<span class="btn-label">Excluir</span></button>
+        <td style="padding: 6px 12px; text-align: center; white-space: nowrap;">
+          <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+            <button class="btn-icon btn-print-sn" data-id="${item.id}" title="Imprimir Comprovante" style="padding: 4px 8px; font-size: 0.9rem;">🖨️<span class="btn-label">Imprimir</span></button>
+            <button class="btn-icon btn-share-sn" data-id="${item.id}" title="Compartilhar via WhatsApp / Web Share" style="color: #10b981; padding: 4px 8px; font-size: 0.9rem;">📲<span class="btn-label">Compartilhar</span></button>
+            <button class="btn-icon btn-download-sn" data-id="${item.id}" title="Baixar Imagem / Comprovante" style="color: #38bdf8; padding: 4px 8px; font-size: 0.9rem;">📥<span class="btn-label">Baixar</span></button>
+            <button class="btn-icon btn-icon--delete btn-delete-sn" data-id="${item.id}" title="Excluir Registro" style="color: #ef4444; padding: 4px 8px; font-size: 0.9rem;">🗑️<span class="btn-label">Excluir</span></button>
           </div>
         </td>
       `;
 
-      // Event listener for print button
-      tr.querySelector('.btn-print-sn').addEventListener('click', () => {
+      // Helper para montar HTML do comprovante
+      const buildPrintHTML = () => {
         const timestamp = new Date(item.createdAt || Date.now()).toLocaleString('pt-BR');
-        const printContent = `
+        return `
           <div class="print-container">
             <style>
               .print-container { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; padding:24px; font-size:12px; background:#ffffff; max-width: 400px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; }
@@ -642,13 +644,70 @@ window.BrigadaProdutosSemNota = {
             </div>
           </div>
         `;
-        window.BrigadaUI.printContent(printContent);
+      };
+
+      // Event listener for print button
+      tr.querySelector('.btn-print-sn').addEventListener('click', () => {
+        window.BrigadaUI.printContent(buildPrintHTML());
         window.BrigadaUI.showToast('Visualização de impressão aberta!', 'success');
+      });
+
+      // Event listener for share button
+      tr.querySelector('.btn-share-sn').addEventListener('click', () => {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          window.BrigadaUI.printContent(buildPrintHTML());
+          return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+
+        doc.setFillColor(99, 102, 241);
+        doc.rect(0, 0, 148, 18, 'F');
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Comprovante de Entrada Sem Nota', 10, 12);
+
+        const rows = [
+          ['PLU:', String(item.plu || 'S/N')],
+          ['Produto:', String(item.name || '—')],
+          ['Quantidade:', `${item.quantity} ${item.unit || 'un'}`],
+          ['Data Chegada:', String(formattedDate)],
+          ['Responsável:', String(item.responsibleName || '—')],
+          ['Registrado Por:', String(window.BrigadaData.getUserNameByEmail(item.createdBy))],
+          ['Data Registro:', String(timestamp)]
+        ];
+
+        doc.autoTable({
+          startY: 24,
+          body: rows,
+          theme: 'plain',
+          styles: { fontSize: 8.5, cellPadding: 2 },
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35, textColor: [100, 116, 139] }, 1: { textColor: [15, 23, 42] } }
+        });
+
+        const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY : 80;
+
+        if (item.signature) {
+          doc.setFontSize(7.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text('Assinatura do Responsável:', 10, finalY + 8);
+          try {
+            doc.addImage(item.signature, 'PNG', 10, finalY + 10, 45, 18);
+          } catch(e) {}
+        }
+
+        window.BrigadaUI.shareDocPDF(doc, `sem_nota_${item.plu || 'item'}.pdf`, `Termo Sem Nota - ${item.name || ''}`);
+      });
+
+      // Event listener for download image button
+      tr.querySelector('.btn-download-sn').addEventListener('click', () => {
+        window.BrigadaUI.printContent(buildPrintHTML());
       });
 
       // Event listener for delete button
       tr.querySelector('.btn-delete-sn').addEventListener('click', async (e) => {
-        const id = e.target.dataset.id;
+        const id = item.id;
         if (confirm('Deseja realmente excluir este registro?')) {
           try {
             await window.BrigadaData.deleteProdutoSemNota(id);

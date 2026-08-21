@@ -151,6 +151,90 @@ window.BrigadaUI = {
     }
   },
 
+  async shareDocPDF(doc, fileName = 'relatorio.pdf', title = 'Documento BRIGADA-IA') {
+    this.showToast('📄 Preparando envio do PDF...', 'info');
+    try {
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          title: title,
+          text: title,
+          files: [pdfFile]
+        });
+        this.showToast('PDF compartilhado com sucesso!', 'success');
+        return;
+      }
+
+      // Download automático
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      this.showToast('PDF baixado! Pronto para enviar.', 'success');
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Erro ao compartilhar PDF:', err);
+        doc.save(fileName);
+      }
+    }
+  },
+
+  async generateCrachaFromProduct(productOrId) {
+    const product = (typeof productOrId === 'object' && productOrId !== null)
+      ? productOrId
+      : window.BrigadaData.products.find(p => String(p.id) === String(productOrId));
+
+    if (!product) {
+      this.showToast('Produto não encontrado.', 'error');
+      return;
+    }
+
+    const parts = (product.endDate || '').split('-');
+    let formattedDate = product.endDate || '';
+    if (parts.length === 3) {
+      formattedDate = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+    }
+
+    let friendlyLoc = '—';
+    if (product.location) {
+      if (window.BrigadaData && window.BrigadaData.formatLocationFriendly) {
+        friendlyLoc = window.BrigadaData.formatLocationFriendly(product);
+      } else {
+        friendlyLoc = product.location;
+      }
+    }
+
+    const user = window.BrigadaAuth.currentUser || {};
+    const crachaData = {
+      productName: (product.name || 'PRODUTO').toUpperCase(),
+      consincoCode: product.plu || '',
+      quantity: product.quantity !== undefined ? product.quantity : 0,
+      expiryDate: formattedDate,
+      notes: friendlyLoc !== '—' ? friendlyLoc : (product.notes || '—'),
+      createdBy: user.name || user.username || 'Felipe'
+    };
+
+    try {
+      if (window.BrigadaData && window.BrigadaData.createCracha) {
+        await window.BrigadaData.createCracha(crachaData);
+      }
+    } catch(err) {
+      console.warn('Crachá gerado localmente:', err);
+    }
+
+    if (window.BrigadaCracha && window.BrigadaCracha.shareCracha) {
+      window.BrigadaCracha.shareCracha(crachaData);
+    } else {
+      this.showToast('Crachá gerado com sucesso!', 'success');
+    }
+  },
+
   // ── Modal de Seleção de Quantidade de Quebra / Avaria ─────────────────────
   showQuebraModal(productOrId, onComplete) {
     const product = (typeof productOrId === 'object' && productOrId !== null)
@@ -713,12 +797,18 @@ window.BrigadaUI = {
 
     const closeBtn = document.getElementById('close-product-view-btn');
     const closeBtn2 = document.getElementById('btn-close-product-view');
+    const crachaBtn = document.getElementById('btn-cracha-product-view');
     const closeHandler = () => {
       modal.classList.remove('modal-overlay--visible');
       setTimeout(() => modal.style.display = 'none', 250);
     };
     if (closeBtn) closeBtn.onclick = closeHandler;
     if (closeBtn2) closeBtn2.onclick = closeHandler;
+    if (crachaBtn) {
+      crachaBtn.onclick = () => {
+        this.generateCrachaFromProduct(product);
+      };
+    }
     modal.onclick = (e) => {
       if (e.target === modal) closeHandler();
     };
@@ -1120,6 +1210,10 @@ window.BrigadaRouter = {
             <a class="sidebar__link ${activePage === 'quebra' ? 'sidebar__link--active' : ''}" data-page="quebra" href="#">
               <span class="sidebar__link-icon">📋</span>
               <span>Formulário de Avaria</span>
+            </a>
+            <a class="sidebar__link ${activePage === 'cracha' ? 'sidebar__link--active' : ''}" data-page="cracha" href="#">
+              <span class="sidebar__link-icon">🏷️</span>
+              <span>Crachá</span>
             </a>
 
             ${!window.BrigadaAuth.isPromotor() ? `
@@ -1596,6 +1690,12 @@ window.BrigadaRouter = {
         window.BrigadaQuebra.render(container);
       } else {
         container.innerHTML = `<div class="empty-state">Erro ao carregar página de Quebras</div>`;
+      }
+    } else if (page === 'cracha') {
+      if (window.BrigadaCracha) {
+        window.BrigadaCracha.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar página de Crachá</div>`;
       }
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;

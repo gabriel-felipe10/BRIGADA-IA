@@ -87,10 +87,18 @@ window.BrigadaResumoMensal = {
           <select id="resumo-month-select" class="select-control" style="min-width: 140px;">
             ${months.map(m => `<option value="${m.val}" ${this.currentMonth === m.val ? 'selected' : ''}>${m.name}</option>`).join('')}
           </select>
-          <!-- Botão Imprimir -->
+          <!-- Botões de Ação do Resumo -->
           <button id="btn-print-resumo" class="btn btn--primary" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Imprimir Relatório Resumo Mensal">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>🖨️</span>
             <span id="btn-print-label">Imprimir</span>
+          </button>
+          <button id="btn-share-resumo" class="btn btn--outline" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:#10b981; border-color:rgba(16, 185, 129, 0.4);" title="Compartilhar via WhatsApp / Web Share">
+            <span>📲</span>
+            <span>Compartilhar</span>
+          </button>
+          <button id="btn-download-resumo" class="btn btn--ghost" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:#38bdf8;" title="Baixar Relatório">
+            <span>📥</span>
+            <span>Baixar</span>
           </button>
         </div>
       </div>
@@ -141,7 +149,8 @@ window.BrigadaResumoMensal = {
           </div>
           <div class="modal-footer">
             <button class="btn btn--ghost" id="btn-cancel-top10">Fechar</button>
-            <button class="btn btn--primary" id="btn-print-top10">🖨️ Imprimir</button>
+            <button class="btn btn--secondary" id="btn-print-top10">🖨️ Imprimir</button>
+            <button class="btn btn--primary" id="btn-share-top10" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399;">📲 Compartilhar PDF</button>
           </div>
         </div>
       </div>
@@ -190,6 +199,16 @@ window.BrigadaResumoMensal = {
       this.printResumo();
     });
 
+    const shareBtn = container.querySelector('#btn-share-resumo');
+    shareBtn?.addEventListener('click', () => {
+      this.shareResumo();
+    });
+
+    const downloadBtn = container.querySelector('#btn-download-resumo');
+    downloadBtn?.addEventListener('click', () => {
+      this.printResumo();
+    });
+
     // Top 10 Modal Events
     container.querySelector('#top10-modal-close')?.addEventListener('click', () => this.closeTop10Modal(container));
     container.querySelector('#btn-cancel-top10')?.addEventListener('click', () => this.closeTop10Modal(container));
@@ -208,6 +227,9 @@ window.BrigadaResumoMensal = {
     // Print button Top 10
     container.querySelector('#btn-print-top10')?.addEventListener('click', () => {
       this.printTop10(container.querySelector('#top10-modal-title').textContent, this.currentTop10Data);
+    });
+    container.querySelector('#btn-share-top10')?.addEventListener('click', () => {
+      this.shareTop10(container.querySelector('#top10-modal-title').textContent, this.currentTop10Data);
     });
   },
 
@@ -642,7 +664,11 @@ window.BrigadaResumoMensal = {
     }
   },
 
-  printResumo(specificSectorId) {
+  shareResumo(specificSectorId) {
+    this.printResumo(specificSectorId, true);
+  },
+
+  printResumo(specificSectorId, isShare = false) {
     const targetSector = specificSectorId || this.currentSector || 'all';
     const products = window.BrigadaData.products || [];
     const userSector = window.BrigadaAuth.currentUser?.sector || 'todos';
@@ -981,6 +1007,53 @@ window.BrigadaResumoMensal = {
       </div>
     `;
 
+    if (isShare && window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      // Cabeçalho
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`BRIGADA-IA — ${reportTitle}`, 14, 13);
+
+      doc.setFontSize(9);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Período: ${monthName}/${this.currentYear} | Gerado em: ${dateStr}`, 14, 28);
+      doc.text(`Total Registros: ${totalItems} | Taxa de Sucesso: ${taxaGeralSucesso}% | Quebras: ${totalQuebras} | Trocas: ${totalTrocas}`, 14, 34);
+
+      doc.autoTable({
+        startY: 38,
+        head: [['PLU', 'Produto', 'Quantidade', 'Status']],
+        body: reportProducts.map(p => {
+          let statusTxt = 'A Vencer (OK)';
+          if (p.expiredAction === 'tratado') statusTxt = 'Tratado (Sucesso)';
+          else if (p.expiredAction === 'quebra') statusTxt = 'Quebra';
+          else if (p.expiredAction === 'troca') statusTxt = 'Troca';
+          else if (p.endDate < new Date().toISOString().split('T')[0]) statusTxt = 'Vencido (Sem Ação)';
+          return [
+            p.plu || '—',
+            p.name || '—',
+            `${p.quantity || 0} ${p.unit || 'un'}`,
+            statusTxt
+          ];
+        }),
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 10, right: 10 },
+        styles: { cellPadding: 2.2 }
+      });
+
+      const fileName = `resumo_mensal_${monthName}_${this.currentYear}.pdf`;
+      window.BrigadaUI.shareDocPDF(doc, fileName, `Resumo Mensal - ${monthName}/${this.currentYear}`);
+      return;
+    }
+
     if (window.BrigadaUI && window.BrigadaUI.printContent) {
       window.BrigadaUI.printContent(printHTML);
     } else {
@@ -1035,9 +1108,93 @@ window.BrigadaResumoMensal = {
     }
   },
 
+  shareTop10(title, dataList) {
+    if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para compartilhar.', 'error');
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      this.printTop10(title, dataList);
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const nowStr = new Date().toLocaleDateString('pt-BR');
+
+    doc.setFillColor(99, 102, 241);
+    doc.rect(0, 0, 210, 20, 'F');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`BRIGADA-IA — ${title}`, 14, 13);
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Período: ${this.currentMonth}/${this.currentYear} | Gerado em: ${nowStr}`, 14, 28);
+
+    doc.autoTable({
+      startY: 32,
+      head: [['Posição', 'PLU', 'Produto', 'Ação', 'Qtd. Total']],
+      body: dataList.map((item, index) => [
+        `${index + 1}º`,
+        item.plu || '—',
+        item.name || '—',
+        item.action === 'quebra' ? 'Quebra' : 'Troca',
+        `${item.count} ${item.unit || ''}`
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+      styles: { cellPadding: 2.5 }
+    });
+
+    window.BrigadaUI.shareDocPDF(doc, `top10_resumo_${this.currentMonth}_${this.currentYear}.pdf`, title);
+  },
+
   printTop10(title, dataList) {
     if (!dataList || dataList.length === 0) return window.BrigadaUI.showToast('Nada para imprimir.', 'error');
     
+    if (window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const nowStr = new Date().toLocaleDateString('pt-BR');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`BRIGADA-IA — ${title}`, 14, 13);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Período: ${this.currentMonth}/${this.currentYear} | Gerado em: ${nowStr}`, 14, 28);
+
+      doc.autoTable({
+        startY: 32,
+        head: [['Posição', 'PLU', 'Produto', 'Ação', 'Qtd. Total']],
+        body: dataList.map((item, index) => [
+          `${index + 1}º`,
+          item.plu || '—',
+          item.name || '—',
+          item.action === 'quebra' ? 'Quebra' : 'Troca',
+          `${item.count} ${item.unit || ''}`
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 },
+        styles: { cellPadding: 2.5 }
+      });
+
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+      return;
+    }
+
     const dateStr = new Date().toLocaleString('pt-BR');
     
     const printContent = `

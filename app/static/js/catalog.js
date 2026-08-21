@@ -119,7 +119,12 @@ window.BrigadaCatalog = {
             </select>
           </div>
 
-          ${!window.BrigadaAuth.isKiosk() ? `<button id="btn-print-selected" class="btn btn--primary" style="margin-left: auto;">🖨️ Imprimir Selecionados</button>` : ''}
+          ${!window.BrigadaAuth.isKiosk() ? `
+            <div style="display: flex; gap: 8px; margin-left: auto;">
+              <button id="btn-print-selected" class="btn btn--secondary">🖨️ Imprimir Selecionados</button>
+              <button id="btn-share-selected" class="btn btn--primary" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399;">📲 Compartilhar PDF</button>
+            </div>
+          ` : ''}
         </div>
 
         <div class="table-scroll">
@@ -247,6 +252,43 @@ window.BrigadaCatalog = {
       checkboxes.forEach(cb => cb.checked = e.target.checked);
     });
 
+    const generateCatalogPDF = (selectedProducts) => {
+      if (!window.jspdf || !window.jspdf.jsPDF) return null;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const nowStr = new Date().toLocaleDateString('pt-BR');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BRIGADA-IA — Catálogo de Produtos', 14, 13);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Data: ${nowStr} | Total: ${selectedProducts.length} itens`, 14, 28);
+
+      doc.autoTable({
+        startY: 32,
+        head: [['PLU', 'Nome do Produto', 'Categoria']],
+        body: selectedProducts.map(p => [
+          p.plu || '—',
+          p.name || '—',
+          p.category || '—'
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 },
+        styles: { cellPadding: 2.5 }
+      });
+
+      return doc;
+    };
+
     // Impressão de selecionados
     document.getElementById('btn-print-selected')?.addEventListener('click', () => {
       const selectedCheckboxes = document.querySelectorAll('.catalog-row-checkbox:checked');
@@ -257,32 +299,27 @@ window.BrigadaCatalog = {
       
       const selectedPlus = Array.from(selectedCheckboxes).map(cb => cb.value);
       const selectedProducts = rawCatalog.filter(p => selectedPlus.includes(p.plu));
-      
-      let printContent = `
-        <div style="font-family: sans-serif; padding: 20px; color: #000; background: #fff;">
-          <h2 style="text-align: center; margin-bottom: 20px;">Lista de Produtos Selecionados</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">PLU</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nome do Produto</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Categoria</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${selectedProducts.map(p => `
-                <tr>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${p.plu || ''}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${p.name || ''}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${p.category || ''}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+      const doc = generateCatalogPDF(selectedProducts);
+      if (doc) {
+        doc.autoPrint();
+        window.open(doc.output('bloburl'), '_blank');
+      }
+    });
 
-      window.BrigadaUI.printContent(printContent);
+    // Compartilhamento de selecionados
+    document.getElementById('btn-share-selected')?.addEventListener('click', () => {
+      const selectedCheckboxes = document.querySelectorAll('.catalog-row-checkbox:checked');
+      if (selectedCheckboxes.length === 0) {
+        alert('Selecione ao menos um produto para compartilhar.');
+        return;
+      }
+      
+      const selectedPlus = Array.from(selectedCheckboxes).map(cb => cb.value);
+      const selectedProducts = rawCatalog.filter(p => selectedPlus.includes(p.plu));
+      const doc = generateCatalogPDF(selectedProducts);
+      if (doc) {
+        window.BrigadaUI.shareDocPDF(doc, `catalogo_produtos_${selectedProducts.length}.pdf`, 'Catálogo de Produtos');
+      }
     });
 
     // Executa filtro inicial

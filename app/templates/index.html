@@ -22,6 +22,9 @@
   </script>
   <!-- HTML5 QRCode Scanner -->
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- jsPDF and AutoTable for native robust vector PDFs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <div id="print-area"></div>
@@ -60,8 +63,9 @@
           <!-- Content injected via JS -->
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn--primary" id="btn-close-product-view" style="width: 100%;">Fechar</button>
+      <div class="modal-footer" style="display: flex; gap: 8px;">
+        <button class="btn btn--secondary" id="btn-cracha-product-view" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(99,102,241,0.15); color: #818cf8; border-color: rgba(99,102,241,0.35);">🏷️ Gerar Crachá</button>
+        <button class="btn btn--primary" id="btn-close-product-view" style="flex: 1;">Fechar</button>
       </div>
     </div>
   </div>
@@ -123,27 +127,28 @@
   </div>
 
   <!-- Core data must load first -->
-  <script src="{{ url_for('static', filename='js/data.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/auth.js') }}?v=1.7.8"></script>
+  <script src="{{ url_for('static', filename='js/data.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}?v=1.9.2"></script>
 
   <!-- Feature modules -->
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/products.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/pereciveis.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/users.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/notifications.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/chambers.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/piso_loja.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/product_list.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/produtos_sem_nota.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/quebra.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/resumo_mensal.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/verse_of_the_day.js') }}?v=1.7.8"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/products.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/pereciveis.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/users.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/notifications.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/chambers.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/piso_loja.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/product_list.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/produtos_sem_nota.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/quebra.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/cracha.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/resumo_mensal.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/verse_of_the_day.js') }}?v=1.9.2"></script>
 
   <!-- Main router (bootstraps the app) -->
-  <script src="{{ url_for('static', filename='js/catalog.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/conciliacao.js') }}?v=1.7.8"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=1.7.8"></script>
+  <script src="{{ url_for('static', filename='js/catalog.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/conciliacao.js') }}?v=1.9.2"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=1.9.2"></script>
 
   <!-- Service Worker registration for PWA -->
   <script>

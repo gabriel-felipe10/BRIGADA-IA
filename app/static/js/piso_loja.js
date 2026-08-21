@@ -371,6 +371,9 @@ window.BrigadaPisoLoja = {
           <td data-label="Status"><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
           <td data-label="Ações" class="actions-cell">
             <div style="display: inline-flex; gap: 6px;">
+              <button class="btn btn-outline btn-sm" data-action="cracha-product-piso" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.35); display: inline-flex; align-items: center; gap: 4px;" title="Gerar Crachá">
+                🏷️ Crachá
+              </button>
               <button class="btn btn-outline btn-sm" data-action="edit-product-piso" data-id="${p.id}" style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                 ✏️ Editar
               </button>
@@ -815,6 +818,9 @@ window.BrigadaPisoLoja = {
                         <td><span class="badge ${status.class} ${blinkBadgeClass}">${status.icon} ${status.label}</span></td>
                         <td>
                           <div style="display: inline-flex; gap: 6px;">
+                            <button class="btn btn-outline btn-sm" data-action="cracha-product-piso" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.35); display: inline-flex; align-items: center; gap: 4px;" title="Gerar Crachá">
+                              🏷️ Crachá
+                            </button>
                             <button class="btn btn-outline btn-sm" data-action="edit-product-piso" data-id="${p.id}" style="cursor: pointer; padding: 4px 10px; font-size: 0.8rem; color: #38bdf8; border-color: rgba(56,189,248,0.35);" title="Editar Produto">
                               ✏️ Editar
                             </button>
@@ -1462,6 +1468,14 @@ window.BrigadaPisoLoja = {
         this.openAddNewProductModal(this.selectedFreezer);
       });
     }
+
+    // Gerar Crachá do Produto no Piso de Loja
+    this.container.querySelectorAll('[data-action="cracha-product-piso"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id, 10);
+        window.BrigadaUI.generateCrachaFromProduct(id);
+      });
+    });
 
     // Edit Product in Freezer
     this.container.querySelectorAll('[data-action="edit-product-piso"]').forEach(btn => {

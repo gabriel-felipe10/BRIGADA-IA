@@ -548,11 +548,15 @@ window.BrigadaConciliacao = {
           <td data-label="Produto" class="product-name" onclick="window.BrigadaUI.showProductView('${p.id}')" style="cursor: pointer; text-decoration: underline; color: var(--primary);" title="Ver detalhes">${p.name}</td>
           <td data-label="Físico" style="font-weight: 600; color: var(--text-primary);">${physical.toFixed(2)} ${unit}</td>
           <td data-label="Localização">${p.location || '—'}</td>
-          <td data-label="Ações" class="actions-cell">
-            <button class="btn-icon btn-icon--print" data-action="print-item" data-id="${p.id}" title="Imprimir Comprovante">🖨️<span class="btn-label">Imprimir</span></button>
-            ${isSigned ? `<span class="btn-icon" style="opacity:0.5; cursor:default;" title="Documento Assinado (Inalterável)">🔒<span class="btn-label">Assinado</span></span>` : ''}
-            ${!isSigned && canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Assinar Contagem">✏️<span class="btn-label">Assinar</span></button>` : ''}
-            ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir">🗑️<span class="btn-label">Excluir</span></button>` : ''}
+          <td data-label="Ações" class="actions-cell" style="white-space: nowrap;">
+            <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+              <button class="btn-icon btn-icon--print" data-action="print-item" data-id="${p.id}" title="Imprimir Comprovante" style="padding: 4px 8px; font-size: 0.9rem;">🖨️<span class="btn-label">Imprimir</span></button>
+              <button class="btn-icon" data-action="share-item" data-id="${p.id}" title="Compartilhar via WhatsApp / Web Share" style="color: #10b981; padding: 4px 8px; font-size: 0.9rem;">📲<span class="btn-label">Compartilhar</span></button>
+              <button class="btn-icon" data-action="download-item" data-id="${p.id}" title="Baixar Comprovante" style="color: #38bdf8; padding: 4px 8px; font-size: 0.9rem;">📥<span class="btn-label">Baixar</span></button>
+              ${isSigned ? `<span class="btn-icon" style="opacity:0.5; cursor:default; padding: 4px 8px; font-size: 0.9rem;" title="Documento Assinado (Inalterável)">🔒<span class="btn-label">Assinado</span></span>` : ''}
+              ${!isSigned && canEditThis ? `<button class="btn-icon btn-icon--edit" data-action="edit" data-id="${p.id}" title="Assinar Contagem" style="padding: 4px 8px; font-size: 0.9rem;">✏️<span class="btn-label">Assinar</span></button>` : ''}
+              ${canDeleteThis ? `<button class="btn-icon btn-icon--delete" data-action="delete" data-id="${p.id}" title="Excluir" style="color: #ef4444; padding: 4px 8px; font-size: 0.9rem;">🗑️<span class="btn-label">Excluir</span></button>` : ''}
+            </div>
           </td>
         </tr>
       `;
@@ -568,6 +572,26 @@ window.BrigadaConciliacao = {
 
     // Bind table action buttons
     tbody.querySelectorAll('[data-action="print-item"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const item = window.BrigadaData.products.find(p => p.id === id);
+        if (item) {
+          this.generateSignedPDF([item]);
+        }
+      });
+    });
+
+    tbody.querySelectorAll('[data-action="share-item"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.id, 10);
+        const item = (window.BrigadaData.products || []).find(p => p.id === id);
+        if (item) {
+          this.generateSignedPDF([item], null, null, null, null, true);
+        }
+      });
+    });
+
+    tbody.querySelectorAll('[data-action="download-item"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = parseInt(e.currentTarget.dataset.id);
         const item = window.BrigadaData.products.find(p => p.id === id);
@@ -1358,7 +1382,7 @@ window.BrigadaConciliacao = {
     this.openSignatureModal(items);
   },
 
-  async generateSignedPDF(items, n1, s1, n2, s2) {
+  async generateSignedPDF(items, n1, s1, n2, s2, isShare = false) {
     const includeLogs = document.getElementById('include-logs-checkbox')?.checked;
     let allLogs = [];
     if (includeLogs) {
@@ -1537,6 +1561,60 @@ window.BrigadaConciliacao = {
         }).join('')}
       </div>
     `;
+
+    if (isShare && window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+
+      items.forEach((item, idx) => {
+        if (idx > 0) doc.addPage();
+
+        doc.setFillColor(99, 102, 241);
+        doc.rect(0, 0, 148, 18, 'F');
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Comprovante de Conciliação de Estoque', 10, 12);
+
+        const rows = [
+          ['PLU:', String(item.plu || '—')],
+          ['Produto:', String(item.name || '—')],
+          ['Estoque Físico:', `${item.quantity || 0} ${item.unit || 'kg'}`],
+          ['Localização:', String(item.location || '—')],
+          ['Data de Emissão:', new Date().toLocaleDateString('pt-BR')]
+        ];
+
+        doc.autoTable({
+          startY: 24,
+          body: rows,
+          theme: 'plain',
+          styles: { fontSize: 8.5, cellPadding: 2 },
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35, textColor: [100, 116, 139] }, 1: { textColor: [15, 23, 42] } }
+        });
+
+        const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY : 75;
+
+        const sigImg = s1 || item.signature || null;
+        const lSigImg = s2 || item.leaderSignature || null;
+        const respName = n1 || item.responsibleName || 'Responsável';
+        const lName = n2 || item.leaderName || 'Liderança';
+
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Responsável: ${respName}`, 15, finalY + 10);
+        if (sigImg) {
+          try { doc.addImage(sigImg, 'PNG', 15, finalY + 12, 35, 14); } catch(e){}
+        }
+
+        doc.text(`Líder: ${lName}`, 85, finalY + 10);
+        if (lSigImg) {
+          try { doc.addImage(lSigImg, 'PNG', 85, finalY + 12, 35, 14); } catch(e){}
+        }
+      });
+
+      window.BrigadaUI.shareDocPDF(doc, 'conciliacao_estoque.pdf', 'Comprovante Oficial de Conciliação');
+      return;
+    }
 
     window.BrigadaUI.printContent(printContent);
     window.BrigadaUI.showToast('Visualização de impressão aberta!', 'success');
