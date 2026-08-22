@@ -1695,7 +1695,16 @@ window.BrigadaRouter = {
       if (window.BrigadaCracha) {
         window.BrigadaCracha.render(container);
       } else {
-        container.innerHTML = `<div class="empty-state">Erro ao carregar página de Crachá</div>`;
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 3rem; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">🏷️</div>
+            <h3 style="margin-bottom: 0.5rem; color: var(--text-primary);">Página de Crachá</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">Os arquivos mais recentes estão sendo atualizados no seu navegador.</p>
+            <button class="btn btn--primary" onclick="window.location.reload(true)" style="padding: 8px 18px; cursor: pointer; font-weight: 600;">
+              🔄 Atualizar Agora
+            </button>
+          </div>
+        `;
       }
     } else if (page === 'admin') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;

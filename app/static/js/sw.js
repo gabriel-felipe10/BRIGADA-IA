@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brigada-ia-v1.20';
+const CACHE_NAME = 'brigada-ia-v2.5';
 const ASSETS = [
   '/',
   '/manifest.json',
@@ -16,6 +16,7 @@ const ASSETS = [
   '/static/js/product_list.js',
   '/static/js/produtos_sem_nota.js',
   '/static/js/quebra.js',
+  '/static/js/cracha.js',
   '/static/js/resumo_mensal.js',
   '/static/js/verse_of_the_day.js',
   '/static/js/catalog.js',
