@@ -1623,9 +1623,10 @@ window.BrigadaNotifications = {
       });
 
       const expiring = filtered.filter(p => {
-        if (!p.expirationDate) return false;
-        const exp = new Date(p.expirationDate);
-        return exp >= now && exp <= alertDate;
+        const dStr = p.endDate || p.expirationDate;
+        if (!dStr) return false;
+        const exp = new Date(dStr);
+        return exp >= now && exp <= alertDate && !p.expiredAction;
       });
 
       let msg = `🛡️ *BRIGADA-IA — Alerta de Validade*\n📅 ${now.toLocaleDateString('pt-BR')}\n\n`;
@@ -1633,7 +1634,8 @@ window.BrigadaNotifications = {
       if (expired.length > 0) {
         msg += `🔴 *Produtos VENCIDOS (${expired.length}):*\n`;
         expired.slice(0, 20).forEach(p => {
-          const exp = new Date(p.expirationDate);
+          const dStr = p.endDate || p.expirationDate;
+          const exp = new Date(dStr);
           msg += `  • ${p.name} (venceu: ${exp.toLocaleDateString('pt-BR')})\n`;
         });
         if (expired.length > 20) msg += `  ... e mais ${expired.length - 20} produtos\n`;
@@ -1643,7 +1645,8 @@ window.BrigadaNotifications = {
       if (expiring.length > 0) {
         msg += `⚠️ *A VENCER em ${alertDays} dia${alertDays > 1 ? 's' : ''} (${expiring.length}):*\n`;
         expiring.slice(0, 20).forEach(p => {
-          const exp = new Date(p.expirationDate);
+          const dStr = p.endDate || p.expirationDate;
+          const exp = new Date(dStr);
           msg += `  • ${p.name} (vence: ${exp.toLocaleDateString('pt-BR')})\n`;
         });
         if (expiring.length > 20) msg += `  ... e mais ${expiring.length - 20} produtos\n`;
@@ -1659,15 +1662,17 @@ window.BrigadaNotifications = {
     }
 
     if (type === 'report') {
-      let exp = 0, soon = 0, ok = 0, quebra = 0, troca = 0;
+      let exp = 0, soon = 0, ok = 0, quebra = 0, troca = 0, tratado = 0;
 
       filtered.forEach(p => {
         if (p.expiredAction === 'quebra') { quebra++; return; }
         if (p.expiredAction === 'troca') { troca++; return; }
-        if (!p.expirationDate) { ok++; return; }
-        const d = new Date(p.expirationDate);
+        if (p.expiredAction === 'tratado' || p.expiredAction === 'vendido') { tratado++; ok++; return; }
+        const dStr = p.endDate || p.expirationDate;
+        if (!dStr) { ok++; return; }
+        const d = new Date(dStr);
         if (d < now && !p.expiredAction) exp++;
-        else if (d <= alertDate) soon++;
+        else if (d <= alertDate && !p.expiredAction) soon++;
         else ok++;
       });
 

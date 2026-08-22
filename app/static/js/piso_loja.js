@@ -265,6 +265,9 @@ window.BrigadaPisoLoja = {
     const congelado30 = [];
 
     products.forEach(p => {
+      // Produtos com ação registrada (Tratado, Quebra, Troca, Vendido) já foram solucionados e não geram alertas de validade no freezer
+      if (p.expiredAction) return;
+
       const s = window.BrigadaData.getProductStatus(p);
       if (s.days < 0 || s.class === 'badge--expired') {
         expired.push({ product: p, status: s });
@@ -347,9 +350,10 @@ window.BrigadaPisoLoja = {
       const stockDist = window.BrigadaData.getProductStockDistribution(p);
       const otherLots = stockDist.filter(d => d.id !== p.id);
 
-      const isCritical = status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today';
-      const isWarning = status.days > 0 && status.days <= 3;
-      const isAlert = isCritical || isWarning || status.isResfriadoAlert || status.isCongeladoAlert;
+      const isResolved = !!p.expiredAction;
+      const isCritical = !isResolved && (status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today');
+      const isWarning = !isResolved && (status.days > 0 && status.days <= 3);
+      const isAlert = !isResolved && (isCritical || isWarning || status.isResfriadoAlert || status.isCongeladoAlert);
       const rowStyle = isCritical ? 'background: rgba(239, 68, 68, 0.08);' : isWarning ? 'background: rgba(245, 158, 11, 0.08);' : '';
       const blinkBadgeClass = isAlert ? 'badge--blinking-alert' : '';
 
@@ -800,9 +804,10 @@ window.BrigadaPisoLoja = {
                     </tr>
                   ` : products.map(p => {
                     const status = window.BrigadaData.getProductStatus(p);
-                    const isCritical = status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today';
-                    const isWarning = status.days > 0 && status.days <= 3;
-                    const isAlert = isCritical || isWarning || status.isResfriadoAlert || status.isCongeladoAlert;
+                    const isResolved = !!p.expiredAction;
+                    const isCritical = !isResolved && (status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today');
+                    const isWarning = !isResolved && (status.days > 0 && status.days <= 3);
+                    const isAlert = !isResolved && (isCritical || isWarning || status.isResfriadoAlert || status.isCongeladoAlert);
                     const rowStyle = isCritical ? 'background: rgba(239, 68, 68, 0.08);' : isWarning ? 'background: rgba(245, 158, 11, 0.08);' : '';
                     const blinkBadgeClass = isAlert ? 'badge--blinking-alert' : '';
 
