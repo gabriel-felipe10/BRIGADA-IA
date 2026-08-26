@@ -2754,13 +2754,38 @@ window.BrigadaChambers = {
       }
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
-              Nenhum produto encontrado no catálogo do setor.
-            </td>
-          </tr>
-        `;
+        if (currentSearch && window.BrigadaCatalog?.openNewPluModal) {
+          const isNum = /^\d+$/.test(currentSearch);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" style="text-align: center; padding: 2rem 1rem;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.5rem;">🔍</span>
+                  <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Nenhum produto encontrado para "${currentSearch}"</span>
+                  <button type="button" class="btn btn--primary btn--sm" id="btn-add-plu-allocate-empty" style="margin-top: 4px; padding: 6px 16px; font-weight: 700; background: #38bdf8; border-color: #38bdf8; color: #0f172a; cursor: pointer;">
+                    ➕ Cadastrar "${currentSearch}" no Catálogo
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          tbody.querySelector('#btn-add-plu-allocate-empty')?.addEventListener('click', () => {
+            window.BrigadaCatalog.openNewPluModal({
+              plu: isNum ? currentSearch : '',
+              name: isNum ? '' : currentSearch
+            }, (saved) => {
+              renderCatalogList();
+            });
+          });
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+                Nenhum produto encontrado no catálogo do setor.
+              </td>
+            </tr>
+          `;
+        }
         return;
       }
 
@@ -2997,8 +3022,11 @@ window.BrigadaChambers = {
     overlay.className = 'modal-overlay modal-overlay--visible';
     overlay.id = 'edit-product-chamber-modal';
 
+    let currentSearch = '';
+    let currentCatFilter = 'all';
+
     overlay.innerHTML = `
-      <div class="modal" style="max-width: 540px; width: 92%; transform: translateY(0); margin-top: 4vh;">
+      <div class="modal" style="max-width: 560px; width: 92%; transform: translateY(0); margin-top: 4vh;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
           <div>
             <h3 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -3008,157 +3036,425 @@ window.BrigadaChambers = {
               ${chamberIcon} ${this.selectedChamber} • Coluna ${col.toString().padStart(2, '0')} • ${levelLabel} • ${posLabel}
             </div>
           </div>
-          <button class="modal-close" id="modal-close-edit-chamber">✕</button>
+          <button class="modal-close" id="modal-close-edit-chamber" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:1.2rem;">✕</button>
         </div>
 
         <div class="modal-body" style="padding: 1.25rem 1.5rem;">
-          <form id="form-edit-chamber-prod" style="display: flex; flex-direction: column; gap: 12px;">
-            
-            <!-- Câmara e Coluna de Armazenagem -->
-            <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Câmara <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="edit-chamber-select" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); font-weight: 600;">
-                  <option value="congelado" ${currentChamberKey === 'congelado' ? 'selected' : ''}>🥶 Câmara Congelada</option>
-                  <option value="resfriado" ${currentChamberKey === 'resfriado' ? 'selected' : ''}>❄️ Câmara Resfriada</option>
-                  <option value="laticinios" ${currentChamberKey === 'laticinios' ? 'selected' : ''}>🧀 Câmara de Laticínios</option>
-                  <option value="pereciveis" ${currentChamberKey === 'pereciveis' ? 'selected' : ''}>🥗 Câmara de Perecíveis</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Coluna <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="edit-chamber-column" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                </select>
-              </div>
-            </div>
-
-            <!-- Nível e Posição (Lado) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Nível de Armazenagem <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="edit-chamber-level" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  <option value="1" ${lvl === 1 ? 'selected' : ''}>📦 Nível 1 — Piso (Chão)</option>
-                  <option value="2" ${lvl === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
-                  <option value="3" ${lvl === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
-                  <option value="4" ${lvl === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Posição / Lado <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="edit-chamber-position" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  <option value="esquerda" ${pos === 'esquerda' ? 'selected' : ''}>⬅️ Lado Esquerdo (E)</option>
-                  <option value="direita" ${pos === 'direita' ? 'selected' : ''}>➡️ Lado Direito (D)</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Tipo do Palete (Full ou Misto) -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
-                Estrutura / Tipo do Palete *
-              </label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
-                  <input type="radio" name="edit-chamber-pallet-type" value="full" ${currentPalletType !== 'misto' ? 'checked' : ''} style="cursor: pointer;" />
-                  <span>📦 Palete Full</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
-                  <input type="radio" name="edit-chamber-pallet-type" value="misto" ${currentPalletType === 'misto' ? 'checked' : ''} style="cursor: pointer;" />
-                  <span>🔀 Palete Misto</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- PLU e Sugestões -->
-            <div class="form-group" style="position: relative;">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Código PLU / EAN
-              </label>
-              <input type="text" id="edit-chamber-plu" class="form-input" value="${product.plu || ''}" placeholder="Digite o PLU..." autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-            </div>
-
-            <!-- Nome do Produto -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Nome do Produto <span style="color: #ef4444;">*</span>
-              </label>
-              <input type="text" id="edit-chamber-name" class="form-input" value="${product.name || ''}" placeholder="Nome do produto..." required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-            </div>
-
-            <!-- Categoria e Unidade -->
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Categoria / Setor <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="edit-chamber-category" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  ${catOptions.map(c => `<option value="${c.val}" ${product.category === c.val ? 'selected' : ''}>${c.label}</option>`).join('')}
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Unidade <span style="color: #ef4444;">*</span>
-                </label>
-                <select id="edit-chamber-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                  <option value="kg" ${product.unit === 'kg' ? 'selected' : ''}>kg</option>
-                  <option value="cx" ${product.unit === 'cx' ? 'selected' : ''}>cx</option>
-                  <option value="un" ${product.unit === 'un' ? 'selected' : ''}>un</option>
-                  <option value="pct" ${product.unit === 'pct' ? 'selected' : ''}>pct</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Quantidade e Validade -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Quantidade <span style="color: #ef4444;">*</span>
-                </label>
-                <input type="number" id="edit-chamber-quantity" class="form-input" value="${product.quantity || 1}" min="0.01" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-              </div>
-
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                  Data de Validade (DD/MM/AAAA) <span style="color: #ef4444;">*</span>
-                </label>
-                <input type="text" id="edit-chamber-enddate" class="form-input" value="${window.BrigadaData.formatDate(product.endDate)}" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-              </div>
-            </div>
-
-            <!-- Fornecedor / Marca -->
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
-                Fornecedor / Marca
-              </label>
-              <input type="text" id="edit-chamber-supplier" class="form-input" value="${product.supplier || ''}" placeholder="Ex: Friboi, Seara, Sadia, Perdigão, Mauricéa..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
-            </div>
-
-            <!-- Botões de Ação -->
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-              <button type="button" class="btn btn--outline" id="btn-cancel-edit-chamber" style="padding: 8px 16px;">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn--primary" id="btn-submit-edit-chamber" style="padding: 8px 20px; font-weight: 700; background: #38bdf8; border-color: #38bdf8; color: #0f172a;">
-                ✓ Salvar Alterações
+          <!-- ETAPA: Catálogo Inteligente de Produtos (Visual) -->
+          <div id="edit-chamber-step-catalog" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.85rem; font-weight: 700; color: #38bdf8;">📖 Catálogo Inteligente de Produtos</span>
+              <button type="button" class="btn btn--ghost btn--sm" id="btn-back-to-edit-form" style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;">
+                ← Voltar ao Formulário
               </button>
             </div>
-          </form>
+
+            <div class="search-box" style="width: 100%; margin-bottom: 0.75rem; display: flex; align-items: center; position: relative;">
+              <span class="search-icon" style="position: absolute; left: 12px; color: var(--text-secondary);">🔍</span>
+              <input type="text" id="edit-chamber-catalog-search" class="search-input" placeholder="Buscar por produto ou PLU no catálogo..." autocomplete="off" style="width: 100%; padding: 9px 40px 9px 36px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              <button type="button" id="edit-chamber-catalog-voice-btn" class="search-mic-btn" style="position: absolute; right: 10px; background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size: 1rem;" title="Buscar por voz">🎙️</button>
+            </div>
+
+            <div class="cat-quick-tabs" id="edit-chamber-catalog-tabs" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button type="button" class="cat-tab cat-tab--sm cat-tab--active" data-cat="all" style="cursor: pointer;">Todos</button>
+              ${catOptions.map(c => `
+                <button type="button" class="cat-tab cat-tab--sm" data-cat="${c.val}" style="cursor: pointer;">${c.label}</button>
+              `).join('')}
+            </div>
+
+            <div class="table-scroll" style="max-height: 250px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px;">
+              <table class="data-table" style="margin: 0; width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 75px; text-transform: uppercase; font-size: 0.75rem;">PLU</th>
+                    <th style="text-transform: uppercase; font-size: 0.75rem;">PRODUTO</th>
+                    <th style="width: 95px; text-align: right; text-transform: uppercase; font-size: 0.75rem;">AÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="edit-chamber-catalog-tbody">
+                  <!-- Gerado dinamicamente -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 8px;">
+              <span id="edit-chamber-catalog-count" style="font-size: 0.8rem; color: var(--text-secondary);">0 produtos disponíveis</span>
+            </div>
+          </div>
+
+          <!-- ETAPA: Formulário Principal de Edição -->
+          <div id="edit-chamber-step-form">
+            <!-- Botão de Acesso ao Catálogo Inteligente -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 8px 12px;">
+              <div style="font-size: 0.82rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                <span>✨</span>
+                <span>Deseja vincular a um item oficial?</span>
+              </div>
+              <button type="button" class="btn btn--sm" id="btn-open-edit-catalog" style="background: #38bdf8; color: #0f172a; font-weight: 700; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <span>📖 Catálogo Inteligente</span>
+              </button>
+            </div>
+
+            <form id="form-edit-chamber-prod" style="display: flex; flex-direction: column; gap: 12px;">
+              
+              <!-- Câmara e Coluna de Armazenagem -->
+              <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Câmara <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select id="edit-chamber-select" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); font-weight: 600;">
+                    <option value="congelado" ${currentChamberKey === 'congelado' ? 'selected' : ''}>🥶 Câmara Congelada</option>
+                    <option value="resfriado" ${currentChamberKey === 'resfriado' ? 'selected' : ''}>❄️ Câmara Resfriada</option>
+                    <option value="laticinios" ${currentChamberKey === 'laticinios' ? 'selected' : ''}>🧀 Câmara de Laticínios</option>
+                    <option value="pereciveis" ${currentChamberKey === 'pereciveis' ? 'selected' : ''}>🥗 Câmara de Perecíveis</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Coluna <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select id="edit-chamber-column" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                  </select>
+                </div>
+              </div>
+
+              <!-- Nível e Posição (Lado) -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Nível de Armazenagem <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select id="edit-chamber-level" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    <option value="1" ${lvl === 1 ? 'selected' : ''}>📦 Nível 1 — Piso (Chão)</option>
+                    <option value="2" ${lvl === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
+                    <option value="3" ${lvl === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
+                    <option value="4" ${lvl === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Posição / Lado <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select id="edit-chamber-position" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    <option value="esquerda" ${pos === 'esquerda' ? 'selected' : ''}>⬅️ Lado Esquerdo (E)</option>
+                    <option value="direita" ${pos === 'direita' ? 'selected' : ''}>➡️ Lado Direito (D)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Tipo do Palete (Full ou Misto) -->
+              <div class="form-group">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                  Estrutura / Tipo do Palete *
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+                    <input type="radio" name="edit-chamber-pallet-type" value="full" ${currentPalletType !== 'misto' ? 'checked' : ''} style="cursor: pointer;" />
+                    <span>📦 Palete Full</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.1); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+                    <input type="radio" name="edit-chamber-pallet-type" value="misto" ${currentPalletType === 'misto' ? 'checked' : ''} style="cursor: pointer;" />
+                    <span>🔀 Palete Misto</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- PLU com Autocomplete Inteligente -->
+              <div class="form-group" style="position: relative;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  <span>Código PLU / EAN</span>
+                  <span style="font-size: 0.72rem; color: #38bdf8;">✨ Autocomplete Ativo</span>
+                </label>
+                <input type="text" id="edit-chamber-plu" class="form-input" value="${product.plu || ''}" placeholder="Digite o PLU ou código..." autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                <div id="edit-chamber-plu-suggestions" class="autocomplete-suggestions" style="z-index: 100100;"></div>
+              </div>
+
+              <!-- Nome do Produto com Autocomplete Inteligente -->
+              <div class="form-group" style="position: relative;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  <span>Nome do Produto <span style="color: #ef4444;">*</span></span>
+                  <span style="font-size: 0.72rem; color: #38bdf8;">✨ Busca Inteligente</span>
+                </label>
+                <input type="text" id="edit-chamber-name" class="form-input" value="${product.name || ''}" placeholder="Nome do produto..." required autocomplete="off" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                <div id="edit-chamber-name-suggestions" class="autocomplete-suggestions" style="z-index: 100100;"></div>
+              </div>
+
+              <!-- Categoria e Unidade -->
+              <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Categoria / Setor <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select id="edit-chamber-category" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    ${catOptions.map(c => `<option value="${c.val}" ${product.category === c.val ? 'selected' : ''}>${c.label}</option>`).join('')}
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Unidade <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select id="edit-chamber-unit" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    <option value="kg" ${product.unit === 'kg' ? 'selected' : ''}>kg</option>
+                    <option value="cx" ${product.unit === 'cx' ? 'selected' : ''}>cx</option>
+                    <option value="un" ${product.unit === 'un' ? 'selected' : ''}>un</option>
+                    <option value="pct" ${product.unit === 'pct' ? 'selected' : ''}>pct</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Quantidade e Validade -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Quantidade <span style="color: #ef4444;">*</span>
+                  </label>
+                  <input type="number" id="edit-chamber-quantity" class="form-input" value="${product.quantity || 1}" min="0.01" step="any" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+                </div>
+
+                <div class="form-group">
+                  <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                    Data de Validade (DD/MM/AAAA) <span style="color: #ef4444;">*</span>
+                  </label>
+                  <input type="text" id="edit-chamber-enddate" class="form-input" value="${window.BrigadaData.formatDate(product.endDate) === '01/01/2000' ? '' : window.BrigadaData.formatDate(product.endDate)}" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); font-weight: 700; color: #38bdf8;" />
+                </div>
+              </div>
+
+              <!-- Fornecedor / Marca -->
+              <div class="form-group">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+                  Fornecedor / Marca
+                </label>
+                <input type="text" id="edit-chamber-supplier" class="form-input" value="${product.supplier || ''}" placeholder="Ex: Friboi, Seara, Sadia, Perdigão, Mauricéa..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);" />
+              </div>
+
+              <!-- Botões de Ação -->
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                <button type="button" class="btn btn--outline" id="btn-cancel-edit-chamber" style="padding: 8px 16px;">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn--primary" id="btn-submit-edit-chamber" style="padding: 8px 20px; font-weight: 700; background: #38bdf8; border-color: #38bdf8; color: #0f172a;">
+                  ✓ Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     `;
 
     document.body.appendChild(overlay);
+
+    // ── Setup do Catálogo Inteligente no Modal de Edição ──
+    const stepCatalog = overlay.querySelector('#edit-chamber-step-catalog');
+    const stepForm = overlay.querySelector('#edit-chamber-step-form');
+    const btnOpenCatalog = overlay.querySelector('#btn-open-edit-catalog');
+    const btnBackToForm = overlay.querySelector('#btn-back-to-edit-form');
+    const catalogSearchInput = overlay.querySelector('#edit-chamber-catalog-search');
+
+    if (btnOpenCatalog && btnBackToForm && stepCatalog && stepForm) {
+      btnOpenCatalog.addEventListener('click', () => {
+        stepForm.style.display = 'none';
+        stepCatalog.style.display = 'block';
+        if (catalogSearchInput) {
+          catalogSearchInput.focus();
+        }
+        renderEditCatalogList();
+      });
+
+      btnBackToForm.addEventListener('click', () => {
+        stepCatalog.style.display = 'none';
+        stepForm.style.display = 'block';
+      });
+    }
+
+    // Renderização do Catálogo de Edição
+    const renderEditCatalogList = () => {
+      const tbody = overlay.querySelector('#edit-chamber-catalog-tbody');
+      const countEl = overlay.querySelector('#edit-chamber-catalog-count');
+      if (!tbody) return;
+
+      const rawCatalog = window.BrigadaData?.catalog || [];
+      const normalize = str => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const q = normalize(currentSearch);
+
+      const filtered = rawCatalog.filter(p => {
+        const pCat = normalize(p.category);
+        if (allowedCats.length > 0) {
+          const isAllowed = allowedCats.some(ac => pCat.includes(normalize(ac)) || normalize(ac).includes(pCat));
+          if (!isAllowed) return false;
+        }
+
+        if (currentCatFilter !== 'all') {
+          if (!pCat.includes(normalize(currentCatFilter)) && !normalize(currentCatFilter).includes(pCat)) return false;
+        }
+
+        if (q) {
+          const full = `${normalize(p.name)} ${normalize(String(p.plu || ''))} ${normalize(p.barcode || '')}`;
+          return q.split(/\s+/).every(t => full.includes(t));
+        }
+        return true;
+      });
+
+      if (countEl) {
+        countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'produto disponível' : 'produtos disponíveis'}`;
+      }
+
+      if (filtered.length === 0) {
+        if (currentSearch && window.BrigadaCatalog?.openNewPluModal) {
+          const isNum = /^\d+$/.test(currentSearch);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" style="text-align: center; padding: 2rem 1rem;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.5rem;">🔍</span>
+                  <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Nenhum produto encontrado para "${currentSearch}"</span>
+                  <button type="button" class="btn btn--primary btn--sm" id="btn-add-plu-edit-empty" style="margin-top: 4px; padding: 6px 16px; font-weight: 700; background: #38bdf8; border-color: #38bdf8; color: #0f172a; cursor: pointer;">
+                    ➕ Cadastrar "${currentSearch}" no Catálogo
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          tbody.querySelector('#btn-add-plu-edit-empty')?.addEventListener('click', () => {
+            window.BrigadaCatalog.openNewPluModal({
+              plu: isNum ? currentSearch : '',
+              name: isNum ? '' : currentSearch
+            }, (saved) => {
+              overlay.querySelector('#edit-chamber-plu').value = saved.plu;
+              overlay.querySelector('#edit-chamber-name').value = saved.name;
+              if (saved.category && overlay.querySelector(`#edit-chamber-category option[value="${saved.category.toLowerCase()}"]`)) {
+                overlay.querySelector('#edit-chamber-category').value = saved.category.toLowerCase();
+              }
+              if (saved.unit && overlay.querySelector(`#edit-chamber-unit option[value="${saved.unit.toLowerCase()}"]`)) {
+                overlay.querySelector('#edit-chamber-unit').value = saved.unit.toLowerCase();
+              }
+              stepCatalog.style.display = 'none';
+              stepForm.style.display = 'block';
+              overlay.querySelector('#edit-chamber-enddate')?.focus();
+            });
+          });
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+                Nenhum produto encontrado no catálogo do setor.
+              </td>
+            </tr>
+          `;
+        }
+        return;
+      }
+
+      tbody.innerHTML = filtered.slice(0, 80).map(p => {
+        const catName = this.catMap[(p.category || '').toLowerCase()] || p.category || 'Geral';
+        return `
+          <tr>
+            <td style="font-family: monospace; font-weight: 700; color: #38bdf8; vertical-align: middle; padding: 8px 12px;">${p.plu || '—'}</td>
+            <td style="vertical-align: middle; padding: 8px 12px;">
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">${p.name}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 1px;">${catName}</div>
+            </td>
+            <td style="text-align: right; vertical-align: middle; padding: 8px 12px;">
+              <button type="button" class="btn btn--primary btn--sm" data-action="select-edit-cat-item" data-plu="${p.plu || ''}" data-name="${(p.name || '').replace(/"/g, '&quot;')}" data-cat="${p.category || ''}" data-unit="${p.unit || 'kg'}" data-supplier="${(p.supplier || '').replace(/"/g, '&quot;')}" style="padding: 5px 14px; font-weight: 600; cursor: pointer; border-radius: 6px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);">
+                Selecionar
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('[data-action="select-edit-cat-item"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const plu = btn.dataset.plu;
+          const name = btn.dataset.name;
+          const cat = btn.dataset.cat;
+          const unit = btn.dataset.unit;
+          const supplier = btn.dataset.supplier || (window.BrigadaData?.detectSupplierFromName ? window.BrigadaData.detectSupplierFromName(name) : '');
+
+          overlay.querySelector('#edit-chamber-plu').value = plu;
+          overlay.querySelector('#edit-chamber-name').value = name;
+          if (cat && overlay.querySelector(`#edit-chamber-category option[value="${cat.toLowerCase()}"]`)) {
+            overlay.querySelector('#edit-chamber-category').value = cat.toLowerCase();
+          }
+          if (unit && overlay.querySelector(`#edit-chamber-unit option[value="${unit.toLowerCase()}"]`)) {
+            overlay.querySelector('#edit-chamber-unit').value = unit.toLowerCase();
+          }
+          if (supplier) {
+            overlay.querySelector('#edit-chamber-supplier').value = supplier;
+          }
+
+          stepCatalog.style.display = 'none';
+          stepForm.style.display = 'block';
+
+          overlay.querySelector('#edit-chamber-enddate')?.focus();
+        });
+      });
+    };
+
+    if (catalogSearchInput) {
+      catalogSearchInput.addEventListener('input', (e) => {
+        currentSearch = e.target.value;
+        renderEditCatalogList();
+      });
+    }
+
+    // Abas de Categoria no Catálogo de Edição
+    overlay.querySelectorAll('#edit-chamber-catalog-tabs .cat-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        overlay.querySelectorAll('#edit-chamber-catalog-tabs .cat-tab').forEach(t => t.classList.remove('cat-tab--active'));
+        tab.classList.add('cat-tab--active');
+        currentCatFilter = tab.dataset.cat;
+        renderEditCatalogList();
+      });
+    });
+
+    // Busca por voz no Catálogo de Edição
+    const voiceBtn = overlay.querySelector('#edit-chamber-catalog-voice-btn');
+    if (voiceBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      voiceBtn.addEventListener('click', () => {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const rec = new SpeechRec();
+        rec.lang = 'pt-BR';
+        rec.onstart = () => {
+          voiceBtn.style.color = '#ef4444';
+          voiceBtn.textContent = '🔴';
+        };
+        rec.onresult = (evt) => {
+          const transcript = evt.results[0][0].transcript;
+          if (catalogSearchInput) {
+            catalogSearchInput.value = transcript;
+            currentSearch = transcript;
+            renderEditCatalogList();
+          }
+        };
+        rec.onend = () => {
+          voiceBtn.style.color = 'var(--text-secondary)';
+          voiceBtn.textContent = '🎙️';
+        };
+        rec.start();
+      });
+    }
+
+    // ── Setup de Autocomplete Instantâneo nos Campos PLU e Nome ──
+    if (window.BrigadaUI?.setupPluAutocomplete) {
+      window.BrigadaUI.setupPluAutocomplete(overlay, '#edit-chamber-plu', '#edit-chamber-plu-suggestions', {
+        plu: '#edit-chamber-plu',
+        name: '#edit-chamber-name',
+        category: '#edit-chamber-category',
+        unit: '#edit-chamber-unit'
+      }, allowedCats, 'plu');
+
+      window.BrigadaUI.setupPluAutocomplete(overlay, '#edit-chamber-name', '#edit-chamber-name-suggestions', {
+        plu: '#edit-chamber-plu',
+        name: '#edit-chamber-name',
+        category: '#edit-chamber-category',
+        unit: '#edit-chamber-unit'
+      }, allowedCats, 'name');
+    }
 
     const chamberSelect = overlay.querySelector('#edit-chamber-select');
     const colSelect = overlay.querySelector('#edit-chamber-column');

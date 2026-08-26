@@ -358,6 +358,48 @@ window.BrigadaData = {
     }
   },
 
+  // Cadastra novo PLU / Produto diretamente no Catálogo e sincroniza no sistema
+  async createCatalogProduct(item) {
+    const payload = {
+      plu: String(item.plu || '').trim(),
+      name: String(item.name || '').trim().toUpperCase(),
+      category: item.category || 'aves',
+      barcode: item.barcode || null,
+      unit: item.unit || 'kg'
+    };
+
+    try {
+      const res = await fetch('/api/products/catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao cadastrar produto no catálogo');
+      }
+      const data = await res.json();
+      const saved = data.product || payload;
+      
+      const existingIdx = this.catalog.findIndex(c => c.plu === saved.plu);
+      if (existingIdx !== -1) {
+        this.catalog[existingIdx] = { ...this.catalog[existingIdx], ...saved };
+      } else {
+        this.catalog.unshift(saved);
+      }
+      return saved;
+    } catch (err) {
+      console.warn("Aviso: Falha na API ao salvar catálogo (usando local):", err);
+      const existingIdx = this.catalog.findIndex(c => c.plu === payload.plu);
+      if (existingIdx !== -1) {
+        this.catalog[existingIdx] = { ...this.catalog[existingIdx], ...payload };
+      } else {
+        this.catalog.unshift(payload);
+      }
+      return payload;
+    }
+  },
+
   // Adiciona produto no backend
   async addProduct(p) {
     const creatorEmail = window.BrigadaAuth.currentUser?.email || 'sistema';

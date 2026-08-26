@@ -26,29 +26,43 @@ window.BrigadaUI = {
         matches = matches.filter(item => allowedCategories.includes(window.BrigadaCatalog.normalizeCat(item.category)));
       }
       matches = matches.filter(item => 
-        (item.plu && item.plu.toLowerCase().includes(query)) ||
-        (item.barcode && item.barcode.toLowerCase().includes(query)) ||
+        (item.plu && String(item.plu).toLowerCase().includes(query)) ||
+        (item.barcode && String(item.barcode).toLowerCase().includes(query)) ||
         (item.name && item.name.toLowerCase().includes(query))
       ).slice(0, 5); // limit to 5 suggestions
 
-      if (matches.length === 0) {
-        suggContainer.style.display = 'none';
-        return;
-      }
-
-      suggContainer.innerHTML = matches.map(item => `
+      let itemsHTML = matches.map(item => `
         <div class="autocomplete-suggestion-item" data-plu="${item.plu}">
           <span class="suggestion-plu" style="color: var(--accent); font-weight: bold; font-family: monospace;">${item.plu}</span>
           <span class="suggestion-name" style="text-align: left; margin-left: 10px; flex-grow: 1;">${item.name}</span>
         </div>
       `).join('');
+
+      // Adiciona botão inteligente para cadastrar novo PLU no catálogo caso não haja exato
+      const isExactMatch = matches.some(m => String(m.plu).toLowerCase() === query || m.name.toLowerCase() === query);
+      if (!isExactMatch && window.BrigadaCatalog?.openNewPluModal && !window.BrigadaAuth.isKiosk()) {
+        const isNum = /^\d+$/.test(query);
+        const registerLabel = isNum ? `➕ Cadastrar PLU "${query}" no Catálogo` : `➕ Cadastrar "${query.toUpperCase()}" no Catálogo`;
+        itemsHTML += `
+          <div class="autocomplete-suggestion-item autocomplete-new-plu-btn" style="border-top: 1px solid var(--border-color); background: rgba(56, 189, 248, 0.08); color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer;">
+            <span>${registerLabel}</span>
+          </div>
+        `;
+      }
+
+      if (!itemsHTML) {
+        suggContainer.style.display = 'none';
+        return;
+      }
+
+      suggContainer.innerHTML = itemsHTML;
       suggContainer.style.display = 'block';
 
-      // Bind selection clicks
-      suggContainer.querySelectorAll('.autocomplete-suggestion-item').forEach(el => {
+      // Bind selection clicks para itens existentes
+      suggContainer.querySelectorAll('.autocomplete-suggestion-item:not(.autocomplete-new-plu-btn)').forEach(el => {
         el.addEventListener('click', () => {
           const plu = el.dataset.plu;
-          const selected = catalog.find(item => item.plu === plu);
+          const selected = catalog.find(item => String(item.plu) === String(plu));
           if (selected) {
             input.value = mainField === 'name' ? (selected.name || '') : (selected.plu || '');
             
@@ -78,6 +92,40 @@ window.BrigadaUI = {
             }
           }
           suggContainer.style.display = 'none';
+        });
+      });
+
+      // Bind clique no botão de cadastrar novo PLU
+      suggContainer.querySelectorAll('.autocomplete-new-plu-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          suggContainer.style.display = 'none';
+          const isNum = /^\d+$/.test(query);
+          window.BrigadaCatalog.openNewPluModal({
+            plu: isNum ? query : '',
+            name: isNum ? '' : query.toUpperCase()
+          }, (saved) => {
+            input.value = mainField === 'name' ? (saved.name || '') : (saved.plu || '');
+            if (fieldsMapping.plu) {
+              const pluEl = container.querySelector(fieldsMapping.plu);
+              if (pluEl) pluEl.value = saved.plu || '';
+            }
+            if (fieldsMapping.name) {
+              const nameEl = container.querySelector(fieldsMapping.name);
+              if (nameEl) nameEl.value = saved.name || '';
+            }
+            if (fieldsMapping.category) {
+              const catEl = container.querySelector(fieldsMapping.category);
+              if (catEl) {
+                const norm = window.BrigadaCatalog.normalizeCat(saved.category);
+                catEl.value = norm || saved.category || '';
+              }
+            }
+            if (fieldsMapping.unit && saved.unit) {
+              const unitEl = container.querySelector(fieldsMapping.unit);
+              if (unitEl) unitEl.value = saved.unit || '';
+            }
+          });
         });
       });
     };

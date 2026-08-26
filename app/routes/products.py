@@ -424,8 +424,6 @@ def get_catalog():
         logger.debug("Buscando catálogo no Supabase")
         response = supabase.table("catalogo_produtos").select("*").execute()
         
-        # Mapa de normalização para garantir que as categorias do Supabase
-        # correspondam aos valores esperados pelo front-end (select options)
         category_normalize = {
             "aves": "aves",
             "bovino": "bovino",
@@ -461,3 +459,72 @@ def get_catalog():
     except Exception as e:
         logger.exception("Erro ao buscar catálogo no Supabase")
         return jsonify({"error": "Erro ao buscar catálogo", "details": str(e)}), 500
+
+
+@products_bp.route("/catalog", methods=["POST"])
+def add_to_catalog():
+    """Adiciona um novo produto/PLU ao catálogo base no Supabase."""
+    try:
+        data = request.get_json(force=True)
+        logger.debug("Adicionando produto ao catálogo | data={}", data)
+        
+        plu = str(data.get("plu") or "").strip()
+        name = str(data.get("name") or "").strip().upper()
+        category = str(data.get("category") or "aves").strip().lower()
+        barcode = str(data.get("barcode") or "").strip() if data.get("barcode") else None
+
+        if not plu or not name:
+            return jsonify({"error": "PLU e Nome do Produto são obrigatórios"}), 400
+
+        # Normaliza categoria
+        cat_map = {
+            "aves": "Aves",
+            "bovino": "Bovino",
+            "suino": "Suíno",
+            "pescado": "Pescado",
+            "frios": "Frios",
+            "laticinios": "Laticínios",
+            "iogurtes": "Iogurtes",
+            "pereciveis": "Perecíveis"
+        }
+        db_cat = cat_map.get(category, category.capitalize())
+
+        # Verifica se já existe produto com esse PLU no catálogo
+        existing = supabase.table("catalogo_produtos").select("*").eq("plu", plu).execute()
+        if existing.data and len(existing.data) > 0:
+            # Atualiza produto existente
+            update_data = {
+                "name": name,
+                "category": db_cat
+            }
+            if barcode:
+                update_data["barcode"] = barcode
+            res = supabase.table("catalogo_produtos").update(update_data).eq("plu", plu).execute()
+            saved = res.data[0] if res.data else existing.data[0]
+            logger.info("PLU já existente atualizado no catálogo | plu={}", plu)
+        else:
+            # Insere novo produto no catálogo
+            insert_data = {
+                "plu": plu,
+                "name": name,
+                "category": db_cat,
+                "barcode": barcode
+            }
+            res = supabase.table("catalogo_produtos").insert(insert_data).execute()
+            saved = res.data[0] if res.data else insert_data
+            logger.info("Novo PLU inserido no catálogo com sucesso | plu={}", plu)
+
+        return jsonify({
+            "success": True,
+            "product": {
+                "id": saved.get("id"),
+                "plu": plu,
+                "name": name,
+                "category": category,
+                "barcode": barcode
+            }
+        }), 201
+    except Exception as e:
+        logger.exception("Erro ao adicionar produto ao catálogo")
+        return jsonify({"error": "Erro ao salvar no catálogo", "details": str(e)}), 500
+
