@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brigada-ia-v2.5';
+const CACHE_NAME = 'brigada-ia-v2.6.1';
 const ASSETS = [
   '/',
   '/manifest.json',

@@ -51,21 +51,22 @@
 
   <!-- Product View Modal Global -->
   <div id="product-view-modal-overlay" class="modal-overlay" style="display: none; z-index: 9999;">
-    <div class="modal" style="max-width: 500px;">
-      <div class="modal-header">
+    <div class="modal" style="max-width: 520px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink: 0;">
         <h2 class="modal-title">Detalhes do Produto</h2>
         <button class="modal-close" id="close-product-view-btn">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="overflow-y: auto; flex: 1;">
         <div id="product-view-content" style="display: grid; gap: 1rem;">
           <!-- Content injected via JS -->
         </div>
       </div>
-      <div class="modal-footer" style="display: flex; gap: 8px;">
-        <button class="btn btn--secondary" id="btn-cracha-product-view" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(99,102,241,0.15); color: #818cf8; border-color: rgba(99,102,241,0.35);">🏷️ Gerar Crachá</button>
-        <button class="btn btn--primary" id="btn-close-product-view" style="flex: 1;">Fechar</button>
+      <div class="modal-footer" style="flex-shrink: 0; display: flex; gap: 8px; flex-wrap: wrap; background: rgba(15, 23, 42, 0.6);">
+        <button class="btn btn--outline" id="btn-send-to-cracha-footer" style="flex: 1; min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: rgba(99,102,241,0.5); color: #a5b4fc; font-weight: 600;">🏷️ Enviar p/ Crachá</button>
+        <button class="btn btn--primary" id="btn-cracha-product-view" style="flex: 1; min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">🖨️ Imprimir Crachá</button>
+        <button class="btn btn--ghost" id="btn-close-product-view" style="padding: 0 16px;">Fechar</button>
       </div>
     </div>
   </div>
@@ -136,19 +137,19 @@
   <script src="{{ url_for('static', filename='js/pereciveis.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/users.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/notifications.js') }}?v=2.0.0"></script>
-  <script src="{{ url_for('static', filename='js/chambers.js') }}?v=2.0.0"></script>
+  <script src="{{ url_for('static', filename='js/chambers.js') }}?v=2.6.1"></script>
   <script src="{{ url_for('static', filename='js/piso_loja.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/product_list.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/produtos_sem_nota.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/quebra.js') }}?v=2.0.0"></script>
-  <script src="{{ url_for('static', filename='js/cracha.js') }}?v=2.0.0"></script>
+  <script src="{{ url_for('static', filename='js/cracha.js') }}?v=2.6.1"></script>
   <script src="{{ url_for('static', filename='js/resumo_mensal.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/verse_of_the_day.js') }}?v=2.0.0"></script>
 
   <!-- Main router (bootstraps the app) -->
   <script src="{{ url_for('static', filename='js/catalog.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/conciliacao.js') }}?v=2.0.0"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=2.0.0"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=2.6.0"></script>
 
   <!-- Service Worker registration for PWA -->
   <script>

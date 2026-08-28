@@ -10,6 +10,33 @@ window.BrigadaCracha = {
   searchQuery: '',
   currentMonth: 'all',
   currentYear: 'all',
+  pendingFormData: null,
+
+  setFormData(data) {
+    this.pendingFormData = data;
+    const container = document.getElementById('page-container');
+    if (container && window.BrigadaRouter && window.BrigadaRouter.currentPage === 'cracha') {
+      this.populateForm(container, data);
+    }
+  },
+
+  populateForm(container, data) {
+    if (!data || !container) return;
+    const productNameInput = container.querySelector('#cr-product-name');
+    const consincoInput = container.querySelector('#cr-consinco-code');
+    const quantityInput = container.querySelector('#cr-quantity');
+    const expiryInput = container.querySelector('#cr-expiry-date');
+    const notesInput = container.querySelector('#cr-notes');
+
+    if (productNameInput && data.productName) productNameInput.value = data.productName;
+    if (consincoInput && data.consincoCode !== undefined) consincoInput.value = data.consincoCode;
+    if (quantityInput && data.quantity !== undefined) quantityInput.value = data.quantity;
+    if (expiryInput && data.expiryDate) expiryInput.value = data.expiryDate;
+    if (notesInput && data.notes) notesInput.value = data.notes;
+
+    this.updatePreview(container);
+    this.pendingFormData = null;
+  },
 
   async render(container) {
     if (window.BrigadaData.loadCrachas) {
@@ -19,6 +46,10 @@ window.BrigadaCracha = {
     container.innerHTML = this.buildHTML();
     this.bindEvents(container);
     this.renderHistory(container);
+
+    if (this.pendingFormData) {
+      this.populateForm(container, this.pendingFormData);
+    }
   },
 
   buildHTML() {
@@ -787,12 +818,12 @@ window.BrigadaCracha = {
   },
 
   /**
-   * Gera um Canvas em alta resolução desenhando o crachá fielmente.
+   * Gera um Canvas em alta resolução desenhando o crachá fielmente em modo paisagem (proporção A4).
    */
   generateCrachaCanvas(data) {
     const canvas = document.createElement('canvas');
-    const width = 880;
-    const height = 560;
+    const width = 1188;
+    const height = 840;
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
@@ -801,22 +832,27 @@ window.BrigadaCracha = {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
+    // Margens e dimensões do crachá ocupando a folha
+    const mX = 24;
+    const mY = 24;
+    const bW = width - (mX * 2);
+    const bH = height - (mY * 2);
+
     // Borda preta externa
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 6;
-    ctx.strokeRect(3, 3, width - 6, height - 6);
+    ctx.strokeRect(mX, mY, bW, bH);
 
-    // Helper para desenhar linhas horizontais
+    // Helpers para desenhar linhas
     const drawHLine = (y) => {
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      ctx.moveTo(mX, y);
+      ctx.lineTo(mX + bW, y);
       ctx.lineWidth = 4;
       ctx.strokeStyle = '#000000';
       ctx.stroke();
     };
 
-    // Helper para desenhar linhas verticais
     const drawVLine = (x, y1, y2) => {
       ctx.beginPath();
       ctx.moveTo(x, y1);
@@ -826,92 +862,106 @@ window.BrigadaCracha = {
       ctx.stroke();
     };
 
-    // 1. Linha Produto (Y: 0 a 110)
+    const midX = mX + bW / 2;
+
+    // 1. Linha Produto (Y: mY até mY + 160)
+    const line1Y = mY + 160;
     ctx.fillStyle = '#000000';
-    ctx.font = '900 26px Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const pName = data.productName || 'NOME DO PRODUTO';
-    // Se o nome for muito longo, quebra em 2 linhas
-    if (pName.length > 38) {
+    const pName = (data.productName || 'NOME DO PRODUTO').toUpperCase();
+    if (pName.length > 50) {
+      ctx.font = '900 32px Arial, sans-serif';
       const mid = Math.floor(pName.length / 2);
       const splitIdx = pName.lastIndexOf(' ', mid) !== -1 ? pName.lastIndexOf(' ', mid) : mid;
       const l1 = pName.slice(0, splitIdx);
       const l2 = pName.slice(splitIdx).trim();
-      ctx.fillText(l1, width / 2, 45);
-      ctx.fillText(l2, width / 2, 80);
+      ctx.fillText(l1, midX, mY + 55);
+      ctx.fillText(l2, midX, mY + 105);
+    } else if (pName.length > 30) {
+      ctx.font = '900 38px Arial, sans-serif';
+      ctx.fillText(pName, midX, mY + 80);
     } else {
-      ctx.fillText(pName, width / 2, 58);
+      ctx.font = '900 46px Arial, sans-serif';
+      ctx.fillText(pName, midX, mY + 80);
     }
 
-    drawHLine(115);
+    drawHLine(line1Y);
 
-    // 2. Linha Validade & Quantidade (Y: 115 a 290)
-    drawVLine(width / 2, 115, 290);
+    // 2. Linha Validade & Quantidade (Y: line1Y até line1Y + 280)
+    const line2Y = line1Y + 280;
+    drawVLine(midX, line1Y, line2Y);
 
     // Coluna Validade
+    const col1X = mX + bW / 4;
     ctx.fillStyle = '#444444';
-    ctx.font = 'bold 15px Arial, sans-serif';
-    ctx.fillText('VALIDADE', width / 4, 150);
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText('VALIDADE', col1X, line1Y + 60);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '900 48px Arial, sans-serif';
-    ctx.fillText(data.expiryDate || '--/--/--', width / 4, 215);
+    ctx.font = '900 70px Arial, sans-serif';
+    ctx.fillText(data.expiryDate || '--/--/--', col1X, line1Y + 160);
 
     // Coluna Quantidade
+    const col2X = mX + (bW / 4) * 3;
     ctx.fillStyle = '#444444';
-    ctx.font = 'bold 15px Arial, sans-serif';
-    ctx.fillText('QUANTIDADE', (width / 4) * 3, 150);
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText('QUANTIDADE', col2X, line1Y + 60);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '900 48px Arial, sans-serif';
-    ctx.fillText(String(data.quantity || '0'), (width / 4) * 3, 215);
+    ctx.font = '900 76px Arial, sans-serif';
+    ctx.fillText(String(data.quantity || '0'), col2X, line1Y + 160);
 
-    drawHLine(290);
+    drawHLine(line2Y);
 
-    // 3. Linha Código Consinco & Observações (Y: 290 a 510)
-    drawVLine(width / 2, 290, 510);
+    // 3. Linha Código Consinco & Observações (Y: line2Y até line2Y + 280)
+    const line3Y = line2Y + 280;
+    drawVLine(midX, line2Y, line3Y);
 
     // Coluna Código Consinco
     ctx.fillStyle = '#444444';
-    ctx.font = 'bold 15px Arial, sans-serif';
-    ctx.fillText('CÓDIGO DO CONSINCO', width / 4, 330);
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText('CÓDIGO DO CONSINCO', col1X, line2Y + 60);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '900 48px Arial, sans-serif';
-    ctx.fillText(String(data.consincoCode || '-----'), width / 4, 410);
+    ctx.font = '900 68px Arial, sans-serif';
+    ctx.fillText(String(data.consincoCode || '-----'), col1X, line2Y + 160);
 
     // Coluna Observações
     ctx.fillStyle = '#444444';
-    ctx.font = 'bold 15px Arial, sans-serif';
-    ctx.fillText('OBSERVAÇÕES', (width / 4) * 3, 330);
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText('OBSERVAÇÕES', col2X, line2Y + 60);
 
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 22px Arial, sans-serif';
     const notes = data.notes || '—';
-    if (notes.length > 25) {
+    if (notes.length > 35) {
+      ctx.font = 'bold 28px Arial, sans-serif';
       const mid = Math.floor(notes.length / 2);
       const splitIdx = notes.lastIndexOf(' ', mid) !== -1 ? notes.lastIndexOf(' ', mid) : mid;
       const n1 = notes.slice(0, splitIdx);
       const n2 = notes.slice(splitIdx).trim();
-      ctx.fillText(n1, (width / 4) * 3, 385);
-      ctx.fillText(n2, (width / 4) * 3, 420);
+      ctx.fillText(n1, col2X, line2Y + 135);
+      ctx.fillText(n2, col2X, line2Y + 180);
+    } else if (notes.length > 18) {
+      ctx.font = 'bold 36px Arial, sans-serif';
+      ctx.fillText(notes, col2X, line2Y + 155);
     } else {
-      ctx.fillText(notes, (width / 4) * 3, 400);
+      ctx.font = 'bold 46px Arial, sans-serif';
+      ctx.fillText(notes, col2X, line2Y + 155);
     }
 
-    drawHLine(510);
+    drawHLine(line3Y);
 
-    // 4. Rodapé (Y: 510 a 560)
+    // 4. Rodapé (Y: line3Y até mY + bH)
     ctx.fillStyle = '#666666';
-    ctx.font = '14px Arial, sans-serif';
+    ctx.font = '20px Arial, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`Conferido por: ${data.createdBy || 'Felipe'}`, 20, 538);
+    ctx.fillText(`Conferido por: ${data.createdBy || 'Felipe'}`, mX + 20, line3Y + 42);
 
     ctx.textAlign = 'right';
     const emission = data.emissionDate || (data.createdAt ? new Date(data.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'));
-    ctx.fillText(`Emissão: ${emission}`, width - 20, 538);
+    ctx.fillText(`Emissão: ${emission}`, mX + bW - 20, line3Y + 42);
 
     return canvas;
   },
@@ -932,89 +982,98 @@ window.BrigadaCracha = {
   generateCrachasPDF(items) {
     if (!window.jspdf || !window.jspdf.jsPDF) return null;
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    // Cria o documento em formato A4 e orientação Paisagem (Landscape)
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-    const crachaWidth = 90;
-    const crachaHeight = 72;
-    const marginX = 11;
-    const marginY = 15;
-    const gapX = 8;
-    const gapY = 12;
+    // Dimensões A4 Paisagem: 297mm largura x 210mm altura
+    const marginX = 10;
+    const marginY = 10;
+    const crachaWidth = 277;
+    const crachaHeight = 190;
+    const halfWidth = crachaWidth / 2;
 
     items.forEach((item, index) => {
-      const posOnPage = index % 4;
-
-      if (index > 0 && posOnPage === 0) {
-        doc.addPage();
+      if (index > 0) {
+        doc.addPage('a4', 'landscape');
       }
 
-      const col = posOnPage % 2;
-      const row = Math.floor(posOnPage / 2);
-      const x = marginX + col * (crachaWidth + gapX);
-      const y = marginY + row * (crachaHeight + gapY);
-
-      // Borda exterior preta grossa
+      // Borda exterior preta grossa cobrindo toda a folha
       doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1.2);
+      doc.rect(marginX, marginY, crachaWidth, crachaHeight);
+
+      // 1. Topo: NOME DO PRODUTO (Altura: 38mm -> marginY até marginY + 38)
       doc.setLineWidth(0.8);
-      doc.rect(x, y, crachaWidth, crachaHeight);
-
-      // 1. Topo: NOME DO PRODUTO (Altura: 16mm)
-      doc.setLineWidth(0.5);
-      doc.line(x, y + 16, x + crachaWidth, y + 16);
+      doc.line(marginX, marginY + 38, marginX + crachaWidth, marginY + 38);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(0, 0, 0);
       const prodName = (item.productName || 'PRODUTO').toUpperCase();
-      doc.text(prodName, x + crachaWidth / 2, y + 9.5, { align: 'center', maxWidth: crachaWidth - 4 });
+      if (prodName.length > 55) {
+        doc.setFontSize(18);
+      } else if (prodName.length > 35) {
+        doc.setFontSize(22);
+      } else {
+        doc.setFontSize(26);
+      }
+      doc.setTextColor(0, 0, 0);
+      doc.text(prodName, marginX + halfWidth, marginY + 22, { align: 'center', maxWidth: crachaWidth - 16 });
 
-      // 2. Linha do meio: VALIDADE (Esquerda) | QUANTIDADE (Direita) (y+16 até y+40)
-      doc.line(x + crachaWidth / 2, y + 16, x + crachaWidth / 2, y + 40);
-      doc.line(x, y + 40, x + crachaWidth, y + 40);
+      // 2. Linha do meio 1: VALIDADE (Esquerda) | QUANTIDADE (Direita) (marginY + 38 até marginY + 106)
+      doc.line(marginX + halfWidth, marginY + 38, marginX + halfWidth, marginY + 106);
+      doc.line(marginX, marginY + 106, marginX + crachaWidth, marginY + 106);
 
       // Validade (Esquerda)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6);
-      doc.setTextColor(60, 60, 60);
-      doc.text('VALIDADE', x + crachaWidth / 4, y + 21, { align: 'center' });
       doc.setFontSize(14);
+      doc.setTextColor(60, 60, 60);
+      doc.text('VALIDADE', marginX + halfWidth / 2, marginY + 53, { align: 'center' });
+      doc.setFontSize(40);
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.expiryDate || '—'), x + crachaWidth / 4, y + 33, { align: 'center' });
+      doc.text(String(item.expiryDate || '—'), marginX + halfWidth / 2, marginY + 85, { align: 'center' });
 
       // Quantidade (Direita)
-      doc.setFontSize(6);
+      doc.setFontSize(14);
       doc.setTextColor(60, 60, 60);
-      doc.text('QUANTIDADE', x + (3 * crachaWidth) / 4, y + 21, { align: 'center' });
-      doc.setFontSize(15);
+      doc.text('QUANTIDADE', marginX + halfWidth + halfWidth / 2, marginY + 53, { align: 'center' });
+      doc.setFontSize(44);
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.quantity || 0), x + (3 * crachaWidth) / 4, y + 33, { align: 'center' });
+      doc.text(String(item.quantity || 0), marginX + halfWidth + halfWidth / 2, marginY + 85, { align: 'center' });
 
-      // 3. Linha inferior: CÓDIGO DO CONSINCO (Esquerda) | OBSERVAÇÕES (Direita) (y+40 até y+64)
-      doc.line(x + crachaWidth / 2, y + 40, x + crachaWidth / 2, y + 64);
-      doc.line(x, y + 64, x + crachaWidth, y + 64);
+      // 3. Linha do meio 2: CÓDIGO DO CONSINCO (Esquerda) | OBSERVAÇÕES (Direita) (marginY + 106 até marginY + 176)
+      doc.line(marginX + halfWidth, marginY + 106, marginX + halfWidth, marginY + 176);
+      doc.line(marginX, marginY + 176, marginX + crachaWidth, marginY + 176);
 
       // Código Consinco
-      doc.setFontSize(6);
+      doc.setFontSize(14);
       doc.setTextColor(60, 60, 60);
-      doc.text('CÓDIGO DO CONSINCO', x + crachaWidth / 4, y + 46, { align: 'center' });
-      doc.setFontSize(13);
+      doc.text('CÓDIGO DO CONSINCO', marginX + halfWidth / 2, marginY + 121, { align: 'center' });
+      doc.setFontSize(38);
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.consincoCode || '—'), x + crachaWidth / 4, y + 56, { align: 'center' });
+      doc.text(String(item.consincoCode || '—'), marginX + halfWidth / 2, marginY + 153, { align: 'center' });
 
       // Observações
-      doc.setFontSize(6);
+      doc.setFontSize(14);
       doc.setTextColor(60, 60, 60);
-      doc.text('OBSERVAÇÕES', x + (3 * crachaWidth) / 4, y + 46, { align: 'center' });
-      doc.setFontSize(7.5);
+      doc.text('OBSERVAÇÕES', marginX + halfWidth + halfWidth / 2, marginY + 121, { align: 'center' });
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.notes || '—'), x + (3 * crachaWidth) / 4, y + 55, { align: 'center', maxWidth: (crachaWidth / 2) - 4 });
+      const notes = String(item.notes || '—');
+      if (notes.length > 40) {
+        doc.setFontSize(16);
+        doc.text(notes, marginX + halfWidth + halfWidth / 2, marginY + 143, { align: 'center', maxWidth: halfWidth - 16 });
+      } else if (notes.length > 20) {
+        doc.setFontSize(22);
+        doc.text(notes, marginX + halfWidth + halfWidth / 2, marginY + 148, { align: 'center', maxWidth: halfWidth - 16 });
+      } else {
+        doc.setFontSize(28);
+        doc.text(notes, marginX + halfWidth + halfWidth / 2, marginY + 152, { align: 'center', maxWidth: halfWidth - 16 });
+      }
 
-      // 4. Rodapé (y+64 até y+72)
+      // 4. Rodapé (marginY + 176 até marginY + 190)
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(5);
+      doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Conferido por: ${item.createdBy || 'Felipe'}`, x + 3, y + 69);
+      doc.text(`Conferido por: ${item.createdBy || 'Felipe'}`, marginX + 8, marginY + 185);
       const emission = item.emissionDate || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'));
-      doc.text(`Emissão: ${emission}`, x + crachaWidth - 3, y + 69, { align: 'right' });
+      doc.text(`Emissão: ${emission}`, marginX + crachaWidth - 8, marginY + 185, { align: 'right' });
     });
 
     return doc;

@@ -233,20 +233,21 @@ window.BrigadaUI = {
     }
   },
 
-  async generateCrachaFromProduct(productOrId) {
+  getCrachaDataFromProduct(productOrId) {
     const product = (typeof productOrId === 'object' && productOrId !== null)
       ? productOrId
       : window.BrigadaData.products.find(p => String(p.id) === String(productOrId));
 
-    if (!product) {
-      this.showToast('Produto não encontrado.', 'error');
-      return;
-    }
+    if (!product) return null;
 
-    const parts = (product.endDate || '').split('-');
-    let formattedDate = product.endDate || '';
-    if (parts.length === 3) {
-      formattedDate = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+    let formattedDate = product.endDate || '--/--/--';
+    if (product.endDate && product.endDate.includes('-')) {
+      const parts = product.endDate.split('-');
+      if (parts.length === 3) {
+        formattedDate = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+      }
+    } else if (product.endDate && product.endDate.includes('/')) {
+      formattedDate = product.endDate;
     }
 
     let friendlyLoc = '—';
@@ -259,14 +260,23 @@ window.BrigadaUI = {
     }
 
     const user = window.BrigadaAuth.currentUser || {};
-    const crachaData = {
+    return {
       productName: (product.name || 'PRODUTO').toUpperCase(),
       consincoCode: product.plu || '',
       quantity: product.quantity !== undefined ? product.quantity : 0,
       expiryDate: formattedDate,
       notes: friendlyLoc !== '—' ? friendlyLoc : (product.notes || '—'),
-      createdBy: user.name || user.username || 'Felipe'
+      createdBy: user.name || user.username || 'Felipe',
+      emissionDate: new Date().toLocaleDateString('pt-BR')
     };
+  },
+
+  async printCrachaFromProduct(productOrId) {
+    const crachaData = this.getCrachaDataFromProduct(productOrId);
+    if (!crachaData) {
+      this.showToast('Produto não encontrado.', 'error');
+      return;
+    }
 
     try {
       if (window.BrigadaData && window.BrigadaData.createCracha) {
@@ -276,11 +286,39 @@ window.BrigadaUI = {
       console.warn('Crachá gerado localmente:', err);
     }
 
-    if (window.BrigadaCracha && window.BrigadaCracha.shareCracha) {
-      window.BrigadaCracha.shareCracha(crachaData);
+    if (window.BrigadaCracha && window.BrigadaCracha.printCracha) {
+      window.BrigadaCracha.printCracha(crachaData);
     } else {
-      this.showToast('Crachá gerado com sucesso!', 'success');
+      this.showToast('Módulo de crachá indisponível.', 'error');
     }
+  },
+
+  sendProductToCrachaPage(productOrId) {
+    const crachaData = this.getCrachaDataFromProduct(productOrId);
+    if (!crachaData) {
+      this.showToast('Produto não encontrado.', 'error');
+      return;
+    }
+
+    const modal = document.getElementById('product-view-modal-overlay');
+    if (modal) {
+      modal.classList.remove('modal-overlay--visible');
+      setTimeout(() => { modal.style.display = 'none'; }, 200);
+    }
+
+    if (window.BrigadaCracha) {
+      window.BrigadaCracha.setFormData(crachaData);
+    }
+
+    if (window.BrigadaRouter && window.BrigadaRouter.navigate) {
+      window.BrigadaRouter.navigate('cracha');
+    }
+
+    this.showToast('Informações do produto enviadas para a página de Crachá!', 'success');
+  },
+
+  async generateCrachaFromProduct(productOrId) {
+    return this.printCrachaFromProduct(productOrId);
   },
 
   // ── Modal de Seleção de Quantidade de Quebra / Avaria ─────────────────────
@@ -837,6 +875,27 @@ window.BrigadaUI = {
             </div>
           `;
         })()}
+        <!-- Bloco de Ações Rápidas de Crachá -->
+        <div style="grid-column: span 2; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.25rem;">🏷️</span>
+              <div>
+                <strong style="color: #a5b4fc; font-size: 0.95rem;">Crachá de Validade deste Produto</strong>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Gere o crachá em folha A4 paisagem ou envie para a aba Crachá:</div>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+            <button type="button" class="btn btn--primary" id="btn-print-cracha-card" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; padding: 0.65rem; font-size: 0.85rem;">
+              🖨️ Imprimir Crachá
+            </button>
+            <button type="button" class="btn btn--outline" id="btn-send-to-cracha-card" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; padding: 0.65rem; font-size: 0.85rem; border-color: rgba(99, 102, 241, 0.5); color: #c7d2fe;">
+              🏷️ Enviar p/ Crachá
+            </button>
+          </div>
+        </div>
+
       </div>
     `;
 
@@ -846,17 +905,38 @@ window.BrigadaUI = {
     const closeBtn = document.getElementById('close-product-view-btn');
     const closeBtn2 = document.getElementById('btn-close-product-view');
     const crachaBtn = document.getElementById('btn-cracha-product-view');
+    const sendCrachaFooterBtn = document.getElementById('btn-send-to-cracha-footer');
+    const sendCrachaCardBtn = document.getElementById('btn-send-to-cracha-card');
+    const printCrachaCardBtn = document.getElementById('btn-print-cracha-card');
+
     const closeHandler = () => {
       modal.classList.remove('modal-overlay--visible');
       setTimeout(() => modal.style.display = 'none', 250);
     };
     if (closeBtn) closeBtn.onclick = closeHandler;
     if (closeBtn2) closeBtn2.onclick = closeHandler;
+
     if (crachaBtn) {
       crachaBtn.onclick = () => {
-        this.generateCrachaFromProduct(product);
+        this.printCrachaFromProduct(product);
       };
     }
+    if (printCrachaCardBtn) {
+      printCrachaCardBtn.onclick = () => {
+        this.printCrachaFromProduct(product);
+      };
+    }
+    if (sendCrachaFooterBtn) {
+      sendCrachaFooterBtn.onclick = () => {
+        this.sendProductToCrachaPage(product);
+      };
+    }
+    if (sendCrachaCardBtn) {
+      sendCrachaCardBtn.onclick = () => {
+        this.sendProductToCrachaPage(product);
+      };
+    }
+
     modal.onclick = (e) => {
       if (e.target === modal) closeHandler();
     };

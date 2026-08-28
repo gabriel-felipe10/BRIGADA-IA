@@ -20,6 +20,7 @@ window.BrigadaChambers = {
   directoryFilter: 'all',
   filterScheduleDay: 'all', // 'all', 'today', 'domingo', 'segunda', etc.
   filterColumn: 'all', // 'all', '1', '2', ..., 'alerts', 'occupied', 'empty'
+  selectedLevelFilter: 'all', // 'all', '1', '2', '3', '4'
 
   // Esquema Oficial de Verificação de Validade — Câmara Congelada (Ciclo Único - Domingo a Sábado | 16 Colunas)
   SCHEDULE_CONGELADA: [
@@ -900,9 +901,25 @@ window.BrigadaChambers = {
     const nextCol = colNum < config.columnsCount ? colNum + 1 : null;
     const colProducts = this.getColumnProducts(colNum);
 
+    const lvl1Products = colProducts.filter(p => (this.parseLocation(p.location)?.level || 1) === 1);
+    const lvl2Products = colProducts.filter(p => (this.parseLocation(p.location)?.level || 1) === 2);
+    const lvl3Products = colProducts.filter(p => (this.parseLocation(p.location)?.level || 1) === 3);
+    const lvl4Products = colProducts.filter(p => (this.parseLocation(p.location)?.level || 1) === 4);
+
+    let displayedProducts = colProducts;
+    if (this.selectedLevelFilter === '1') displayedProducts = lvl1Products;
+    else if (this.selectedLevelFilter === '2') displayedProducts = lvl2Products;
+    else if (this.selectedLevelFilter === '3') displayedProducts = lvl3Products;
+    else if (this.selectedLevelFilter === '4') displayedProducts = lvl4Products;
+
+    const currentLevelLabel = this.selectedLevelFilter === 'all' ? 'Todos os Níveis' :
+      this.selectedLevelFilter === '1' ? 'Piso 1 (Chão)' :
+      this.selectedLevelFilter === '2' ? 'Nível 2 (Aéreo 1)' :
+      this.selectedLevelFilter === '3' ? 'Nível 3 (Aéreo 2)' : 'Nível 4 (Topo)';
+
     return `
       <div class="chambers-page animate-fade-in">
-        <div class="chamber-action-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="chamber-action-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <button class="btn btn-outline btn-sm" id="btn-back-to-columns" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
               ${this.icons.ArrowLeft}
@@ -944,17 +961,119 @@ window.BrigadaChambers = {
 
         ${alertBannerHTML}
 
-        <!-- Tabela Principal de Produtos Alocados na Coluna (Estilo Idêntico ao Piso de Loja) -->
+        <!-- Seletor de Níveis / Pisos com Cards Interativos -->
+        <div class="glass-panel" style="padding: 1.25rem; margin-bottom: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.3rem;">🪜</span>
+              <div>
+                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Visualização por Nível / Piso</h4>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-secondary);">Selecione abaixo para ver apenas o que está no Piso 1, Nível 2 ou Nível 3:</p>
+              </div>
+            </div>
+            ${this.selectedLevelFilter !== 'all' ? `
+              <button class="btn btn-ghost btn-sm" data-action="filter-rack-level" data-level="all" style="font-size: 0.8rem; cursor: pointer; color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); border-radius: 6px; padding: 4px 10px;">
+                🔄 Ver Todos os Níveis
+              </button>
+            ` : ''}
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem;">
+            <!-- Card Todos -->
+            <div class="rack-level-filter-card" data-action="filter-rack-level" data-level="all" role="button" tabindex="0" style="cursor: pointer; padding: 0.9rem 1rem; border-radius: 10px; border: 1.5px solid ${this.selectedLevelFilter === 'all' ? '#6366f1' : 'rgba(255,255,255,0.08)'}; background: ${this.selectedLevelFilter === 'all' ? 'rgba(99,102,241,0.22)' : 'rgba(255,255,255,0.03)'}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 4px; box-shadow: ${this.selectedLevelFilter === 'all' ? '0 0 14px rgba(99,102,241,0.3)' : 'none'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: ${this.selectedLevelFilter === 'all' ? '#c7d2fe' : 'var(--text-secondary)'}; text-transform: uppercase;">🏢 Todos os Níveis</span>
+                <span style="font-size: 0.75rem; background: rgba(99,102,241,0.25); color: #c7d2fe; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${colProducts.length}</span>
+              </div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                ${colProducts.reduce((sum, p) => sum + (parseFloat(p.quantity) || 0), 0).toFixed(0)} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">kg/un</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-tertiary);">Coluna Completa</div>
+            </div>
+
+            <!-- Card Piso 1 -->
+            <div class="rack-level-filter-card" data-action="filter-rack-level" data-level="1" role="button" tabindex="0" style="cursor: pointer; padding: 0.9rem 1rem; border-radius: 10px; border: 1.5px solid ${this.selectedLevelFilter === '1' ? '#10b981' : 'rgba(16,185,129,0.2)'}; background: ${this.selectedLevelFilter === '1' ? 'rgba(16,185,129,0.22)' : 'rgba(16,185,129,0.04)'}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 4px; box-shadow: ${this.selectedLevelFilter === '1' ? '0 0 14px rgba(16,185,129,0.3)' : 'none'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: #10b981; text-transform: uppercase;">📦 Piso 1 (Chão)</span>
+                <span style="font-size: 0.75rem; background: rgba(16,185,129,0.25); color: #6ee7b7; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${lvl1Products.length}</span>
+              </div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                ${lvl1Products.reduce((sum, p) => sum + (parseFloat(p.quantity) || 0), 0).toFixed(0)} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">kg/un</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-tertiary);">${lvl1Products.filter(p => this.parseLocation(p.location)?.position === 'esquerda').length} Esq • ${lvl1Products.filter(p => this.parseLocation(p.location)?.position === 'direita').length} Dir</div>
+              <button type="button" class="btn btn-sm" data-action="quick-add-to-level" data-lvl="1" style="margin-top: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; background: rgba(16,185,129,0.25); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); border-radius: 6px; cursor: pointer; width: 100%; text-align: center;">
+                ➕ Cadastrar no Piso 1
+              </button>
+            </div>
+
+            <!-- Card Nível 2 -->
+            <div class="rack-level-filter-card" data-action="filter-rack-level" data-level="2" role="button" tabindex="0" style="cursor: pointer; padding: 0.9rem 1rem; border-radius: 10px; border: 1.5px solid ${this.selectedLevelFilter === '2' ? '#0284c7' : 'rgba(56,189,248,0.2)'}; background: ${this.selectedLevelFilter === '2' ? 'rgba(56,189,248,0.22)' : 'rgba(56,189,248,0.04)'}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 4px; box-shadow: ${this.selectedLevelFilter === '2' ? '0 0 14px rgba(2,132,199,0.3)' : 'none'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🏗️ Nível 2 (Aéreo 1)</span>
+                <span style="font-size: 0.75rem; background: rgba(56,189,248,0.25); color: #7dd3fc; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${lvl2Products.length}</span>
+              </div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                ${lvl2Products.reduce((sum, p) => sum + (parseFloat(p.quantity) || 0), 0).toFixed(0)} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">kg/un</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-tertiary);">${lvl2Products.filter(p => this.parseLocation(p.location)?.position === 'esquerda').length} Esq • ${lvl2Products.filter(p => this.parseLocation(p.location)?.position === 'direita').length} Dir</div>
+              <button type="button" class="btn btn-sm" data-action="quick-add-to-level" data-lvl="2" style="margin-top: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; background: rgba(56,189,248,0.25); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); border-radius: 6px; cursor: pointer; width: 100%; text-align: center;">
+                ➕ Cadastrar no Nível 2
+              </button>
+            </div>
+
+            <!-- Card Nível 3 -->
+            <div class="rack-level-filter-card" data-action="filter-rack-level" data-level="3" role="button" tabindex="0" style="cursor: pointer; padding: 0.9rem 1rem; border-radius: 10px; border: 1.5px solid ${this.selectedLevelFilter === '3' ? '#8b5cf6' : 'rgba(168,85,247,0.2)'}; background: ${this.selectedLevelFilter === '3' ? 'rgba(168,85,247,0.22)' : 'rgba(168,85,247,0.04)'}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 4px; box-shadow: ${this.selectedLevelFilter === '3' ? '0 0 14px rgba(139,92,246,0.3)' : 'none'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: #c084fc; text-transform: uppercase;">🪜 Nível 3 (Aéreo 2)</span>
+                <span style="font-size: 0.75rem; background: rgba(168,85,247,0.25); color: #e9d5ff; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${lvl3Products.length}</span>
+              </div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                ${lvl3Products.reduce((sum, p) => sum + (parseFloat(p.quantity) || 0), 0).toFixed(0)} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">kg/un</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-tertiary);">${lvl3Products.filter(p => this.parseLocation(p.location)?.position === 'esquerda').length} Esq • ${lvl3Products.filter(p => this.parseLocation(p.location)?.position === 'direita').length} Dir</div>
+              <button type="button" class="btn btn-sm" data-action="quick-add-to-level" data-lvl="3" style="margin-top: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; background: rgba(168,85,247,0.25); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4); border-radius: 6px; cursor: pointer; width: 100%; text-align: center;">
+                ➕ Cadastrar no Nível 3
+              </button>
+            </div>
+
+            ${lvl4Products.length > 0 || config.levelsCount >= 4 ? `
+            <!-- Card Nível 4 -->
+            <div class="rack-level-filter-card" data-action="filter-rack-level" data-level="4" role="button" tabindex="0" style="cursor: pointer; padding: 0.9rem 1rem; border-radius: 10px; border: 1.5px solid ${this.selectedLevelFilter === '4' ? '#ec4899' : 'rgba(236,72,153,0.2)'}; background: ${this.selectedLevelFilter === '4' ? 'rgba(236,72,153,0.22)' : 'rgba(236,72,153,0.04)'}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 4px; box-shadow: ${this.selectedLevelFilter === '4' ? '0 0 14px rgba(236,72,153,0.3)' : 'none'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: #f472b6; text-transform: uppercase;">🔝 Nível 4 (Topo)</span>
+                <span style="font-size: 0.75rem; background: rgba(236,72,153,0.25); color: #fbcfe8; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${lvl4Products.length}</span>
+              </div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                ${lvl4Products.reduce((sum, p) => sum + (parseFloat(p.quantity) || 0), 0).toFixed(0)} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">kg/un</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-tertiary);">${lvl4Products.filter(p => this.parseLocation(p.location)?.position === 'esquerda').length} Esq • ${lvl4Products.filter(p => this.parseLocation(p.location)?.position === 'direita').length} Dir</div>
+              <button type="button" class="btn btn-sm" data-action="quick-add-to-level" data-lvl="4" style="margin-top: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; background: rgba(236,72,153,0.25); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4); border-radius: 6px; cursor: pointer; width: 100%; text-align: center;">
+                ➕ Cadastrar no Nível 4
+              </button>
+            </div>` : ''}
+          </div>
+        </div>
+
+        <!-- Tabela Principal de Produtos Alocados na Coluna -->
         <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
           <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
             <div style="display:flex; flex-direction:column; gap:4px;">
-              <h3 style="font-size: 1.2rem; font-weight: 600; margin: 0;">Produtos Alocados nesta Coluna</h3>
-              <p style="font-size:0.85rem; color:var(--text-secondary); margin: 0;">Total: ${colProducts.length} itens armazenados na Coluna ${colStr}</p>
+              <h3 style="font-size: 1.2rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                ${this.selectedLevelFilter === 'all' ? '📦 Produtos Alocados na Coluna' :
+                  this.selectedLevelFilter === '1' ? '📦 Produtos Alocados no Piso 1 (Chão)' :
+                  this.selectedLevelFilter === '2' ? '🏗️ Produtos Alocados no Nível 2 (Aéreo 1)' :
+                  this.selectedLevelFilter === '3' ? '🪜 Produtos Alocados no Nível 3 (Aéreo 2)' :
+                  '🔝 Produtos Alocados no Nível 4 (Topo)'}
+              </h3>
+              <p style="font-size:0.85rem; color:var(--text-secondary); margin: 0;">
+                ${this.selectedLevelFilter === 'all' ? `Total: ${colProducts.length} itens armazenados na Coluna ${colStr}` :
+                  `Exibindo ${displayedProducts.length} de ${colProducts.length} itens da Coluna ${colStr} (${currentLevelLabel})`}
+              </p>
             </div>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <button class="btn btn--primary" id="btn-open-add-new-chamber-col" style="display: flex; align-items: center; gap: 6px; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer; font-weight: 700; padding: 7px 14px;">
                 <span>➕</span>
-                Adicionar Novo Produto
+                Adicionar Novo Produto ${this.selectedLevelFilter !== 'all' ? `no ${this.selectedLevelFilter === '1' ? 'Piso 1' : `Nível ${this.selectedLevelFilter}`}` : ''}
               </button>
             </div>
           </div>
@@ -973,15 +1092,15 @@ window.BrigadaChambers = {
                 </tr>
               </thead>
               <tbody>
-                ${colProducts.length === 0 ? `
+                ${displayedProducts.length === 0 ? `
                   <tr>
                     <td colspan="7" class="empty-state" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">
                       <div style="font-size: 2rem; margin-bottom: 8px;">❄️</div>
-                      Nenhum produto alocado nesta coluna ainda.<br>
-                      <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" para cadastrar itens nesta coluna.</small>
+                      Nenhum produto alocado ${this.selectedLevelFilter === 'all' ? 'nesta coluna' : `no ${this.selectedLevelFilter === '1' ? 'Piso 1' : `Nível ${this.selectedLevelFilter}`}`} ainda.<br>
+                      <small style="color: var(--text-tertiary); margin-top: 4px; display: inline-block;">Clique em "+ Adicionar Novo Produto" para cadastrar itens neste nível.</small>
                     </td>
                   </tr>
-                ` : colProducts.map(p => {
+                ` : displayedProducts.map(p => {
                   const status = window.BrigadaData.getProductStatus(p);
                   const isResolved = !!p.expiredAction;
                   const isCritical = !isResolved && (status.days <= 0 || status.class === 'badge--expired' || status.class === 'badge--today');
@@ -1478,11 +1597,32 @@ window.BrigadaChambers = {
       });
     }
 
+    // Filtro de Nível / Piso da Coluna (Todos, Piso 1, Nível 2, Nível 3, Nível 4)
+    this.container.querySelectorAll('[data-action="filter-rack-level"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Se clicou no botão interno de cadastrar direto, não filtra
+        if (e.target.closest('[data-action="quick-add-to-level"]')) return;
+        this.selectedLevelFilter = btn.dataset.level || 'all';
+        this.render(this.container);
+      });
+    });
+
+    // Botões de Cadastro Rápido Direto em cada Card de Nível
+    this.container.querySelectorAll('[data-action="quick-add-to-level"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetLvl = parseInt(btn.dataset.lvl, 10) || 1;
+        this.selectedLevelFilter = String(targetLvl);
+        this.openAddNewProductModal(this.selectedColumn, targetLvl, 'esquerda');
+      });
+    });
+
     // Botão Adicionar Novo Produto no Header da Tabela da Coluna
     const addColProdBtn = this.container.querySelector('#btn-open-add-new-chamber-col');
     if (addColProdBtn) {
       addColProdBtn.addEventListener('click', () => {
-        this.openAddNewProductModal(this.selectedColumn, 1, 'esquerda');
+        const targetLvl = this.selectedLevelFilter !== 'all' ? parseInt(this.selectedLevelFilter, 10) : 1;
+        this.openAddNewProductModal(this.selectedColumn, targetLvl, 'esquerda');
       });
     }
 
@@ -2483,10 +2623,18 @@ window.BrigadaChambers = {
     this.closeModal('add-product-chamber-modal');
     this.closeModal('allocation-modal');
 
+    let currentLvl = lvl || 1;
     const isResfriada = this.selectedChamber === 'Câmara Resfriada';
     const chamberIcon = isResfriada ? '❄️' : '🥶';
     const chamberId = isResfriada ? 'resfriado' : 'congelado';
     const today = new Date().toISOString().split('T')[0];
+
+    const getLevelText = (l) => {
+      if (l === 1) return 'Piso 1 (Chão)';
+      if (l === 2) return 'Nível 2 (Aéreo 1)';
+      if (l === 3) return 'Nível 3 (Aéreo 2)';
+      return 'Nível 4 (Topo)';
+    };
 
     const allowedCats = window.BrigadaAuth.getAllowedCategoriesForUser(this.selectedChamber);
     const catOptions = [
@@ -2508,20 +2656,45 @@ window.BrigadaChambers = {
     let currentSearch = '';
 
     overlay.innerHTML = `
-      <div class="modal" style="max-width: 580px; width: 92%; transform: translateY(0); margin-top: 3vh;">
+      <div class="modal" style="max-width: 600px; width: 92%; transform: translateY(0); margin-top: 2vh;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
           <h3 class="modal-title" id="chamber-modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
             <span>${chamberIcon}</span>
-            <span>Novo Produto — ${this.selectedChamber}</span>
+            <span>Novo Produto — ${this.selectedChamber} • Coluna ${col.toString().padStart(2, '0')}</span>
+            <span id="chamber-modal-level-title-badge" style="font-size: 0.8rem; background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.35); padding: 2px 8px; border-radius: 6px;">
+              ${getLevelText(currentLvl)}
+            </span>
           </h3>
           <button class="modal-close" id="modal-close-add-chamber" style="background: none; border: none; font-size: 1.25rem; color: var(--text-secondary); cursor: pointer;">✕</button>
         </div>
 
         <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+          <!-- Seletor Rápido de Nível / Piso dentro do Modal -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 1rem;">📍</span>
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Alocar no Nível:</span>
+            </div>
+            <div id="modal-level-quick-tabs" style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="modal-lvl-pill ${currentLvl === 1 ? 'active' : ''}" data-lvl="1" style="cursor: pointer; padding: 5px 11px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; border: 1.5px solid ${currentLvl === 1 ? '#10b981' : 'rgba(255,255,255,0.1)'}; background: ${currentLvl === 1 ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.04)'}; color: ${currentLvl === 1 ? '#6ee7b7' : 'var(--text-secondary)'}; transition: all 0.15s ease;">
+                📦 Piso 1 (Chão)
+              </button>
+              <button type="button" class="modal-lvl-pill ${currentLvl === 2 ? 'active' : ''}" data-lvl="2" style="cursor: pointer; padding: 5px 11px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; border: 1.5px solid ${currentLvl === 2 ? '#0284c7' : 'rgba(255,255,255,0.1)'}; background: ${currentLvl === 2 ? 'rgba(56,189,248,0.25)' : 'rgba(255,255,255,0.04)'}; color: ${currentLvl === 2 ? '#7dd3fc' : 'var(--text-secondary)'}; transition: all 0.15s ease;">
+                🏗️ Nível 2 (Aéreo 1)
+              </button>
+              <button type="button" class="modal-lvl-pill ${currentLvl === 3 ? 'active' : ''}" data-lvl="3" style="cursor: pointer; padding: 5px 11px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; border: 1.5px solid ${currentLvl === 3 ? '#8b5cf6' : 'rgba(255,255,255,0.1)'}; background: ${currentLvl === 3 ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.04)'}; color: ${currentLvl === 3 ? '#e9d5ff' : 'var(--text-secondary)'}; transition: all 0.15s ease;">
+                🪜 Nível 3 (Aéreo 2)
+              </button>
+              <button type="button" class="modal-lvl-pill ${currentLvl === 4 ? 'active' : ''}" data-lvl="4" style="cursor: pointer; padding: 5px 11px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; border: 1.5px solid ${currentLvl === 4 ? '#ec4899' : 'rgba(255,255,255,0.1)'}; background: ${currentLvl === 4 ? 'rgba(236,72,153,0.25)' : 'rgba(255,255,255,0.04)'}; color: ${currentLvl === 4 ? '#fbcfe8' : 'var(--text-secondary)'}; transition: all 0.15s ease;">
+                🔝 Nível 4 (Topo)
+              </button>
+            </div>
+          </div>
+
           <!-- ETAPA 1: Seleção Inteligente por Catálogo -->
           <div id="chamber-modal-step-catalog">
-            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 12px;">
-              Selecione o produto do catálogo abaixo para preenchimento ágil:
+            <p id="chamber-modal-step-catalog-desc" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 12px;">
+              Selecione o produto do catálogo abaixo para cadastrar no <strong style="color: var(--text-primary);">${getLevelText(currentLvl)}</strong>:
             </p>
 
             <div class="search-box" style="width: 100%; margin-bottom: 0.75rem; display: flex; align-items: center; position: relative;">
@@ -2596,9 +2769,14 @@ window.BrigadaChambers = {
 
               <!-- Destino / Posição de Armazenagem & Tipo do Palete -->
               <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="font-size: 0.82rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                  <span>📍 Local de Alocação:</span>
-                  <span>${chamberIcon} ${this.selectedChamber} • Coluna ${col.toString().padStart(2, '0')}</span>
+                <div style="font-size: 0.82rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>📍 Local de Alocação:</span>
+                    <span>${chamberIcon} ${this.selectedChamber} • Coluna ${col.toString().padStart(2, '0')}</span>
+                  </div>
+                  <span id="chamber-modal-location-badge" style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
+                    ${getLevelText(currentLvl)}
+                  </span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
@@ -2606,10 +2784,10 @@ window.BrigadaChambers = {
                       Nível de Armazenagem *
                     </label>
                     <select id="add-chamber-level" class="form-input" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary);">
-                      <option value="1" ${lvl === 1 ? 'selected' : ''}>📦 Nível 1 — Piso (Chão)</option>
-                      <option value="2" ${lvl === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo</option>
-                      <option value="3" ${lvl === 3 ? 'selected' : ''}>🏗️ Nível 3 — Aéreo</option>
-                      <option value="4" ${lvl === 4 ? 'selected' : ''}>🏗️ Nível 4 — Aéreo (Topo)</option>
+                      <option value="1" ${currentLvl === 1 ? 'selected' : ''}>📦 Nível 1 — Piso (Chão)</option>
+                      <option value="2" ${currentLvl === 2 ? 'selected' : ''}>🏗️ Nível 2 — Aéreo 1</option>
+                      <option value="3" ${currentLvl === 3 ? 'selected' : ''}>🪜 Nível 3 — Aéreo 2</option>
+                      <option value="4" ${currentLvl === 4 ? 'selected' : ''}>🔝 Nível 4 — Aéreo (Topo)</option>
                     </select>
                   </div>
 
@@ -2692,13 +2870,18 @@ window.BrigadaChambers = {
               </div>
 
               <!-- Botões de Ação -->
-              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-                <button type="button" class="btn btn--outline" id="btn-cancel-add-chamber" style="padding: 8px 16px; cursor: pointer;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 14px; flex-wrap: wrap;">
+                <button type="button" class="btn btn--outline" id="btn-cancel-add-chamber" style="padding: 8px 14px; cursor: pointer;">
                   Cancelar
                 </button>
-                <button type="submit" class="btn btn--primary" id="btn-submit-add-chamber" style="padding: 8px 20px; font-weight: 700; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer;">
-                  ✓ Cadastrar e Alocar
-                </button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn--outline" id="btn-submit-add-chamber-continue" style="padding: 8px 14px; font-weight: 700; border-color: rgba(16,185,129,0.5); color: #34d399; cursor: pointer;">
+                    ➕ Salvar e +1 no ${currentLvl === 1 ? 'Piso 1' : `Nível ${currentLvl}`}
+                  </button>
+                  <button type="submit" class="btn btn--primary" id="btn-submit-add-chamber" style="padding: 8px 20px; font-weight: 700; background-color: #10b981; border-color: #10b981; color: white; cursor: pointer;">
+                    ✓ Salvar e Fechar
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -2707,6 +2890,93 @@ window.BrigadaChambers = {
     `;
 
     document.body.appendChild(overlay);
+
+    // Função para atualizar dinamicamente o nível ativo em todo o modal
+    const updateModalLevelUI = (newLvl) => {
+      currentLvl = parseInt(newLvl, 10) || 1;
+      const lvlText = getLevelText(currentLvl);
+
+      const titleBadge = overlay.querySelector('#chamber-modal-level-title-badge');
+      if (titleBadge) {
+        titleBadge.textContent = lvlText;
+        if (currentLvl === 1) {
+          titleBadge.style.background = 'rgba(16,185,129,0.2)';
+          titleBadge.style.color = '#10b981';
+          titleBadge.style.borderColor = 'rgba(16,185,129,0.35)';
+        } else if (currentLvl === 2) {
+          titleBadge.style.background = 'rgba(56,189,248,0.2)';
+          titleBadge.style.color = '#38bdf8';
+          titleBadge.style.borderColor = 'rgba(56,189,248,0.35)';
+        } else if (currentLvl === 3) {
+          titleBadge.style.background = 'rgba(168,85,247,0.2)';
+          titleBadge.style.color = '#c084fc';
+          titleBadge.style.borderColor = 'rgba(168,85,247,0.35)';
+        } else {
+          titleBadge.style.background = 'rgba(236,72,153,0.2)';
+          titleBadge.style.color = '#f472b6';
+          titleBadge.style.borderColor = 'rgba(236,72,153,0.35)';
+        }
+      }
+
+      const descEl = overlay.querySelector('#chamber-modal-step-catalog-desc');
+      if (descEl) {
+        descEl.innerHTML = `Selecione o produto do catálogo abaixo para cadastrar no <strong style="color: var(--text-primary);">${lvlText}</strong>:`;
+      }
+
+      const locationBadge = overlay.querySelector('#chamber-modal-location-badge');
+      if (locationBadge) {
+        locationBadge.textContent = lvlText;
+      }
+
+      const lvlSelect = overlay.querySelector('#add-chamber-level');
+      if (lvlSelect && lvlSelect.value !== String(currentLvl)) {
+        lvlSelect.value = String(currentLvl);
+      }
+
+      const continueBtn = overlay.querySelector('#btn-submit-add-chamber-continue');
+      if (continueBtn) {
+        continueBtn.textContent = `➕ Salvar e +1 no ${currentLvl === 1 ? 'Piso 1' : `Nível ${currentLvl}`}`;
+      }
+
+      // Atualiza visual dos botões no topo do modal
+      overlay.querySelectorAll('#modal-level-quick-tabs .modal-lvl-pill').forEach(pill => {
+        const pLvl = parseInt(pill.dataset.lvl, 10);
+        const isActive = pLvl === currentLvl;
+        pill.classList.toggle('active', isActive);
+        if (pLvl === 1) {
+          pill.style.border = isActive ? '1.5px solid #10b981' : '1.5px solid rgba(255,255,255,0.1)';
+          pill.style.background = isActive ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.04)';
+          pill.style.color = isActive ? '#6ee7b7' : 'var(--text-secondary)';
+        } else if (pLvl === 2) {
+          pill.style.border = isActive ? '1.5px solid #0284c7' : '1.5px solid rgba(255,255,255,0.1)';
+          pill.style.background = isActive ? 'rgba(56,189,248,0.25)' : 'rgba(255,255,255,0.04)';
+          pill.style.color = isActive ? '#7dd3fc' : 'var(--text-secondary)';
+        } else if (pLvl === 3) {
+          pill.style.border = isActive ? '1.5px solid #8b5cf6' : '1.5px solid rgba(255,255,255,0.1)';
+          pill.style.background = isActive ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.04)';
+          pill.style.color = isActive ? '#e9d5ff' : 'var(--text-secondary)';
+        } else {
+          pill.style.border = isActive ? '1.5px solid #ec4899' : '1.5px solid rgba(255,255,255,0.1)';
+          pill.style.background = isActive ? 'rgba(236,72,153,0.25)' : 'rgba(255,255,255,0.04)';
+          pill.style.color = isActive ? '#fbcfe8' : 'var(--text-secondary)';
+        }
+      });
+    };
+
+    // Eventos de clique nos botões de nível dentro do modal
+    overlay.querySelectorAll('#modal-level-quick-tabs .modal-lvl-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        updateModalLevelUI(parseInt(pill.dataset.lvl, 10));
+      });
+    });
+
+    // Evento de mudança no select de nível
+    overlay.querySelector('#add-chamber-level')?.addEventListener('change', (e) => {
+      updateModalLevelUI(parseInt(e.target.value, 10));
+    });
+
+    // Inicializa estilo do nível inicial
+    updateModalLevelUI(currentLvl);
 
     // Aplica máscara de data manual DD/MM/AAAA
     const endDateInput = overlay.querySelector('#add-chamber-enddate');
@@ -2933,9 +3203,7 @@ window.BrigadaChambers = {
       }
     });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
+    const handleSave = async (continueAfterSave = false) => {
       const nameVal = nameInput.value.trim();
       const pluVal = pluInput.value.trim();
       const catVal = catSelect.value;
@@ -2959,7 +3227,7 @@ window.BrigadaChambers = {
       const chosenPos = overlay.querySelector('#add-chamber-position')?.value || pos || 'esquerda';
       const chosenType = overlay.querySelector('input[name="add-chamber-pallet-type"]:checked')?.value || 'full';
       const locString = this.formatLocation(chamberId, col, chosenLvl, chosenPos, chosenType);
-      window.BrigadaUI.showToast('Cadastrando e adicionando produto...', 'info');
+      window.BrigadaUI.showToast('Salvando produto...', 'info');
 
       try {
         await window.BrigadaData.addProduct({
@@ -2975,13 +3243,46 @@ window.BrigadaChambers = {
         });
 
         this.setSlotMarkedEmpty(this.selectedChamber, col, chosenLvl, chosenPos, false);
-        window.BrigadaUI.showToast('Produto cadastrado e alocado com sucesso!', 'success');
-        close();
-        this.render(this.container);
+        this.selectedLevelFilter = String(chosenLvl);
+
+        if (continueAfterSave) {
+          window.BrigadaUI.showToast(`✅ Salvo no ${chosenLvl === 1 ? 'Piso 1' : `Nível ${chosenLvl}`}! Pronto para o próximo item.`, 'success');
+          // Limpa campos para o próximo item
+          nameInput.value = '';
+          pluInput.value = '';
+          overlay.querySelector('#add-chamber-quantity').value = '1';
+          overlay.querySelector('#add-chamber-enddate').value = '';
+          supplierInput.value = '';
+          currentSearch = '';
+          if (searchInput) searchInput.value = '';
+
+          // Volta para a etapa de seleção de catálogo mantendo o mesmo nível
+          overlay.querySelector('#chamber-modal-step-form').style.display = 'none';
+          overlay.querySelector('#chamber-modal-step-catalog').style.display = 'block';
+          renderCatalogList();
+          if (searchInput) searchInput.focus();
+
+          // Atualiza a tabela ao fundo
+          this.render(this.container);
+        } else {
+          window.BrigadaUI.showToast('Produto cadastrado e alocado com sucesso!', 'success');
+          close();
+          this.render(this.container);
+        }
       } catch (err) {
         console.error(err);
         window.BrigadaUI.showToast('Erro ao cadastrar produto: ' + err.message, 'error');
       }
+    };
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleSave(false);
+    });
+
+    overlay.querySelector('#btn-submit-add-chamber-continue')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleSave(true);
     });
   },
 
