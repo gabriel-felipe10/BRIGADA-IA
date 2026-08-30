@@ -85,6 +85,14 @@ def create_product():
         try:
             response = supabase.table("produtos").insert(db_data).execute()
         except Exception as e:
+            err_str = str(e)
+            if "23505" in err_str or "duplicate key" in err_str.lower() or "unique constraint" in err_str.lower():
+                logger.error("Violação de unicidade (PLU + Validade duplicados): {}", e)
+                return jsonify({
+                    "error": f"Já existe um produto cadastrado com o PLU {plu} e Validade {end_date}. Execute no SQL Editor do Supabase: ALTER TABLE produtos DROP CONSTRAINT IF EXISTS produtos_plu_end_date_key;",
+                    "details": err_str
+                }), 409
+
             logger.warning("Erro ao salvar produto com campos extras, tentando sem eles: {}", e)
             db_data.pop("column", None)
             db_data.pop("column_number", None)
@@ -94,7 +102,17 @@ def create_product():
             db_data.pop("leader_signature", None)
             db_data.pop("responsible_name", None)
             db_data.pop("leader_name", None)
-            response = supabase.table("produtos").insert(db_data).execute()
+            try:
+                response = supabase.table("produtos").insert(db_data).execute()
+            except Exception as e2:
+                err_str2 = str(e2)
+                if "23505" in err_str2 or "duplicate key" in err_str2.lower() or "unique constraint" in err_str2.lower():
+                    logger.error("Violação de unicidade na tentativa sem campos extras: {}", e2)
+                    return jsonify({
+                        "error": f"Já existe um produto cadastrado com o PLU {plu} e Validade {end_date}. Execute no SQL Editor do Supabase: ALTER TABLE produtos DROP CONSTRAINT IF EXISTS produtos_plu_end_date_key;",
+                        "details": err_str2
+                    }), 409
+                raise e2
             
         if not response.data:
             return jsonify({"error": "Erro ao salvar produto no Supabase"}), 500
