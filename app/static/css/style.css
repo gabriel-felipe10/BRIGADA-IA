@@ -3824,11 +3824,20 @@ input[type="checkbox"]:focus-visible {
   display: none;
 }
 
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
 @media print {
   body {
     background: #ffffff !important;
     color: #000000 !important;
     font-family: system-ui, -apple-system, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 
   /* Ocultar elementos de UI interativos quando imprimindo diretamente */

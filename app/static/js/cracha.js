@@ -986,10 +986,10 @@ window.BrigadaCracha = {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
     // Dimensões A4 Paisagem: 297mm largura x 210mm altura
-    const marginX = 10;
-    const marginY = 10;
-    const crachaWidth = 277;
-    const crachaHeight = 190;
+    const marginX = 5;
+    const marginY = 5;
+    const crachaWidth = 287;
+    const crachaHeight = 200;
     const halfWidth = crachaWidth / 2;
 
     items.forEach((item, index) => {
@@ -1002,78 +1002,83 @@ window.BrigadaCracha = {
       doc.setLineWidth(1.2);
       doc.rect(marginX, marginY, crachaWidth, crachaHeight);
 
-      // 1. Topo: NOME DO PRODUTO (Altura: 38mm -> marginY até marginY + 38)
+      // Layout: Seção 1 (Produto) 42mm | Seção 2 (Val/Qtd) 74mm | Seção 3 (Cód/Obs) 74mm | Rodapé 10mm
+      const sec1End = marginY + 42;
+      const sec2End = sec1End + 74;
+      const sec3End = sec2End + 74;
+
+      // 1. Topo: NOME DO PRODUTO (marginY até sec1End)
       doc.setLineWidth(0.8);
-      doc.line(marginX, marginY + 38, marginX + crachaWidth, marginY + 38);
+      doc.line(marginX, sec1End, marginX + crachaWidth, sec1End);
       doc.setFont('helvetica', 'bold');
       const prodName = (item.productName || 'PRODUTO').toUpperCase();
       if (prodName.length > 55) {
-        doc.setFontSize(18);
+        doc.setFontSize(20);
       } else if (prodName.length > 35) {
-        doc.setFontSize(22);
-      } else {
         doc.setFontSize(26);
+      } else {
+        doc.setFontSize(32);
       }
       doc.setTextColor(0, 0, 0);
-      doc.text(prodName, marginX + halfWidth, marginY + 22, { align: 'center', maxWidth: crachaWidth - 16 });
+      doc.text(prodName, marginX + halfWidth, marginY + 25, { align: 'center', maxWidth: crachaWidth - 16 });
 
-      // 2. Linha do meio 1: VALIDADE (Esquerda) | QUANTIDADE (Direita) (marginY + 38 até marginY + 106)
-      doc.line(marginX + halfWidth, marginY + 38, marginX + halfWidth, marginY + 106);
-      doc.line(marginX, marginY + 106, marginX + crachaWidth, marginY + 106);
+      // 2. Linha do meio 1: VALIDADE (Esquerda) | QUANTIDADE (Direita) (sec1End até sec2End)
+      doc.line(marginX + halfWidth, sec1End, marginX + halfWidth, sec2End);
+      doc.line(marginX, sec2End, marginX + crachaWidth, sec2End);
 
       // Validade (Esquerda)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(60, 60, 60);
-      doc.text('VALIDADE', marginX + halfWidth / 2, marginY + 53, { align: 'center' });
-      doc.setFontSize(40);
+      doc.text('VALIDADE', marginX + halfWidth / 2, sec1End + 18, { align: 'center' });
+      doc.setFontSize(48);
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.expiryDate || '—'), marginX + halfWidth / 2, marginY + 85, { align: 'center' });
+      doc.text(String(item.expiryDate || '—'), marginX + halfWidth / 2, sec1End + 52, { align: 'center' });
 
       // Quantidade (Direita)
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(60, 60, 60);
-      doc.text('QUANTIDADE', marginX + halfWidth + halfWidth / 2, marginY + 53, { align: 'center' });
-      doc.setFontSize(44);
+      doc.text('QUANTIDADE', marginX + halfWidth + halfWidth / 2, sec1End + 18, { align: 'center' });
+      doc.setFontSize(52);
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.quantity || 0), marginX + halfWidth + halfWidth / 2, marginY + 85, { align: 'center' });
+      doc.text(String(item.quantity || 0), marginX + halfWidth + halfWidth / 2, sec1End + 52, { align: 'center' });
 
-      // 3. Linha do meio 2: CÓDIGO DO CONSINCO (Esquerda) | OBSERVAÇÕES (Direita) (marginY + 106 até marginY + 176)
-      doc.line(marginX + halfWidth, marginY + 106, marginX + halfWidth, marginY + 176);
-      doc.line(marginX, marginY + 176, marginX + crachaWidth, marginY + 176);
+      // 3. Linha do meio 2: CÓDIGO DO CONSINCO (Esquerda) | OBSERVAÇÕES (Direita) (sec2End até sec3End)
+      doc.line(marginX + halfWidth, sec2End, marginX + halfWidth, sec3End);
+      doc.line(marginX, sec3End, marginX + crachaWidth, sec3End);
 
       // Código Consinco
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(60, 60, 60);
-      doc.text('CÓDIGO DO CONSINCO', marginX + halfWidth / 2, marginY + 121, { align: 'center' });
-      doc.setFontSize(38);
+      doc.text('CÓDIGO DO CONSINCO', marginX + halfWidth / 2, sec2End + 18, { align: 'center' });
+      doc.setFontSize(46);
       doc.setTextColor(0, 0, 0);
-      doc.text(String(item.consincoCode || '—'), marginX + halfWidth / 2, marginY + 153, { align: 'center' });
+      doc.text(String(item.consincoCode || '—'), marginX + halfWidth / 2, sec2End + 52, { align: 'center' });
 
       // Observações
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(60, 60, 60);
-      doc.text('OBSERVAÇÕES', marginX + halfWidth + halfWidth / 2, marginY + 121, { align: 'center' });
+      doc.text('OBSERVAÇÕES', marginX + halfWidth + halfWidth / 2, sec2End + 18, { align: 'center' });
       doc.setTextColor(0, 0, 0);
       const notes = String(item.notes || '—');
       if (notes.length > 40) {
-        doc.setFontSize(16);
-        doc.text(notes, marginX + halfWidth + halfWidth / 2, marginY + 143, { align: 'center', maxWidth: halfWidth - 16 });
+        doc.setFontSize(18);
+        doc.text(notes, marginX + halfWidth + halfWidth / 2, sec2End + 45, { align: 'center', maxWidth: halfWidth - 16 });
       } else if (notes.length > 20) {
-        doc.setFontSize(22);
-        doc.text(notes, marginX + halfWidth + halfWidth / 2, marginY + 148, { align: 'center', maxWidth: halfWidth - 16 });
+        doc.setFontSize(26);
+        doc.text(notes, marginX + halfWidth + halfWidth / 2, sec2End + 50, { align: 'center', maxWidth: halfWidth - 16 });
       } else {
-        doc.setFontSize(28);
-        doc.text(notes, marginX + halfWidth + halfWidth / 2, marginY + 152, { align: 'center', maxWidth: halfWidth - 16 });
+        doc.setFontSize(34);
+        doc.text(notes, marginX + halfWidth + halfWidth / 2, sec2End + 52, { align: 'center', maxWidth: halfWidth - 16 });
       }
 
-      // 4. Rodapé (marginY + 176 até marginY + 190)
+      // 4. Rodapé (sec3End até marginY + crachaHeight)
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Conferido por: ${item.createdBy || 'Felipe'}`, marginX + 8, marginY + 185);
+      doc.text(`Conferido por: ${item.createdBy || 'Felipe'}`, marginX + 8, sec3End + 7);
       const emission = item.emissionDate || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'));
-      doc.text(`Emissão: ${emission}`, marginX + crachaWidth - 8, marginY + 185, { align: 'right' });
+      doc.text(`Emissão: ${emission}`, marginX + crachaWidth - 8, sec3End + 7, { align: 'right' });
     });
 
     return doc;

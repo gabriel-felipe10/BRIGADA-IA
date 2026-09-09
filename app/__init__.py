@@ -42,6 +42,7 @@ def create_app():
     from app.routes.quebras import quebras_bp
     from app.routes.crachas import crachas_bp
     from app.routes.bible import bible_bp
+    from app.routes.powerbi import powerbi_bp
 
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_bp)
@@ -53,8 +54,9 @@ def create_app():
     app.register_blueprint(quebras_bp)
     app.register_blueprint(crachas_bp)
     app.register_blueprint(bible_bp)
+    app.register_blueprint(powerbi_bp)
 
-    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota, quebras, crachas, bible")
+    logger.info("Blueprints registrados: api, dashboard, logs, products, users, settings, produtos_sem_nota, quebras, crachas, bible, powerbi")
     logger.info("🛡️  BRIGADA-IA pronta para receber requisições")
 
     return app
