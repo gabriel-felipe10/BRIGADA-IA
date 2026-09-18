@@ -5295,24 +5295,58 @@ window.BrigadaData = {
   async loadCrachas() {
     try {
       const res = await fetch('/api/crachas');
-      if (!res.ok) throw new Error('Falha ao buscar crachás');
-      const apiItems = await res.json();
+      let apiItems = [];
+      if (res.ok) {
+        apiItems = await res.json();
+      }
       const cached = localStorage.getItem('brigada_crachas');
-      const localData = cached ? JSON.parse(cached) : [];
-      const seenIds = new Set(apiItems.map(i => String(i.id)));
-      const merged = [...apiItems];
-      localData.forEach(item => {
-        if (!seenIds.has(String(item.id))) {
-          seenIds.add(String(item.id));
-          merged.push(item);
-        }
-      });
+      let localData = [];
+      try {
+        localData = cached ? JSON.parse(cached) : [];
+      } catch (e) {
+        localData = [];
+      }
+
+      const seenIds = new Set();
+      const merged = [];
+
+      if (Array.isArray(apiItems)) {
+        apiItems.forEach((item, idx) => {
+          if (item) {
+            if (item.id == null) item.id = idx + 1;
+            const key = String(item.id);
+            if (!seenIds.has(key)) {
+              seenIds.add(key);
+              merged.push(item);
+            }
+          }
+        });
+      }
+
+      if (Array.isArray(localData)) {
+        localData.forEach(item => {
+          if (item) {
+            if (item.id == null) item.id = Date.now() + Math.floor(Math.random() * 1000);
+            const key = String(item.id);
+            if (!seenIds.has(key)) {
+              seenIds.add(key);
+              merged.push(item);
+            }
+          }
+        });
+      }
+
       this.crachas = merged;
+      localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
       return this.crachas;
     } catch (err) {
       console.error('Erro na API ao carregar crachás (usando fallback local):', err);
       const cached = localStorage.getItem('brigada_crachas');
-      this.crachas = cached ? JSON.parse(cached) : [];
+      try {
+        this.crachas = cached ? JSON.parse(cached) : [];
+      } catch (e) {
+        this.crachas = [];
+      }
       return this.crachas;
     }
   },
@@ -5329,6 +5363,9 @@ window.BrigadaData = {
         throw new Error(errData.error || 'Erro ao salvar crachá no servidor');
       }
       const created = await res.json();
+      if (!created.id) created.id = Date.now();
+      if (!Array.isArray(this.crachas)) this.crachas = [];
+      this.crachas = this.crachas.filter(c => c && String(c.id) !== String(created.id));
       this.crachas.unshift(created);
       localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
       return created;
@@ -5339,6 +5376,7 @@ window.BrigadaData = {
         ...payload,
         createdAt: new Date().toISOString()
       };
+      if (!Array.isArray(this.crachas)) this.crachas = [];
       this.crachas.unshift(local);
       localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
       return local;
@@ -5346,27 +5384,43 @@ window.BrigadaData = {
   },
 
   async deleteCracha(id) {
-    try {
-      if (id > 1000000000000) {
-        this.crachas = this.crachas.filter(c => c.id !== id);
-        localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
-        return { success: true };
-      }
-      const res = await fetch(`/api/crachas/${id}`, {
-        method: 'DELETE'
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Erro ao excluir crachá do servidor');
-      }
-      this.crachas = this.crachas.filter(c => c.id !== id);
-      localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
-      return { success: true };
-    } catch (err) {
-      console.error('Erro na API ao excluir crachá (usando fallback local):', err);
-      this.crachas = this.crachas.filter(c => c.id !== id);
-      localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
-      return { success: true };
+    if (id === undefined || id === null || id === '') return { success: false };
+    const idStr = String(id).trim();
+    if (!idStr || idStr === 'undefined' || idStr === 'null' || idStr === 'NaN') {
+      return { success: false };
     }
+
+    try {
+      const numId = Number(id);
+      if (!isNaN(numId) && numId > 0 && numId < 1000000000000) {
+        const res = await fetch(`/api/crachas/${numId}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok && res.status !== 404) {
+          const errData = await res.json().catch(() => ({}));
+          console.warn('Erro ao excluir no servidor:', errData);
+        }
+      }
+    } catch (err) {
+      console.warn('Erro na requisição DELETE de crachá:', err);
+    }
+
+    // Remove EXATAMENTE e APENAS o item com o ID correspondente
+    if (Array.isArray(this.crachas)) {
+      this.crachas = this.crachas.filter(c => {
+        if (!c) return false;
+        return String(c.id).trim() !== idStr;
+      });
+    } else {
+      this.crachas = [];
+    }
+
+    try {
+      localStorage.setItem('brigada_crachas', JSON.stringify(this.crachas));
+    } catch (e) {
+      console.warn('Erro ao salvar no localStorage:', e);
+    }
+
+    return { success: true };
   }
 };

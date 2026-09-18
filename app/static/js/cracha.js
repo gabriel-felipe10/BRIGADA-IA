@@ -177,19 +177,20 @@ window.BrigadaCracha = {
         .cracha-preview {
           background: #ffffff;
           color: #000000;
-          border: 3px solid #000;
-          width: 420px;
+          border: 4px solid #000000;
+          width: 440px;
           padding: 0;
-          font-family: 'Arial Black', 'Arial', sans-serif;
+          font-family: 'Arial Black', 'Impact', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-weight: 900;
           position: relative;
           border-radius: 4px;
           overflow: hidden;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.35);
         }
 
         .cracha-row {
           display: flex;
-          border-bottom: 2px solid #000;
+          border-bottom: 3px solid #000000;
         }
 
         .cracha-row:last-child {
@@ -197,7 +198,7 @@ window.BrigadaCracha = {
         }
 
         .cracha-cell {
-          padding: 8px 10px;
+          padding: 10px 12px;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -207,54 +208,63 @@ window.BrigadaCracha = {
         }
 
         .cracha-cell + .cracha-cell {
-          border-left: 2px solid #000;
+          border-left: 3px solid #000000;
         }
 
         .cracha-cell-label {
-          font-size: 8px;
-          font-weight: bold;
+          font-size: 11px;
+          font-weight: 900;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          color: #333;
-          margin-bottom: 2px;
+          letter-spacing: 0.8px;
+          color: #000000;
+          margin-bottom: 4px;
+          font-family: 'Arial Black', 'Impact', sans-serif;
         }
 
         .cracha-cell-value {
-          font-size: 24px;
+          font-size: 30px;
           font-weight: 900;
-          line-height: 1.1;
-          color: #000;
+          line-height: 1.05;
+          color: #000000;
           word-break: break-all;
+          font-family: 'Arial Black', 'Impact', sans-serif;
+          letter-spacing: 0.5px;
         }
 
         .cracha-cell-value.xsmall {
-          font-size: 12px;
-          font-weight: 700;
-          line-height: 1.3;
+          font-size: 14px;
+          font-weight: 900;
+          line-height: 1.25;
           word-break: break-word;
           max-height: 85px;
           overflow: hidden;
           white-space: pre-wrap;
+          font-family: 'Arial Black', 'Impact', sans-serif;
         }
 
         .cracha-product-name {
-          font-size: 15px;
+          font-size: 19px;
           font-weight: 900;
-          line-height: 1.2;
-          color: #000;
+          line-height: 1.25;
+          color: #000000;
           text-align: center;
-          padding: 10px 12px;
+          padding: 12px 14px;
           word-break: break-word;
+          text-transform: uppercase;
+          font-family: 'Arial Black', 'Impact', sans-serif;
+          letter-spacing: 0.5px;
         }
 
         .cracha-footer {
-          font-size: 7.5px;
-          color: #555;
-          padding: 4px 8px;
+          font-size: 9.5px;
+          font-weight: 900;
+          color: #111111;
+          padding: 6px 10px;
           display: flex;
           justify-content: space-between;
-          border-top: 1px solid #ccc;
-          background: #fafafa;
+          border-top: 2px solid #000000;
+          background: #f8f9fa;
+          font-family: 'Arial Black', 'Impact', sans-serif;
         }
 
         /* ── Mobile ────────────────────────────────────────── */
@@ -819,6 +829,7 @@ window.BrigadaCracha = {
 
   /**
    * Gera um Canvas em alta resolução desenhando o crachá fielmente em modo paisagem (proporção A4).
+   * Usa fontes ultra-grossas (Arial Black / 900) e traços pesados para máxima legibilidade física e digital.
    */
   generateCrachaCanvas(data) {
     const canvas = document.createElement('canvas');
@@ -838,17 +849,17 @@ window.BrigadaCracha = {
     const bW = width - (mX * 2);
     const bH = height - (mY * 2);
 
-    // Borda preta externa
+    // Borda preta externa ultra-grossa
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 8;
     ctx.strokeRect(mX, mY, bW, bH);
 
-    // Helpers para desenhar linhas
+    // Helpers para desenhar linhas divisórias grossas
     const drawHLine = (y) => {
       ctx.beginPath();
       ctx.moveTo(mX, y);
       ctx.lineTo(mX + bW, y);
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 6;
       ctx.strokeStyle = '#000000';
       ctx.stroke();
     };
@@ -857,111 +868,111 @@ window.BrigadaCracha = {
       ctx.beginPath();
       ctx.moveTo(x, y1);
       ctx.lineTo(x, y2);
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 6;
       ctx.strokeStyle = '#000000';
       ctx.stroke();
     };
 
     const midX = mX + bW / 2;
 
-    // 1. Linha Produto (Y: mY até mY + 160)
-    const line1Y = mY + 160;
+    // 1. Linha Produto (Y: mY até mY + 165)
+    const line1Y = mY + 165;
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const pName = (data.productName || 'NOME DO PRODUTO').toUpperCase();
     if (pName.length > 50) {
-      ctx.font = '900 32px Arial, sans-serif';
+      ctx.font = '900 36px "Arial Black", Impact, Arial, sans-serif';
       const mid = Math.floor(pName.length / 2);
       const splitIdx = pName.lastIndexOf(' ', mid) !== -1 ? pName.lastIndexOf(' ', mid) : mid;
       const l1 = pName.slice(0, splitIdx);
       const l2 = pName.slice(splitIdx).trim();
       ctx.fillText(l1, midX, mY + 55);
-      ctx.fillText(l2, midX, mY + 105);
+      ctx.fillText(l2, midX, mY + 110);
     } else if (pName.length > 30) {
-      ctx.font = '900 38px Arial, sans-serif';
-      ctx.fillText(pName, midX, mY + 80);
+      ctx.font = '900 44px "Arial Black", Impact, Arial, sans-serif';
+      ctx.fillText(pName, midX, mY + 82);
     } else {
-      ctx.font = '900 46px Arial, sans-serif';
-      ctx.fillText(pName, midX, mY + 80);
+      ctx.font = '900 52px "Arial Black", Impact, Arial, sans-serif';
+      ctx.fillText(pName, midX, mY + 82);
     }
 
     drawHLine(line1Y);
 
-    // 2. Linha Validade & Quantidade (Y: line1Y até line1Y + 280)
-    const line2Y = line1Y + 280;
+    // 2. Linha Validade & Quantidade (Y: line1Y até line1Y + 275)
+    const line2Y = line1Y + 275;
     drawVLine(midX, line1Y, line2Y);
 
     // Coluna Validade
     const col1X = mX + bW / 4;
-    ctx.fillStyle = '#444444';
-    ctx.font = 'bold 22px Arial, sans-serif';
-    ctx.fillText('VALIDADE', col1X, line1Y + 60);
+    ctx.fillStyle = '#000000';
+    ctx.font = '900 24px "Arial Black", Impact, Arial, sans-serif';
+    ctx.fillText('VALIDADE', col1X, line1Y + 55);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '900 70px Arial, sans-serif';
+    ctx.font = '900 86px "Arial Black", Impact, Arial, sans-serif';
     ctx.fillText(data.expiryDate || '--/--/--', col1X, line1Y + 160);
 
     // Coluna Quantidade
     const col2X = mX + (bW / 4) * 3;
-    ctx.fillStyle = '#444444';
-    ctx.font = 'bold 22px Arial, sans-serif';
-    ctx.fillText('QUANTIDADE', col2X, line1Y + 60);
+    ctx.fillStyle = '#000000';
+    ctx.font = '900 24px "Arial Black", Impact, Arial, sans-serif';
+    ctx.fillText('QUANTIDADE', col2X, line1Y + 55);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '900 76px Arial, sans-serif';
+    ctx.font = '900 90px "Arial Black", Impact, Arial, sans-serif';
     ctx.fillText(String(data.quantity || '0'), col2X, line1Y + 160);
 
     drawHLine(line2Y);
 
-    // 3. Linha Código Consinco & Observações (Y: line2Y até line2Y + 280)
-    const line3Y = line2Y + 280;
+    // 3. Linha Código Consinco & Observações (Y: line2Y até line2Y + 275)
+    const line3Y = line2Y + 275;
     drawVLine(midX, line2Y, line3Y);
 
     // Coluna Código Consinco
-    ctx.fillStyle = '#444444';
-    ctx.font = 'bold 22px Arial, sans-serif';
-    ctx.fillText('CÓDIGO DO CONSINCO', col1X, line2Y + 60);
+    ctx.fillStyle = '#000000';
+    ctx.font = '900 24px "Arial Black", Impact, Arial, sans-serif';
+    ctx.fillText('CÓDIGO DO CONSINCO', col1X, line2Y + 55);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '900 68px Arial, sans-serif';
+    ctx.font = '900 82px "Arial Black", Impact, Arial, sans-serif';
     ctx.fillText(String(data.consincoCode || '-----'), col1X, line2Y + 160);
 
     // Coluna Observações
-    ctx.fillStyle = '#444444';
-    ctx.font = 'bold 22px Arial, sans-serif';
-    ctx.fillText('OBSERVAÇÕES', col2X, line2Y + 60);
+    ctx.fillStyle = '#000000';
+    ctx.font = '900 24px "Arial Black", Impact, Arial, sans-serif';
+    ctx.fillText('OBSERVAÇÕES', col2X, line2Y + 55);
 
     ctx.fillStyle = '#000000';
-    const notes = data.notes || '—';
+    const notes = (data.notes || '—').toUpperCase();
     if (notes.length > 35) {
-      ctx.font = 'bold 28px Arial, sans-serif';
+      ctx.font = '900 32px "Arial Black", Impact, Arial, sans-serif';
       const mid = Math.floor(notes.length / 2);
       const splitIdx = notes.lastIndexOf(' ', mid) !== -1 ? notes.lastIndexOf(' ', mid) : mid;
       const n1 = notes.slice(0, splitIdx);
       const n2 = notes.slice(splitIdx).trim();
       ctx.fillText(n1, col2X, line2Y + 135);
-      ctx.fillText(n2, col2X, line2Y + 180);
+      ctx.fillText(n2, col2X, line2Y + 185);
     } else if (notes.length > 18) {
-      ctx.font = 'bold 36px Arial, sans-serif';
+      ctx.font = '900 42px "Arial Black", Impact, Arial, sans-serif';
       ctx.fillText(notes, col2X, line2Y + 155);
     } else {
-      ctx.font = 'bold 46px Arial, sans-serif';
+      ctx.font = '900 52px "Arial Black", Impact, Arial, sans-serif';
       ctx.fillText(notes, col2X, line2Y + 155);
     }
 
     drawHLine(line3Y);
 
     // 4. Rodapé (Y: line3Y até mY + bH)
-    ctx.fillStyle = '#666666';
-    ctx.font = '20px Arial, sans-serif';
+    ctx.fillStyle = '#111111';
+    ctx.font = '900 22px "Arial Black", Impact, Arial, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`Conferido por: ${data.createdBy || 'Felipe'}`, mX + 20, line3Y + 42);
+    ctx.fillText(`Conferido por: ${data.createdBy || 'Felipe'}`, mX + 20, line3Y + 45);
 
     ctx.textAlign = 'right';
     const emission = data.emissionDate || (data.createdAt ? new Date(data.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'));
-    ctx.fillText(`Emissão: ${emission}`, mX + bW - 20, line3Y + 42);
+    ctx.fillText(`Emissão: ${emission}`, mX + bW - 20, line3Y + 45);
 
     return canvas;
   },
@@ -999,7 +1010,7 @@ window.BrigadaCracha = {
 
       // Borda exterior preta grossa cobrindo toda a folha
       doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(1.2);
+      doc.setLineWidth(1.8);
       doc.rect(marginX, marginY, crachaWidth, crachaHeight);
 
       // Layout: Seção 1 (Produto) 42mm | Seção 2 (Val/Qtd) 74mm | Seção 3 (Cód/Obs) 74mm | Rodapé 10mm
@@ -1008,16 +1019,16 @@ window.BrigadaCracha = {
       const sec3End = sec2End + 74;
 
       // 1. Topo: NOME DO PRODUTO (marginY até sec1End)
-      doc.setLineWidth(0.8);
+      doc.setLineWidth(1.2);
       doc.line(marginX, sec1End, marginX + crachaWidth, sec1End);
       doc.setFont('helvetica', 'bold');
       const prodName = (item.productName || 'PRODUTO').toUpperCase();
       if (prodName.length > 55) {
-        doc.setFontSize(20);
+        doc.setFontSize(22);
       } else if (prodName.length > 35) {
-        doc.setFontSize(26);
+        doc.setFontSize(28);
       } else {
-        doc.setFontSize(32);
+        doc.setFontSize(34);
       }
       doc.setTextColor(0, 0, 0);
       doc.text(prodName, marginX + halfWidth, marginY + 25, { align: 'center', maxWidth: crachaWidth - 16 });
@@ -1028,18 +1039,18 @@ window.BrigadaCracha = {
 
       // Validade (Esquerda)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
       doc.text('VALIDADE', marginX + halfWidth / 2, sec1End + 18, { align: 'center' });
-      doc.setFontSize(48);
+      doc.setFontSize(54);
       doc.setTextColor(0, 0, 0);
       doc.text(String(item.expiryDate || '—'), marginX + halfWidth / 2, sec1End + 52, { align: 'center' });
 
       // Quantidade (Direita)
-      doc.setFontSize(16);
-      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
       doc.text('QUANTIDADE', marginX + halfWidth + halfWidth / 2, sec1End + 18, { align: 'center' });
-      doc.setFontSize(52);
+      doc.setFontSize(58);
       doc.setTextColor(0, 0, 0);
       doc.text(String(item.quantity || 0), marginX + halfWidth + halfWidth / 2, sec1End + 52, { align: 'center' });
 
@@ -1048,34 +1059,34 @@ window.BrigadaCracha = {
       doc.line(marginX, sec3End, marginX + crachaWidth, sec3End);
 
       // Código Consinco
-      doc.setFontSize(16);
-      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
       doc.text('CÓDIGO DO CONSINCO', marginX + halfWidth / 2, sec2End + 18, { align: 'center' });
-      doc.setFontSize(46);
+      doc.setFontSize(50);
       doc.setTextColor(0, 0, 0);
       doc.text(String(item.consincoCode || '—'), marginX + halfWidth / 2, sec2End + 52, { align: 'center' });
 
       // Observações
-      doc.setFontSize(16);
-      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
       doc.text('OBSERVAÇÕES', marginX + halfWidth + halfWidth / 2, sec2End + 18, { align: 'center' });
       doc.setTextColor(0, 0, 0);
       const notes = String(item.notes || '—');
       if (notes.length > 40) {
-        doc.setFontSize(18);
+        doc.setFontSize(20);
         doc.text(notes, marginX + halfWidth + halfWidth / 2, sec2End + 45, { align: 'center', maxWidth: halfWidth - 16 });
       } else if (notes.length > 20) {
-        doc.setFontSize(26);
+        doc.setFontSize(28);
         doc.text(notes, marginX + halfWidth + halfWidth / 2, sec2End + 50, { align: 'center', maxWidth: halfWidth - 16 });
       } else {
-        doc.setFontSize(34);
+        doc.setFontSize(36);
         doc.text(notes, marginX + halfWidth + halfWidth / 2, sec2End + 52, { align: 'center', maxWidth: halfWidth - 16 });
       }
 
       // 4. Rodapé (sec3End até marginY + crachaHeight)
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(40, 40, 40);
       doc.text(`Conferido por: ${item.createdBy || 'Felipe'}`, marginX + 8, sec3End + 7);
       const emission = item.emissionDate || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'));
       doc.text(`Emissão: ${emission}`, marginX + crachaWidth - 8, sec3End + 7, { align: 'right' });
@@ -1096,48 +1107,65 @@ window.BrigadaCracha = {
   },
 
   getFilteredList() {
-    let list = window.BrigadaData.crachas || [];
+    let list = Array.isArray(window.BrigadaData.crachas) ? window.BrigadaData.crachas : [];
 
-    if (this.currentMonth !== 'all') {
+    if (this.currentMonth && this.currentMonth !== 'all') {
       list = list.filter(c => {
-        if (!c.expiryDate) return false;
+        if (!c || !c.expiryDate) return false;
         const parts = c.expiryDate.split('/');
         return parts.length >= 2 && parts[1] === this.currentMonth;
       });
     }
 
-    if (this.currentYear !== 'all') {
+    if (this.currentYear && this.currentYear !== 'all') {
       list = list.filter(c => {
-        if (!c.createdAt) return false;
-        const y = c.createdAt.split('-')[0];
-        return y === this.currentYear;
+        if (!c) return false;
+        if (c.createdAt) {
+          const y = String(c.createdAt).split('-')[0];
+          if (y === this.currentYear) return true;
+        }
+        if (c.expiryDate) {
+          const parts = c.expiryDate.split('/');
+          if (parts.length === 3) {
+            const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+            if (y === this.currentYear) return true;
+          }
+        }
+        return false;
       });
     }
 
     if (this.searchQuery) {
-      const qLower = this.searchQuery.toLowerCase();
-      list = list.filter(c =>
-        (c.productName && c.productName.toLowerCase().includes(qLower)) ||
-        (c.consincoCode && c.consincoCode.toLowerCase().includes(qLower)) ||
-        (c.notes && c.notes.toLowerCase().includes(qLower)) ||
-        (c.createdBy && c.createdBy.toLowerCase().includes(qLower))
-      );
+      const qLower = this.searchQuery.toLowerCase().trim();
+      list = list.filter(c => {
+        if (!c) return false;
+        return (
+          (c.productName && String(c.productName).toLowerCase().includes(qLower)) ||
+          (c.consincoCode && String(c.consincoCode).toLowerCase().includes(qLower)) ||
+          (c.notes && String(c.notes).toLowerCase().includes(qLower)) ||
+          (c.createdBy && String(c.createdBy).toLowerCase().includes(qLower)) ||
+          (c.expiryDate && String(c.expiryDate).includes(qLower))
+        );
+      });
     }
 
     return list;
   },
 
   renderHistory(container) {
+    const targetContainer = container || this.container || document.getElementById('page-container') || document;
+    this.container = targetContainer;
+
     const list = this.getFilteredList();
 
     // Métricas
-    const metricsContainer = container.querySelector('#cracha-metrics-container');
+    const metricsContainer = targetContainer.querySelector('#cracha-metrics-container');
     if (metricsContainer) {
       const totalCount = list.length;
-      const totalQty = list.reduce((sum, c) => sum + (c.quantity || 0), 0);
+      const totalQty = list.reduce((sum, c) => sum + (Number(c.quantity) || 0), 0);
       const todayStr = new Date().toLocaleDateString('pt-BR');
       const todayCount = (window.BrigadaData.crachas || []).filter(c => {
-        if (!c.createdAt) return false;
+        if (!c || !c.createdAt) return false;
         const d = new Date(c.createdAt);
         return d.toLocaleDateString('pt-BR') === todayStr;
       }).length;
@@ -1168,11 +1196,11 @@ window.BrigadaCracha = {
     }
 
     // Tabela
-    const tbody = container.querySelector('#crachas-table-body');
-    const badge = container.querySelector('#cr-count-badge');
-    const batchBar = container.querySelector('#batch-cracha-bar');
-    const batchCount = container.querySelector('#batch-cracha-count');
-    const selectAllCb = container.querySelector('#select-all-crachas');
+    const tbody = targetContainer.querySelector('#crachas-table-body');
+    const badge = targetContainer.querySelector('#cr-count-badge');
+    const batchBar = targetContainer.querySelector('#batch-cracha-bar');
+    const batchCount = targetContainer.querySelector('#batch-cracha-count');
+    const selectAllCb = targetContainer.querySelector('#select-all-crachas');
 
     if (batchBar) batchBar.style.display = 'none';
     if (selectAllCb) selectAllCb.checked = false;
@@ -1197,10 +1225,10 @@ window.BrigadaCracha = {
         <td style="text-align: center; width: 40px;">
           <input type="checkbox" class="select-cracha-row" value="${c.id}" style="cursor:pointer; width:16px; height:16px;">
         </td>
-        <td data-label="Produto" style="font-weight: 600;">${c.productName || '—'}</td>
-        <td data-label="Quantidade">${c.quantity || 0}</td>
+        <td data-label="Produto" style="font-weight: 700; color: var(--text-primary);">${c.productName || '—'}</td>
+        <td data-label="Quantidade" style="font-weight: 700;">${c.quantity || 0}</td>
         <td data-label="Cód. Consinco">${c.consincoCode || '—'}</td>
-        <td data-label="Validade">${c.expiryDate || '—'}</td>
+        <td data-label="Validade" style="font-weight: 700; color: #f59e0b;">${c.expiryDate || '—'}</td>
         <td data-label="Observações" style="font-size: 0.85rem; max-width: 150px; word-break: break-word;">${c.notes || '—'}</td>
         <td data-label="Gerado por">${c.createdBy || '—'}</td>
         <td data-label="Ações" style="text-align: right; white-space: nowrap;">
@@ -1226,7 +1254,7 @@ window.BrigadaCracha = {
 
     // Atualiza barra de ações em lote
     const updateBatchBar = () => {
-      const selected = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => parseInt(cb.value));
+      const selected = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => String(cb.value));
       if (batchBar && batchCount) {
         if (selected.length > 0) {
           batchCount.textContent = `${selected.length} crachá${selected.length > 1 ? 's' : ''} selecionado${selected.length > 1 ? 's' : ''}`;
@@ -1251,65 +1279,71 @@ window.BrigadaCracha = {
     });
 
     // Botão Compartilhar Selecionados
-    container.querySelector('#btn-batch-share-crachas')?.addEventListener('click', () => {
-      const selectedIds = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => parseInt(cb.value));
-      const selectedItems = (window.BrigadaData.crachas || []).filter(c => selectedIds.includes(c.id));
+    targetContainer.querySelector('#btn-batch-share-crachas')?.addEventListener('click', () => {
+      const selectedIds = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => String(cb.value));
+      const selectedItems = (window.BrigadaData.crachas || []).filter(c => c && selectedIds.includes(String(c.id)));
       if (!selectedItems.length) return;
       this.shareMultipleCrachas(selectedItems);
     });
 
     // Botão Imprimir Selecionados
-    container.querySelector('#btn-batch-print-crachas')?.addEventListener('click', () => {
-      const selectedIds = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => parseInt(cb.value));
-      const selectedItems = (window.BrigadaData.crachas || []).filter(c => selectedIds.includes(c.id));
+    targetContainer.querySelector('#btn-batch-print-crachas')?.addEventListener('click', () => {
+      const selectedIds = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => String(cb.value));
+      const selectedItems = (window.BrigadaData.crachas || []).filter(c => c && selectedIds.includes(String(c.id)));
       if (!selectedItems.length) return;
       this.printMultipleCrachas(selectedItems);
     });
 
     // Botão Excluir Selecionados
-    container.querySelector('#btn-batch-delete-crachas')?.addEventListener('click', async () => {
-      const selectedIds = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => parseInt(cb.value));
+    targetContainer.querySelector('#btn-batch-delete-crachas')?.addEventListener('click', async () => {
+      const selectedIds = Array.from(tbody.querySelectorAll('.select-cracha-row:checked')).map(cb => String(cb.value));
       if (!selectedIds.length) return;
       if (confirm(`Tem certeza que deseja excluir os ${selectedIds.length} crachás selecionados?`)) {
         for (const id of selectedIds) {
           await window.BrigadaData.deleteCracha(id);
         }
-        this.renderHistory(container);
+        this.renderHistory(targetContainer);
+        if (window.BrigadaUI?.showToast) {
+          window.BrigadaUI.showToast(`${selectedIds.length} crachás excluídos com sucesso!`, 'info');
+        }
       }
     });
 
     // Bind botões individuais da tabela
     tbody.querySelectorAll('.btn-print-row-cracha').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = parseInt(btn.dataset.id);
-        const item = (window.BrigadaData.crachas || []).find(c => c.id === id);
+        const id = String(btn.dataset.id);
+        const item = (window.BrigadaData.crachas || []).find(c => c && String(c.id) === id);
         if (item) this.printCracha(item);
       });
     });
 
     tbody.querySelectorAll('.btn-share-row-cracha').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = parseInt(btn.dataset.id);
-        const item = (window.BrigadaData.crachas || []).find(c => c.id === id);
+        const id = String(btn.dataset.id);
+        const item = (window.BrigadaData.crachas || []).find(c => c && String(c.id) === id);
         if (item) this.shareCracha(item);
       });
     });
 
     tbody.querySelectorAll('.btn-download-row-cracha').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = parseInt(btn.dataset.id);
-        const item = (window.BrigadaData.crachas || []).find(c => c.id === id);
+        const id = String(btn.dataset.id);
+        const item = (window.BrigadaData.crachas || []).find(c => c && String(c.id) === id);
         if (item) this.downloadCrachaImage(item);
       });
     });
 
     tbody.querySelectorAll('.btn-delete-cracha').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const id = parseInt(btn.dataset.id);
+        const id = String(btn.dataset.id);
         if (!confirm('Deseja excluir este crachá?')) return;
         try {
           await window.BrigadaData.deleteCracha(id);
-          this.renderHistory(container);
+          this.renderHistory(targetContainer);
+          if (window.BrigadaUI?.showToast) {
+            window.BrigadaUI.showToast('Crachá excluído com sucesso!', 'info');
+          }
         } catch (err) {
           console.error('Erro ao excluir crachá:', err);
           alert('Erro ao excluir: ' + err.message);
