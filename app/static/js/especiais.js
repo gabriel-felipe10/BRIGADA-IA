@@ -1488,30 +1488,30 @@ window.BrigadaEspeciais = {
   }
 },
 
-  // Polígonos Anatômicos Vetoriais
+  // Polígonos Anatômicos Vetoriais Alinhados Pixel a Pixel com a Ilustração
   cutsPolygons: {
-  "picanha": "618,146 648,149 676,158 692,175 674,204 624,196 618,146",
-  "contrafilé": "465,148 545,147 618,146 624,196 545,193 465,191",
-  "filé-mignon": "465,191 545,193 624,196 612,216 545,212 465,210",
-  "capa-de-filé": "345,138 410,144 465,148 465,178 410,175 345,170",
-  "filé-de-costela": "345,170 410,175 465,178 465,210 410,212 348,210",
-  "cupim": "248,138 285,124 318,126 345,138 340,165 295,164 252,160",
-  "acém": "252,160 340,165 348,210 354,235 315,242 272,248 245,200",
-  "pescoço": "162,185 210,145 248,138 245,200 235,275 195,305 168,260",
-  "peito": "195,305 235,275 272,248 278,285 275,340 245,385 212,380 185,345",
-  "paleta": "272,248 315,242 354,235 355,270 353,300 342,335 328,358 285,365 278,285",
-  "costela": "354,235 410,212 465,210 478,240 484,285 484,325 480,378 435,376 385,371 355,368 342,335 355,270",
-  "fraldinha": "465,210 545,212 555,245 545,295 538,345 530,378 480,378 484,325 478,240",
-  "alcatra": "624,196 674,204 688,230 678,265 628,262 612,216",
-  "maminha": "545,212 612,216 628,262 622,305 605,355 572,390 538,345 545,295 555,245",
-  "coxão-mole": "628,262 678,265 684,305 678,345 645,360 622,305",
-  "lagarto": "674,204 695,208 718,240 718,295 688,305 688,230",
-  "coxão-duro": "688,305 718,295 710,360 685,385 668,382 678,345 684,305",
-  "patinho": "622,305 645,360 678,345 668,382 655,420 625,415 605,355",
-  "chambaril": "275,365 328,358 322,425 315,485 272,485 272,425",
-  "chambaril-t": "625,415 655,420 675,410 668,485 630,485 620,445",
-  "rabo": "692,175 708,185 718,225 720,295 722,365 714,365 712,295 708,225 695,190"
-},
+    "picanha": "575,150 615,144 650,145 685,165 675,205 625,205 575,182",
+    "contrafilé": "480,162 530,156 575,150 575,182 530,186 480,190",
+    "filé-mignon": "480,190 575,182 575,215 480,212",
+    "capa-de-filé": "370,153 430,158 430,192 370,185",
+    "filé-de-costela": "430,158 480,162 480,212 430,212 430,192",
+    "cupim": "246,150 270,142 295,136 320,137 348,144 370,153 340,175 300,183 270,175",
+    "acém": "270,175 300,183 340,175 370,153 370,185 355,240 330,235 280,230 240,260 248,205",
+    "pescoço": "190,225 220,185 246,150 270,175 248,205 240,260 170,275",
+    "peito": "170,275 240,260 240,320 245,375 220,395 180,385 160,330",
+    "paleta": "240,260 280,230 330,235 355,240 350,280 355,370 300,375 245,375 240,320",
+    "costela": "370,185 430,192 430,212 480,212 480,375 420,378 355,370 350,280 355,240",
+    "fraldinha": "480,212 550,230 540,290 535,340 533,365 480,375",
+    "maminha": "550,230 575,215 575,240 600,300 614,350 570,380 535,340 540,290",
+    "alcatra": "575,182 625,205 675,205 680,250 640,250 575,240 575,215",
+    "coxão-mole": "675,205 700,205 705,245 708,285 680,285 680,250",
+    "lagarto": "685,165 710,205 714,250 710,285 705,320 685,320 708,285 705,245 700,205",
+    "coxão-duro": "680,285 708,285 685,320 705,320 686,359 645,350 660,310",
+    "patinho": "575,240 640,250 680,250 680,285 660,310 645,350 614,350 600,300",
+    "chambaril": "220,395 245,375 355,370 330,440 320,525 270,525 275,440",
+    "chambaril-t": "614,350 645,350 686,359 680,440 675,525 620,525 625,440",
+    "rabo": "685,165 700,185 715,230 725,300 735,385 725,385 715,300 705,230"
+  },
 
   init(container) {
     this.render(container);
@@ -1543,6 +1543,46 @@ window.BrigadaEspeciais = {
         </polygon>
       `;
     }
+
+    const labelsList = [
+      { key: "pescoço", text: "Pescoço", x: 265, y: 92, anchor: "middle" },
+      { key: "cupim", text: "Cupim", x: 350, y: 80, anchor: "middle" },
+      { key: "acém", text: "Acém", x: 412, y: 95, anchor: "middle" },
+      { key: "capa-de-filé", text: "Capa de filé", x: 472, y: 72, anchor: "middle" },
+      { key: "filé-de-costela", text: "Filé de costela", x: 525, y: 104, anchor: "middle" },
+      { key: "contrafilé", text: "Contrafilé", x: 590, y: 68, anchor: "middle" },
+      { key: "filé-mignon", text: "Filé-Mignon", x: 678, y: 94, anchor: "middle" },
+      { key: "picanha", text: "Picanha", x: 798, y: 92, anchor: "middle" },
+      { key: "rabo", text: "Rabo", x: 735, y: 180, anchor: "start" },
+      { key: "alcatra", text: "Alcatra", x: 735, y: 218, anchor: "start" },
+      { key: "coxão-mole", text: "Coxão mole", x: 742, y: 253, anchor: "start" },
+      { key: "lagarto", text: "Lagarto", x: 742, y: 288, anchor: "start" },
+      { key: "coxão-duro", text: "Coxão duro", x: 742, y: 323, anchor: "start" },
+      { key: "patinho", text: "Patinho", x: 742, y: 358, anchor: "start" },
+      { key: "chambaril-t", text: "Chambaril", x: 742, y: 460, anchor: "start" },
+      { key: "peito", text: "Peito", x: 172, y: 278, anchor: "end" },
+      { key: "paleta", text: "Paleta", x: 178, y: 348, anchor: "end" },
+      { key: "chambaril", text: "Chambaril (x2)", x: 268, y: 388, anchor: "end" },
+      { key: "costela", text: "Costela", x: 450, y: 432, anchor: "middle" },
+      { key: "fraldinha", text: "Fraldinha", x: 526, y: 452, anchor: "middle" },
+      { key: "maminha", text: "Maminha", x: 604, y: 474, anchor: "middle" }
+    ];
+
+    const labelsSVG = labelsList.map(l => `
+      <text 
+        class="bovine-map-label" 
+        data-cut-id="${l.key}" 
+        x="${l.x}" 
+        y="${l.y}" 
+        text-anchor="${l.anchor}"
+        fill="#f8fafc" 
+        font-size="12" 
+        font-weight="800" 
+        letter-spacing="0.3px"
+        style="cursor: pointer; transition: all 0.2s ease; text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.85);">
+        ${l.text}
+      </text>
+    `).join('');
 
     return `
       <style>
@@ -1593,13 +1633,14 @@ window.BrigadaEspeciais = {
         .bovine-svg-viewport {
           position: relative;
           width: 100%;
+          aspect-ratio: 843 / 543;
           min-height: 480px;
-          max-height: 620px;
-          background: #060914;
+          max-height: 640px;
+          background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0f172a 70%, #060913 100%);
           border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           overflow: hidden;
-          box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1608,7 +1649,6 @@ window.BrigadaEspeciais = {
         .bovine-svg {
           width: 100%;
           height: 100%;
-          max-height: 600px;
           display: block;
           user-select: none;
         }
@@ -1618,34 +1658,52 @@ window.BrigadaEspeciais = {
           fill: transparent;
           stroke: transparent;
           cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           outline: none;
         }
 
         /* Hover no Corte */
         .bovine-cut-region:hover {
-          fill: rgba(245, 197, 66, 0.38) !important;
+          fill: rgba(255, 255, 255, 0.25) !important;
           stroke: #ffffff !important;
-          stroke-width: 3.5 !important;
+          stroke-width: 3 !important;
           stroke-linejoin: round !important;
           stroke-linecap: round !important;
-          filter: drop-shadow(0 0 14px rgba(245, 197, 66, 0.85));
+          filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
         }
 
-        /* Corte Selecionado em Destaque Brilhante */
+        /* Corte Selecionado em Destaque Brilhante com Contorno Perfeito */
         .bovine-cut-region.selected {
-          fill: rgba(0, 230, 118, 0.6) !important;
-          stroke: #00e676 !important;
-          stroke-width: 4.5 !important;
+          fill: rgba(16, 185, 129, 0.45) !important;
+          stroke: #10b981 !important;
+          stroke-width: 3.8 !important;
           stroke-linejoin: round !important;
           stroke-linecap: round !important;
-          filter: drop-shadow(0 0 22px rgba(0, 230, 118, 1)) !important;
+          filter: drop-shadow(0 0 18px rgba(16, 185, 129, 0.95)) !important;
+          animation: pulseSelected 2.2s infinite ease-in-out;
         }
         .bovine-cut-region.tier-nobre.selected {
-          fill: rgba(245, 158, 11, 0.62) !important;
+          fill: rgba(245, 158, 11, 0.5) !important;
           stroke: #fbbf24 !important;
-          stroke-width: 4.5 !important;
-          filter: drop-shadow(0 0 22px rgba(245, 158, 11, 1)) !important;
+          stroke-width: 3.8 !important;
+          filter: drop-shadow(0 0 20px rgba(245, 158, 11, 1)) !important;
+        }
+        .bovine-cut-region.tier-segunda.selected {
+          fill: rgba(56, 189, 248, 0.45) !important;
+          stroke: #38bdf8 !important;
+          stroke-width: 3.8 !important;
+          filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.95)) !important;
+        }
+
+        @keyframes pulseSelected {
+          0%, 100% {
+            stroke-opacity: 1;
+            stroke-width: 3.6;
+          }
+          50% {
+            stroke-opacity: 0.75;
+            stroke-width: 4.8;
+          }
         }
 
         /* Tooltip Flutuante */
@@ -1905,17 +1963,19 @@ window.BrigadaEspeciais = {
             
             <div id="bovine-tooltip" class="bovine-tooltip"></div>
 
-            <svg class="bovine-svg" id="bovineSvg" viewBox="80 95 670 435" preserveAspectRatio="xMidYMid meet">
+            <svg class="bovine-svg" id="bovineSvg" viewBox="0 0 843 543" preserveAspectRatio="xMidYMid meet">
               
               <!-- IMAGEM ILUSTRADA DE ALTA RESOLUÇÃO COMO BASE DO MAPA -->
-              <image href="/static/cortes_bovinos.png" x="0" y="0" width="843" height="543" preserveAspectRatio="none" style="pointer-events: none; filter: contrast(1.05) brightness(1.02);" />
-
-              <!-- CAMADA DE TRANSLUCIDEZ/DIMMING QUANDO UM CORTE ESTÁ SELECIONADO -->
-              <rect id="svg-dim-backdrop" x="0" y="0" width="843" height="543" fill="rgba(6, 11, 24, 0.65)" style="opacity: 0; pointer-events: none; transition: opacity 0.3s ease;" />
+              <image href="/static/cortes_bovinos.png" x="0" y="0" width="843" height="543" preserveAspectRatio="none" style="pointer-events: none; filter: contrast(1.12) brightness(1.1) saturate(1.15);" />
 
               <!-- TODAS AS 21 REGIÕES ANATÔMICAS VETORIAIS CLICÁVEIS -->
               <g id="bovine-cuts-group">
                 ${regionsSVG}
+              </g>
+
+              <!-- RÓTULOS E NOMES DOS CORTES EM ALTA DEFINIÇÃO VETORIAL -->
+              <g id="bovine-labels-group">
+                ${labelsSVG}
               </g>
 
             </svg>
@@ -2178,17 +2238,20 @@ window.BrigadaEspeciais = {
   selectCut(cutId, openModal = false) {
     const allRegions = document.querySelectorAll('.bovine-cut-region');
     const allButtons = document.querySelectorAll('.btn-cut-item');
-    const dimBackdrop = document.getElementById('svg-dim-backdrop');
     const statusIndicator = document.getElementById('map-status-indicator');
 
     // Modo "Todos os Cortes" / Reset
     if (!cutId || cutId === 'all') {
       this.activeCut = null;
-      if (dimBackdrop) dimBackdrop.style.opacity = '0';
       allRegions.forEach(r => {
         r.classList.remove('selected');
       });
       allButtons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.bovine-map-label').forEach(l => {
+        l.classList.remove('selected');
+        l.setAttribute('fill', '#f8fafc');
+        l.style.fontSize = '12px';
+      });
 
       if (statusIndicator) {
         statusIndicator.textContent = 'Modo: Todos os Cortes Ativos';
@@ -2204,15 +2267,27 @@ window.BrigadaEspeciais = {
 
     this.activeCut = cutId;
 
-    // 1. Ativa backdrop escuro e destaca o corte selecionado sobre a ilustração
-    if (dimBackdrop) dimBackdrop.style.opacity = '1';
-
+    // Destaca o corte selecionado sobre a ilustração anatômica
     allRegions.forEach(r => {
       const id = r.getAttribute('data-cut-id');
       if (id === cutId) {
         r.classList.add('selected');
       } else {
         r.classList.remove('selected');
+      }
+    });
+
+    const allLabels = document.querySelectorAll('.bovine-map-label');
+    allLabels.forEach(l => {
+      const id = l.getAttribute('data-cut-id');
+      if (id === cutId) {
+        l.classList.add('selected');
+        l.setAttribute('fill', cut.accentColor || '#fbbf24');
+        l.style.fontSize = '13.5px';
+      } else {
+        l.classList.remove('selected');
+        l.setAttribute('fill', '#f8fafc');
+        l.style.fontSize = '12px';
       }
     });
 
@@ -2613,6 +2688,16 @@ window.BrigadaEspeciais = {
 
       region.addEventListener('mouseleave', () => {
         if (tooltip) tooltip.style.display = 'none';
+      });
+    });
+
+    // 1.1 Eventos nos Rótulos de Texto SVG
+    const mapLabels = container.querySelectorAll('.bovine-map-label');
+    mapLabels.forEach(label => {
+      const cutId = label.getAttribute('data-cut-id');
+      label.addEventListener('click', (e) => {
+        e.stopPropagation();
+        self.selectCut(cutId, false);
       });
     });
 
