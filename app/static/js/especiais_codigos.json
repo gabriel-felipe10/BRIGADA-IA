@@ -1,0 +1,1073 @@
+[
+  {
+    "codigo": "1068",
+    "descricao": "FRANGO INTEIRO RESF NATTO",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "10013",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1190",
+    "descricao": "FRANGO INTEIRO RESF MAURICEA",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "11914",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1439",
+    "descricao": "BANANINHA CONGELADA FRIBOI",
+    "categoria": "BOVINO CONGELADO",
+    "codigo_base": null,
+    "corte_bovino": "costela"
+  },
+  {
+    "codigo": "1800",
+    "descricao": "ASA / COXA COM SOBRE FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20043",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1801",
+    "descricao": "CORAÇÃO DE FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20048",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1829",
+    "descricao": "BIFE DE CUPIM FRIBOI",
+    "categoria": "BOVINO CONGELADO",
+    "codigo_base": null,
+    "corte_bovino": "cupim"
+  },
+  {
+    "codigo": "1830",
+    "descricao": "ARANHA CONGELADA FRIBOI",
+    "categoria": "BOVINO CONGELADO",
+    "codigo_base": null,
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "1833",
+    "descricao": "COSTELA TIRAS FRIBOI",
+    "categoria": "BOVINO CONGELADO",
+    "codigo_base": null,
+    "corte_bovino": "costela"
+  },
+  {
+    "codigo": "1835",
+    "descricao": "PEITO BOV FRIBOI RESF PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "1837",
+    "descricao": "COXÃO MOLE FRIBOI RESF PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "1851",
+    "descricao": "FRALDINHA FRIBOI RESF PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "1852",
+    "descricao": "CAPA DE FILÉ FRIBOI RESF PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "capa-de-filé"
+  },
+  {
+    "codigo": "1869",
+    "descricao": "OSSO PATINHO CONG PEÇA FRIBOI",
+    "categoria": "BOVINO CONGELADO",
+    "codigo_base": null,
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "1873",
+    "descricao": "BUCHO CONGELADO FRIBOI",
+    "categoria": "VÍSCERAS BOVINAS",
+    "codigo_base": null,
+    "corte_bovino": "vísceras"
+  },
+  {
+    "codigo": "1903",
+    "descricao": "PICADINHO BOVINO KG",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "19836",
+    "corte_bovino": "acém"
+  },
+  {
+    "codigo": "1942",
+    "descricao": "FILÉ DE PEITO RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20046",
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "1943",
+    "descricao": "COXA DE FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20047",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1944",
+    "descricao": "MOELA FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20048",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1945",
+    "descricao": "COXINHA DA ASA FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20049",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1946",
+    "descricao": "PEITO FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20050",
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "1947",
+    "descricao": "FÍGADO DE FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20051",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1948",
+    "descricao": "SOBRECOXA FG RESF MAURICEA KG",
+    "categoria": "AVES RESFRIADAS",
+    "codigo_base": "20052",
+    "corte_bovino": "aves"
+  },
+  {
+    "codigo": "1985",
+    "descricao": "PALETA FRIBOI RESF PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2012",
+    "descricao": "CARNE DE SOL PEDAÇO / COXÃO MOLE PED",
+    "categoria": "CARNE DE SOL",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2013",
+    "descricao": "CARNE DE SOL PALETA PEDAÇO",
+    "categoria": "CARNE DE SOL",
+    "codigo_base": null,
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2015",
+    "descricao": "COSTELA DO CHEFF / COSTELA MINGA PEDAÇO",
+    "categoria": "BOVINO CONGELADO",
+    "codigo_base": null,
+    "corte_bovino": "costela"
+  },
+  {
+    "codigo": "2058",
+    "descricao": "PEITO BOV RESF C/ OSSO",
+    "categoria": "DIANTEIRO RESFRIADO",
+    "codigo_base": "20438",
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "2059",
+    "descricao": "PALETA BOV RESF C/ OSSO",
+    "categoria": "DIANTEIRO RESFRIADO",
+    "codigo_base": "20439",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2060",
+    "descricao": "ACÉM BOV RESF C/ OSSO",
+    "categoria": "DIANTEIRO RESFRIADO",
+    "codigo_base": "20441",
+    "corte_bovino": "acém"
+  },
+  {
+    "codigo": "2062",
+    "descricao": "CHAMBARIL DIANTEIRO BOV KG",
+    "categoria": "DIANTEIRO RESFRIADO",
+    "codigo_base": "20443",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2136",
+    "descricao": "MOCOTÓ BOV CG KG",
+    "categoria": "VÍSCERAS BOVINAS",
+    "codigo_base": "24702",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2217",
+    "descricao": "FILÉ MIGNON BOV RESF MASTERBOI KG",
+    "categoria": "LINHA NACIONAL / BASE",
+    "codigo_base": "20770",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2218",
+    "descricao": "MAMINHA BOV RESF MASTERBOI",
+    "categoria": "LINHA NACIONAL / BASE",
+    "codigo_base": "20771",
+    "corte_bovino": "maminha"
+  },
+  {
+    "codigo": "2219",
+    "descricao": "MÚSCULO BOV RESF MASTERBOI KG",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20772",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2220",
+    "descricao": "PICANHA BOV RESF MASTERBOI",
+    "categoria": "LINHA NACIONAL / BASE",
+    "codigo_base": "20773",
+    "corte_bovino": "picanha"
+  },
+  {
+    "codigo": "2221",
+    "descricao": "LAGARTO BOV RESF MASTERBOI KG",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20774",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2222",
+    "descricao": "MIOLO ALCATRA / CORAÇÃO DA ALCATRA PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20776",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2223",
+    "descricao": "FRALDINHA BOV RESF MASTERBOI",
+    "categoria": "LINHA NACIONAL / BASE",
+    "codigo_base": "20777",
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "2224",
+    "descricao": "CONTRA FILÉ BOV RESF PEÇA MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20778",
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2225",
+    "descricao": "CAPA DE FILÉ BOV RESF MASTERBOI",
+    "categoria": "LINHA NACIONAL / BASE",
+    "codigo_base": "20797",
+    "corte_bovino": "capa-de-filé"
+  },
+  {
+    "codigo": "2226",
+    "descricao": "COXÃO MOLE PEÇA RESFRIADO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20775",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2227",
+    "descricao": "PATINHO BOV RESF PEÇA MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20796",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2228",
+    "descricao": "COSTELA BOVINA RESF / CHÃ DE FORA PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "23520",
+    "corte_bovino": "costela"
+  },
+  {
+    "codigo": "2238",
+    "descricao": "MOCOTÓ BOV INT CG KG",
+    "categoria": "VÍSCERAS BOVINAS",
+    "codigo_base": "20808",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2239",
+    "descricao": "BUCHO BOV INT CG KG",
+    "categoria": "VÍSCERAS BOVINAS",
+    "codigo_base": "20809",
+    "corte_bovino": "vísceras"
+  },
+  {
+    "codigo": "2240",
+    "descricao": "RABADA BOV INT CG KG",
+    "categoria": "VÍSCERAS BOVINAS",
+    "codigo_base": "20810",
+    "corte_bovino": "rabo"
+  },
+  {
+    "codigo": "2257",
+    "descricao": "CARRÉ SUÍNO CONGELADO PEÇA",
+    "categoria": "SUÍNO CONGELADO",
+    "codigo_base": "20916",
+    "corte_bovino": "suíno"
+  },
+  {
+    "codigo": "2258",
+    "descricao": "CARRÉ SUÍNO SEARA PEDAÇO KG",
+    "categoria": "SUÍNO CONGELADO",
+    "codigo_base": "20917",
+    "corte_bovino": "suíno"
+  },
+  {
+    "codigo": "2259",
+    "descricao": "BISTECA SUÍNA CG FATIADA KG",
+    "categoria": "SUÍNO CONGELADO",
+    "codigo_base": "20918",
+    "corte_bovino": "suíno"
+  },
+  {
+    "codigo": "2273",
+    "descricao": "COXÃO MOLE BOV RESF PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20983",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2274",
+    "descricao": "COXÃO MOLE BOV RESF FATIADO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "20984",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2277",
+    "descricao": "FÍGADO BOVINO PEÇA CG / LAGARTO FATIADO",
+    "categoria": "BOVINO / VÍSCERAS",
+    "codigo_base": "20807",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2278",
+    "descricao": "LAGARTO BOV RESF PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21012",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2526",
+    "descricao": "FILÉ MIGNON PORCIONADO MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21913",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2527",
+    "descricao": "FILÉ MIGNON MASTERBOI PEDAÇO",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21914",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2528",
+    "descricao": "BIFE FILÉ MIGNON MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21915",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2529",
+    "descricao": "BIFE FILÉ PARMEGIANA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21916",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2530",
+    "descricao": "STROGONOFF MIGNON MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21917",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2531",
+    "descricao": "MEDALHÃO MIGNON MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21918",
+    "corte_bovino": "filé-mignon"
+  },
+  {
+    "codigo": "2532",
+    "descricao": "PICANHA MASTERBOI PEDAÇO",
+    "categoria": "LINHA GRILL / CHURRASCO",
+    "codigo_base": "21919",
+    "corte_bovino": "picanha"
+  },
+  {
+    "codigo": "2533",
+    "descricao": "BIFE DE PICANHA MASTERBOI",
+    "categoria": "LINHA GRILL / CHURRASCO",
+    "codigo_base": "21920",
+    "corte_bovino": "picanha"
+  },
+  {
+    "codigo": "2535",
+    "descricao": "PICANHA NOBRE MASTERBOI",
+    "categoria": "LINHA GRILL / CHURRASCO",
+    "codigo_base": null,
+    "corte_bovino": "picanha"
+  },
+  {
+    "codigo": "2536",
+    "descricao": "MAMINHA MASTERBOI PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21935",
+    "corte_bovino": "maminha"
+  },
+  {
+    "codigo": "2537",
+    "descricao": "BIFE DE MAMINHA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21936",
+    "corte_bovino": "maminha"
+  },
+  {
+    "codigo": "2538",
+    "descricao": "MAMINHA SANFONADA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21937",
+    "corte_bovino": "maminha"
+  },
+  {
+    "codigo": "2539",
+    "descricao": "MAMINHA GRILL MASTERBOI KG",
+    "categoria": "LINHA GRILL",
+    "codigo_base": "21938",
+    "corte_bovino": "maminha"
+  },
+  {
+    "codigo": "2540",
+    "descricao": "MAMINHA NOBRE MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21939",
+    "corte_bovino": "maminha"
+  },
+  {
+    "codigo": "2542",
+    "descricao": "CORAÇÃO DA ALCATRA PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21941",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2543",
+    "descricao": "STEAK DO AÇOUGUEIRO MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21942",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2544",
+    "descricao": "BIFE DE ALCATRA MASTERBOI",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "21943",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2545",
+    "descricao": "ALCATRA MASTERBOI ESPECIAL",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21944",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2546",
+    "descricao": "ALCATRA GRILL MASTERBOI KG",
+    "categoria": "LINHA GRILL",
+    "codigo_base": "21945",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2547",
+    "descricao": "ALCATRA BABY BEEF MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21946",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2548",
+    "descricao": "BOMBOM DA ALCATRA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21947",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2549",
+    "descricao": "BABY BEEF MASTERBOI FRACIONADO",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21948",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2550",
+    "descricao": "BOMBOM ALCATRA PORCIONADO MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21949",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2551",
+    "descricao": "MEDALHÃO ALCATRA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21950",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2552",
+    "descricao": "STROGONOFF ALCATRA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21951",
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2553",
+    "descricao": "CONTRA FILÉ PORCIONADO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21952",
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2554",
+    "descricao": "CONTRA FILÉ MASTERBOI PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21953",
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2555",
+    "descricao": "BIFE DE CONTRA FILÉ MASTERBOI",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "21954",
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2557",
+    "descricao": "BIFE DE CHORIZO MASTERBOI",
+    "categoria": "LINHA GRILL",
+    "codigo_base": null,
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2558",
+    "descricao": "MIOLO DO CONTRA FILÉ MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21957",
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2559",
+    "descricao": "BIFE LIGHT CONTRA FILÉ MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21958",
+    "corte_bovino": "contrafilé"
+  },
+  {
+    "codigo": "2560",
+    "descricao": "COXÃO MOLE MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2561",
+    "descricao": "BIFE DE COXÃO MOLE MASTERBOI",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "21960",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2562",
+    "descricao": "BIFE COXÃO MOLE LIGHT MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21961",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2563",
+    "descricao": "BIFE PARIS COXÃO MOLE MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21962",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2564",
+    "descricao": "STROGONOFF COXÃO MOLE MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21963",
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2565",
+    "descricao": "BROCHETE COXÃO MOLE MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2566",
+    "descricao": "ASSADO CAMPESTRE MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": null,
+    "corte_bovino": "costela"
+  },
+  {
+    "codigo": "2567",
+    "descricao": "CORTE ORIENTAL MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2568",
+    "descricao": "CORTE ESPIRAL MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2569",
+    "descricao": "FLATBEEF MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21968",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2570",
+    "descricao": "STEAK DO MIOLO MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": null,
+    "corte_bovino": "alcatra"
+  },
+  {
+    "codigo": "2571",
+    "descricao": "COXÃO MOLE PORCIONADO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2572",
+    "descricao": "COXÃO MOLE MOÍDO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "coxão-mole"
+  },
+  {
+    "codigo": "2573",
+    "descricao": "PATINHO PEDAÇO MASTERBOI",
+    "categoria": "PEDAÇOS",
+    "codigo_base": "21972",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2574",
+    "descricao": "PATINHO MOÍDO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21973",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2575",
+    "descricao": "BIFE DE PATINHO MASTERBOI",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "21974",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2576",
+    "descricao": "DUCKBEEF MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21975",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2577",
+    "descricao": "FLANBEEF PATINHO MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21976",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2578",
+    "descricao": "ESCALOPE MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21977",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2579",
+    "descricao": "STROGONOFF DE PATINHO MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21978",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2580",
+    "descricao": "PATINHO MASTERBOI PORCIONADO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21979",
+    "corte_bovino": "patinho"
+  },
+  {
+    "codigo": "2581",
+    "descricao": "COXÃO DURO PEDAÇO / CHÃ DE FORA PED",
+    "categoria": "PEDAÇOS",
+    "codigo_base": "21980",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2582",
+    "descricao": "BIFE COXÃO DURO / BIFE CHÃ DE FORA",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "21981",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2583",
+    "descricao": "BIFE PARA ROLÊ COXÃO DURO",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21982",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2584",
+    "descricao": "REDBEEF MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21983",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2585",
+    "descricao": "STRETTO MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21984",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2586",
+    "descricao": "BIFE DE PANELA PAULISTA",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21985",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2587",
+    "descricao": "CUBOS COXÃO DURO MASTERBOI",
+    "categoria": "CUBOS",
+    "codigo_base": "21986",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2588",
+    "descricao": "COXÃO DURO MOÍDO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21987",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2589",
+    "descricao": "COXÃO DURO PORCIONADO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21988",
+    "corte_bovino": "coxão-duro"
+  },
+  {
+    "codigo": "2590",
+    "descricao": "LAGARTO MASTERBOI PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21989",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2591",
+    "descricao": "BIFE DE LAGARTO MASTERBOI",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "21990",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2592",
+    "descricao": "BIFE LAGARTO PALHA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "21991",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2593",
+    "descricao": "ESCABECHE MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21992",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2594",
+    "descricao": "PICADINHO MAGRO MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "21993",
+    "corte_bovino": "acém"
+  },
+  {
+    "codigo": "2595",
+    "descricao": "LAGARTO PARA RECHEAR MASTERBOI",
+    "categoria": "LAGARTO ESPECIAL",
+    "codigo_base": "21994",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2596",
+    "descricao": "LAGARTO SANFONADO MASTERBOI",
+    "categoria": "LAGARTO ESPECIAL",
+    "codigo_base": "21995",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2597",
+    "descricao": "LAGARTO ESPECIAL MASTERBOI",
+    "categoria": "LAGARTO ESPECIAL",
+    "codigo_base": "21996",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2598",
+    "descricao": "LAGARTO PORCIONADO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21997",
+    "corte_bovino": "lagarto"
+  },
+  {
+    "codigo": "2599",
+    "descricao": "FRALDINHA PEDAÇO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "21998",
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "2600",
+    "descricao": "FRALDINHA GRILL MASTERBOI",
+    "categoria": "LINHA GRILL",
+    "codigo_base": "21999",
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "2601",
+    "descricao": "FRALDINHA NOBRE MASTERBOI",
+    "categoria": "LINHA GRILL",
+    "codigo_base": "22000",
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "2602",
+    "descricao": "STEAK VIRGÍNIA MASTERBOI",
+    "categoria": "TRASEIRO ESPECIAL",
+    "codigo_base": "22001",
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "2603",
+    "descricao": "FRALDA PORCIONADA MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "22002",
+    "corte_bovino": "fraldinha"
+  },
+  {
+    "codigo": "2604",
+    "descricao": "MÚSCULO PEDAÇO MASTERBOI",
+    "categoria": "MÚSCULO ESPECIAL",
+    "codigo_base": "22003",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2605",
+    "descricao": "MÚSCULO MOLE ESPECIAL MASTERBOI",
+    "categoria": "MÚSCULO ESPECIAL",
+    "codigo_base": "22004",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2606",
+    "descricao": "MÚSCULO MOLE FATIADO MASTERBOI",
+    "categoria": "MÚSCULO ESPECIAL",
+    "codigo_base": "22005",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2607",
+    "descricao": "MÚSCULO TORTUGUITA MASTERBOI",
+    "categoria": "MÚSCULO ESPECIAL",
+    "codigo_base": "22006",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2608",
+    "descricao": "MÚSCULO PICADINHO MASTERBOI",
+    "categoria": "MÚSCULO ESPECIAL",
+    "codigo_base": "22007",
+    "corte_bovino": "acém"
+  },
+  {
+    "codigo": "2609",
+    "descricao": "MÚSCULO MOÍDO MASTERBOI",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "22008",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2610",
+    "descricao": "STEAK TORTUGUITA MASTERBOI",
+    "categoria": "CORTES ESPECIAIS",
+    "codigo_base": "22009",
+    "corte_bovino": "chambaril"
+  },
+  {
+    "codigo": "2613",
+    "descricao": "BIFE CAÇAROLA MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22012",
+    "corte_bovino": "acém"
+  },
+  {
+    "codigo": "2614",
+    "descricao": "CUBOS DE ACÉM MASTERBOI",
+    "categoria": "CUBOS",
+    "codigo_base": null,
+    "corte_bovino": "acém"
+  },
+  {
+    "codigo": "2618",
+    "descricao": "PALETA MASTERBOI PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "22017",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2619",
+    "descricao": "ASSADO INGLÊS MASTERBOI",
+    "categoria": "DIANTEIRO RESFRIADO",
+    "codigo_base": "22018",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2620",
+    "descricao": "BIFE PARA MILANESA MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22019",
+    "corte_bovino": "outros"
+  },
+  {
+    "codigo": "2621",
+    "descricao": "PEIXINHO TRADICIONAL MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22020",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2622",
+    "descricao": "PEIXINHO ESPECIAL MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22021",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2623",
+    "descricao": "PEIXINHO SANFONADO MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22022",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2624",
+    "descricao": "PALETA ESPECIAL MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22023",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2625",
+    "descricao": "CUBOS DE PALETA BOVINA",
+    "categoria": "CUBOS",
+    "codigo_base": null,
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2626",
+    "descricao": "BIFE BORBOLETA MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22025",
+    "corte_bovino": "paleta"
+  },
+  {
+    "codigo": "2628",
+    "descricao": "PEITO BOVINO MASTERBOI",
+    "categoria": "DIANTEIRO RESFRIADO",
+    "codigo_base": null,
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "2629",
+    "descricao": "BIFE À MINEIRA MASTERBOI",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22028",
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "2631",
+    "descricao": "CUBOS PARA SOPA MASTERBOI",
+    "categoria": "CUBOS",
+    "codigo_base": null,
+    "corte_bovino": "peito"
+  },
+  {
+    "codigo": "2632",
+    "descricao": "CUPIM MASTERBOI PEÇA",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "22031",
+    "corte_bovino": "cupim"
+  },
+  {
+    "codigo": "2633",
+    "descricao": "CUPIM MASTERBOI PEDAÇO",
+    "categoria": "BOVINO RESFRIADO",
+    "codigo_base": "22032",
+    "corte_bovino": "cupim"
+  },
+  {
+    "codigo": "2634",
+    "descricao": "BIFE DE CUPIM MASTERBOI",
+    "categoria": "TRASEIRO TRADICIONAL",
+    "codigo_base": "22033",
+    "corte_bovino": "cupim"
+  },
+  {
+    "codigo": "2635",
+    "descricao": "BIFE MASTERBOI ESPECIAL",
+    "categoria": "DIANTEIRO ESPECIAL",
+    "codigo_base": "22034",
+    "corte_bovino": "outros"
+  }
+]

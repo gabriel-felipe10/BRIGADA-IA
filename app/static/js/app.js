@@ -1296,6 +1296,10 @@ window.BrigadaRouter = {
               <span class="sidebar__link-icon">🥩</span>
               <span>Açougue</span>
             </a>
+            <a class="sidebar__link ${activePage === 'especiais' ? 'sidebar__link--active' : ''}" data-page="especiais" href="#">
+              <span class="sidebar__link-icon">⭐</span>
+              <span>Especiais</span>
+            </a>
             ` : ''}
             ${!window.BrigadaAuth.isPromotor() && window.BrigadaAuth.hasSectorAccess('pereciveis') ? `
             <a class="sidebar__link ${activePage === 'pereciveis' ? 'sidebar__link--active' : ''}" data-page="pereciveis" href="#">
@@ -1516,13 +1520,14 @@ window.BrigadaRouter = {
 
       // Toggle Sidebar events
       document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-        const appSidebar = document.getElementById('app-sidebar');
+        const appSidebar = document.getElementById('app-sidebar') || document.getElementById('sidebar');
+        if (!appSidebar) return;
+        const collapsed = appSidebar.classList.toggle('sidebar-collapsed');
         const icon = document.getElementById('sidebar-toggle-icon');
-        appSidebar.classList.toggle('sidebar-collapsed');
-        const collapsed = appSidebar.classList.contains('sidebar-collapsed');
-        icon.textContent = collapsed ? '☰' : '☰';
+        if (icon) icon.textContent = '☰';
         localStorage.setItem('sidebar-collapsed', collapsed);
-        document.getElementById('sidebar-toggle').title = collapsed ? 'Expandir menu' : 'Recolher menu';
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        if (toggleBtn) toggleBtn.title = collapsed ? 'Expandir menu' : 'Recolher menu';
       });
 
       // Mobile Menu
@@ -1802,6 +1807,16 @@ window.BrigadaRouter = {
         return;
       }
       window.BrigadaPereciveis.render(container);
+    } else if (page === 'especiais') {
+      if (!window.BrigadaAuth.hasSectorAccess('açougue')) {
+        this.navigate('dashboard');
+        return;
+      }
+      if (window.BrigadaEspeciais) {
+        window.BrigadaEspeciais.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar página de Especiais</div>`;
+      }
     } else if (page === 'users') {
       if (!window.BrigadaAuth.requireSuperAdmin()) return;
       window.BrigadaUsers.render(container);
