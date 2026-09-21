@@ -10,7 +10,7 @@ window.BrigadaEspeciais = {
   searchQuery: '',
   activeCatFilter: 'TODOS',
 
-  // Catálogo Oficial dos 153 Códigos Especiais
+  // Catálogo Oficial dos 137 Códigos Bovinos
   codigosEspeciais: [
   {
     "codigo": "1068",
@@ -1482,35 +1482,37 @@ window.BrigadaEspeciais = {
     "usage": "Rabada com agrião e polenta",
     "desc": "Vértebras caudais circundadas por carne macia e gordura entremeada. O ingrediente principal da tradicional rabada com agrião.",
     "labelPos": {
-      "x": 710,
-      "y": 230
+      "x": 716,
+      "y": 280
     }
   }
 },
 
   // Polígonos Anatômicos Vetoriais Alinhados Pixel a Pixel com a Ilustração
+    // Polígonos Anatômicos Vetoriais Alinhados com a Ilustração do Cartaz de Cortes Bovinos (Imagem 1)
+    // Polígonos Anatômicos Vetoriais Alinhados ao Mapa Ilustrado (1000x680)
   cutsPolygons: {
-    "picanha": "575,150 615,144 650,145 685,165 675,205 625,205 575,182",
-    "contrafilé": "480,162 530,156 575,150 575,182 530,186 480,190",
-    "filé-mignon": "480,190 575,182 575,215 480,212",
-    "capa-de-filé": "370,153 430,158 430,192 370,185",
-    "filé-de-costela": "430,158 480,162 480,212 430,212 430,192",
-    "cupim": "246,150 270,142 295,136 320,137 348,144 370,153 340,175 300,183 270,175",
-    "acém": "270,175 300,183 340,175 370,153 370,185 355,240 330,235 280,230 240,260 248,205",
-    "pescoço": "190,225 220,185 246,150 270,175 248,205 240,260 170,275",
-    "peito": "170,275 240,260 240,320 245,375 220,395 180,385 160,330",
-    "paleta": "240,260 280,230 330,235 355,240 350,280 355,370 300,375 245,375 240,320",
-    "costela": "370,185 430,192 430,212 480,212 480,375 420,378 355,370 350,280 355,240",
-    "fraldinha": "480,212 550,230 540,290 535,340 533,365 480,375",
-    "maminha": "550,230 575,215 575,240 600,300 614,350 570,380 535,340 540,290",
-    "alcatra": "575,182 625,205 675,205 680,250 640,250 575,240 575,215",
-    "coxão-mole": "675,205 700,205 705,245 708,285 680,285 680,250",
-    "lagarto": "685,165 710,205 714,250 710,285 705,320 685,320 708,285 705,245 700,205",
-    "coxão-duro": "680,285 708,285 685,320 705,320 686,359 645,350 660,310",
-    "patinho": "575,240 640,250 680,250 680,285 660,310 645,350 614,350 600,300",
-    "chambaril": "220,395 245,375 355,370 330,440 320,525 270,525 275,440",
-    "chambaril-t": "614,350 645,350 686,359 680,440 675,525 620,525 625,440",
-    "rabo": "685,165 700,185 715,230 725,300 735,385 725,385 715,300 705,230"
+    "pescoço": "138,305 148,255 172,232 208,232 240,230 268,220 305,202 310,310 272,320 240,345 202,340 162,332",
+    "cupim": "305,202 325,160 370,142 412,168 432,200 408,228 378,236 344,234",
+    "acém": "310,310 305,202 344,234 408,228 432,200 436,244 422,310 382,315 346,314",
+    "capa-de-filé": "432,200 480,200 486,240 436,244",
+    "filé-de-costela": "436,244 486,240 512,240 502,298 422,310",
+    "contrafilé": "480,200 566,196 644,190 644,234 566,236 486,240",
+    "filé-mignon": "486,240 566,236 644,234 644,278 566,278 512,240",
+    "picanha": "644,190 714,190 758,228 738,254 684,254 644,234",
+    "rabo": "758,228 772,240 778,272 775,332 768,382 758,422 748,432 734,422 744,372 752,312 742,252",
+    "alcatra": "644,234 684,254 738,254 728,308 668,308 644,278",
+    "coxão-mole": "684,254 738,254 762,292 758,352 714,352 728,308",
+    "lagarto": "758,228 772,242 778,282 778,332 772,372 752,372 758,352 762,292 738,254",
+    "coxão-duro": "714,352 752,352 772,372 768,432 724,432 714,392",
+    "patinho": "644,278 668,308 728,308 714,352 714,392 674,432 635,382 630,314",
+    "chambaril-t": "674,432 724,432 768,432 752,512 738,572 728,632 678,632 668,572 652,512 634,482",
+    "peito": "178,335 212,344 240,345 268,322 286,374 282,414 252,434 216,422 182,412",
+    "paleta": "268,322 310,310 366,314 376,374 366,434 286,434 286,374",
+    "chambaril": "268,434 366,434 356,512 348,572 338,632 286,632 278,572 272,512",
+    "costela": "366,314 422,310 502,298 517,362 478,434 366,434 376,374",
+    "fraldinha": "502,298 566,278 566,352 530,422 478,434 517,362",
+    "maminha": "566,278 644,278 630,314 635,382 596,432 530,422 566,352"
   },
 
   init(container) {
@@ -1544,45 +1546,185 @@ window.BrigadaEspeciais = {
       `;
     }
 
-    const labelsList = [
-      { key: "pescoço", text: "Pescoço", x: 265, y: 92, anchor: "middle" },
-      { key: "cupim", text: "Cupim", x: 350, y: 80, anchor: "middle" },
-      { key: "acém", text: "Acém", x: 412, y: 95, anchor: "middle" },
-      { key: "capa-de-filé", text: "Capa de filé", x: 472, y: 72, anchor: "middle" },
-      { key: "filé-de-costela", text: "Filé de costela", x: 525, y: 104, anchor: "middle" },
-      { key: "contrafilé", text: "Contrafilé", x: 590, y: 68, anchor: "middle" },
-      { key: "filé-mignon", text: "Filé-Mignon", x: 678, y: 94, anchor: "middle" },
-      { key: "picanha", text: "Picanha", x: 798, y: 92, anchor: "middle" },
-      { key: "rabo", text: "Rabo", x: 735, y: 180, anchor: "start" },
-      { key: "alcatra", text: "Alcatra", x: 735, y: 218, anchor: "start" },
-      { key: "coxão-mole", text: "Coxão mole", x: 742, y: 253, anchor: "start" },
-      { key: "lagarto", text: "Lagarto", x: 742, y: 288, anchor: "start" },
-      { key: "coxão-duro", text: "Coxão duro", x: 742, y: 323, anchor: "start" },
-      { key: "patinho", text: "Patinho", x: 742, y: 358, anchor: "start" },
-      { key: "chambaril-t", text: "Chambaril", x: 742, y: 460, anchor: "start" },
-      { key: "peito", text: "Peito", x: 172, y: 278, anchor: "end" },
-      { key: "paleta", text: "Paleta", x: 178, y: 348, anchor: "end" },
-      { key: "chambaril", text: "Chambaril (x2)", x: 268, y: 388, anchor: "end" },
-      { key: "costela", text: "Costela", x: 450, y: 432, anchor: "middle" },
-      { key: "fraldinha", text: "Fraldinha", x: 526, y: 452, anchor: "middle" },
-      { key: "maminha", text: "Maminha", x: 604, y: 474, anchor: "middle" }
+    // Labels internos — nomes dentro de cada corte (sempre visíveis, pequenos)
+    const innerLabelsData = [
+      { key: "pescoço",        text: ["Pescoço"],                  cx: 210, cy: 245 },
+      { key: "cupim",          text: ["Cupim"],                    cx: 375, cy: 135 },
+      { key: "acém",           text: ["Acém"],                     cx: 345, cy: 262 },
+      { key: "capa-de-filé",   text: ["Capa", "de filé"],         cx: 462, cy: 212 },
+      { key: "filé-de-costela",text: ["Filé de", "costela"],      cx: 470, cy: 268 },
+      { key: "contrafilé",     text: ["Contrafilé"],               cx: 567, cy: 215 },
+      { key: "filé-mignon",    text: ["Filé-Mignon"],             cx: 577, cy: 258 },
+      { key: "picanha",        text: ["Picanha"],                  cx: 697, cy: 222 },
+      { key: "rabo",           text: ["Rabo"],                     cx: 760, cy: 330 },
+      { key: "alcatra",        text: ["Alcatra"],                  cx: 692, cy: 273 },
+      { key: "coxão-mole",     text: ["Coxão", "mole"],           cx: 728, cy: 299 },
+      { key: "lagarto",        text: ["Lagarto"],                  cx: 770, cy: 295 },
+      { key: "coxão-duro",     text: ["Coxão", "duro"],           cx: 740, cy: 392 },
+      { key: "patinho",        text: ["Patinho"],                  cx: 673, cy: 368 },
+      { key: "chambaril-t",    text: ["Chambaril"],                cx: 713, cy: 530 },
+      { key: "peito",          text: ["Peito"],                    cx: 234, cy: 388 },
+      { key: "paleta",         text: ["Paleta"],                   cx: 330, cy: 358 },
+      { key: "chambaril",      text: ["Chambaril"],                cx: 317, cy: 528 },
+      { key: "costela",        text: ["Costela"],                  cx: 436, cy: 372 },
+      { key: "fraldinha",      text: ["Fraldinha"],                cx: 543, cy: 385 },
+      { key: "maminha",        text: ["Maminha"],                  cx: 607, cy: 393 },
     ];
 
-    const labelsSVG = labelsList.map(l => `
-      <text 
-        class="bovine-map-label" 
-        data-cut-id="${l.key}" 
-        x="${l.x}" 
-        y="${l.y}" 
-        text-anchor="${l.anchor}"
-        fill="#f8fafc" 
-        font-size="12" 
-        font-weight="800" 
-        letter-spacing="0.3px"
-        style="cursor: pointer; transition: all 0.2s ease; text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.85);">
-        ${l.text}
-      </text>
-    `).join('');
+    const innerLabelsSVG = innerLabelsData.map(l => {
+      const isNobre = l.key === 'picanha';
+      const textColor = isNobre ? '#f5c542' : '#ffffff';
+      const strokeColor = isNobre ? '#7a4f00' : 'rgba(0,0,0,0.9)';
+      // Each line of multi-line text
+      const lines = l.text.map((line, i) => {
+        const yPos = l.cy + (i * 14) - ((l.text.length - 1) * 7);
+        return `
+        <text 
+          class="bovine-inner-label"
+          data-cut-id="${l.key}"
+          x="${l.cx}" 
+          y="${yPos}" 
+          text-anchor="middle" 
+          fill="${strokeColor}"
+          font-size="11" 
+          font-weight="900"
+          stroke="${strokeColor}"
+          stroke-width="3"
+          stroke-linejoin="round"
+          style="pointer-events: none;">
+          ${line}
+        </text>
+        <text 
+          class="bovine-inner-label"
+          data-cut-id="${l.key}"
+          x="${l.cx}" 
+          y="${yPos}" 
+          text-anchor="middle" 
+          fill="${textColor}" 
+          font-size="11" 
+          font-weight="700"
+          style="pointer-events: none;">
+          ${line}
+        </text>
+      `}).join('');
+      return `<g class="bovine-inner-group" data-cut-id="${l.key}">${lines}</g>`;
+    }).join('');
+
+    const labelsList = [
+      { key: "pescoço",        text: "Pescoço",        x: 168,  y: 68,  anchor: "middle", lx1: 168,  ly1: 74,  lx2: 248,  ly2: 225, dotX: 248,  dotY: 225 },
+      { key: "cupim",          text: "Cupim",           x: 370,  y: 44,  anchor: "middle", lx1: 370,  ly1: 50,  lx2: 372,  ly2: 96,  dotX: 372,  dotY: 96  },
+      { key: "acém",           text: "Acém",            x: 340,  y: 88,  anchor: "middle", lx1: 340,  ly1: 95,  lx2: 335,  ly2: 233, dotX: 335,  dotY: 233 },
+      { key: "capa-de-filé",   text: "Capa de filé",   x: 455,  y: 62,  anchor: "middle", lx1: 455,  ly1: 69,  lx2: 450,  ly2: 185, dotX: 450,  dotY: 185 },
+      { key: "filé-de-costela", text: "Filé de costela", x: 530, y: 88,  anchor: "middle", lx1: 530,  ly1: 95,  lx2: 505,  ly2: 200, dotX: 505,  dotY: 200 },
+      { key: "contrafilé",     text: "Contrafilé",     x: 608,  y: 58,  anchor: "middle", lx1: 608,  ly1: 65,  lx2: 568,  ly2: 186, dotX: 568,  dotY: 186 },
+      { key: "filé-mignon",    text: "Filé-Mignon",    x: 665,  y: 88,  anchor: "middle", lx1: 665,  ly1: 95,  lx2: 622,  ly2: 256, dotX: 622,  dotY: 256 },
+      { key: "picanha",        text: "Picanha",         x: 788,  y: 62,  anchor: "middle", lx1: 775,  ly1: 70,  lx2: 718,  ly2: 198, dotX: 718,  dotY: 198 },
+      { key: "rabo",           text: "Rabo",            x: 938,  y: 218, anchor: "start",  lx1: 933,  ly1: 214, lx2: 872,  ly2: 262, dotX: 872,  dotY: 262 },
+      { key: "alcatra",        text: "Alcatra",         x: 938,  y: 256, anchor: "start",  lx1: 933,  ly1: 252, lx2: 800,  ly2: 292, dotX: 800,  dotY: 292 },
+      { key: "coxão-mole",     text: "Coxão mole",     x: 938,  y: 292, anchor: "start",  lx1: 933,  ly1: 288, lx2: 870,  ly2: 288, dotX: 870,  dotY: 288 },
+      { key: "lagarto",        text: "Lagarto",         x: 938,  y: 328, anchor: "start",  lx1: 933,  ly1: 324, lx2: 873,  ly2: 337, dotX: 873,  dotY: 337 },
+      { key: "coxão-duro",     text: "Coxão duro",     x: 938,  y: 362, anchor: "start",  lx1: 933,  ly1: 358, lx2: 863,  ly2: 393, dotX: 863,  dotY: 393 },
+      { key: "patinho",        text: "Patinho",         x: 938,  y: 398, anchor: "start",  lx1: 933,  ly1: 394, lx2: 755,  ly2: 412, dotX: 755,  dotY: 412 },
+      { key: "chambaril-t",    text: "Chambaril",       x: 938,  y: 448, anchor: "start",  lx1: 933,  ly1: 444, lx2: 863,  ly2: 493, dotX: 863,  dotY: 493 },
+      { key: "peito",          text: "Peito",           x: 88,   y: 372, anchor: "end",    lx1: 93,   ly1: 368, lx2: 238,  ly2: 378, dotX: 238,  dotY: 378 },
+      { key: "paleta",         text: "Paleta",          x: 88,   y: 315, anchor: "end",    lx1: 93,   ly1: 311, lx2: 320,  ly2: 338, dotX: 320,  dotY: 338 },
+      { key: "chambaril",      text: "Chambaril",       x: 88,   y: 498, anchor: "end",    lx1: 93,   ly1: 494, lx2: 330,  ly2: 512, dotX: 330,  dotY: 512 },
+      { key: "costela",        text: "Costela",         x: 475,  y: 585, anchor: "middle", lx1: 475,  ly1: 578, lx2: 478,  ly2: 388, dotX: 478,  dotY: 388 },
+      { key: "fraldinha",      text: "Fraldinha",       x: 578,  y: 585, anchor: "middle", lx1: 578,  ly1: 578, lx2: 615,  ly2: 403, dotX: 615,  dotY: 403 },
+      { key: "maminha",        text: "Maminha",         x: 678,  y: 585, anchor: "middle", lx1: 678,  ly1: 578, lx2: 678,  ly2: 447, dotX: 678,  dotY: 447 }
+    ];
+
+    const linesSVG = labelsList.map(l => {
+      const isPickanha = l.key === 'picanha';
+      const lineColor = isPickanha ? '#f5c542' : '#ffffff';
+      const dashArr = isPickanha ? 'none' : '3,3';
+      const lineW = isPickanha ? '2.2' : '1.8';
+      return `
+      <g class="bovine-leader-group" data-cut-id="${l.key}">
+        <line 
+          class="bovine-leader-line" 
+          data-cut-id="${l.key}" 
+          x1="${l.lx1}" 
+          y1="${l.ly1}" 
+          x2="${l.lx2}" 
+          y2="${l.ly2}" 
+          stroke="${lineColor}" 
+          stroke-width="${lineW}" 
+          stroke-dasharray="${dashArr}" 
+          opacity="0.9" 
+          style="cursor: pointer; transition: all 0.2s ease;">
+        </line>
+        <circle 
+          class="bovine-pointer-dot" 
+          data-cut-id="${l.key}" 
+          cx="${l.dotX}" 
+          cy="${l.dotY}" 
+          r="${isPickanha ? 4 : 3}" 
+          fill="${lineColor}" 
+          opacity="0.95" 
+          style="transition: all 0.2s ease;">
+        </circle>
+      </g>
+    `}).join('');
+
+    const labelsSVG = labelsList.map(l => {
+      const isPickanha = l.key === 'picanha';
+      const labelColor = isPickanha ? '#f5c542' : '#f8fafc';
+      const strokeVal = isPickanha ? 'filter:drop-shadow(0 0 6px #f5c542);' : '';
+      return `
+      <g class="bovine-label-group" data-cut-id="${l.key}" style="cursor: pointer;">
+        <text 
+          class="bovine-map-label" 
+          data-cut-id="${l.key}" 
+          x="${l.x}" 
+          y="${l.y}" 
+          text-anchor="${l.anchor}" 
+          fill="${labelColor}" 
+          font-size="13" 
+          font-weight="800" 
+          letter-spacing="0.3px" 
+          style="cursor: pointer; transition: all 0.2s ease; ${strokeVal} text-shadow: 0 2px 6px rgba(0,0,0,0.95), 0 0 10px rgba(0,0,0,0.85);">
+          ${l.text}
+        </text>
+      </g>
+    `}).join('');
+
+
+    const slide2HotspotsSVG = `
+      <!-- POLÍGONOS DE ALTA PRECISÃO DOS CORTES NO BOI GASTRONÔMICO (SLIDE 2) -->
+      <polygon class="slide2-cut tier-segunda" data-cut-id="pescoço" points="335,455 455,455 445,580 380,600 330,520"></polygon>
+      <polygon class="slide2-cut tier-segunda" data-cut-id="peito" points="380,600 450,585 480,680 405,700 370,620"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="paleta" points="450,585 580,595 550,770 480,775 440,680"></polygon>
+      <polygon class="slide2-cut tier-segunda" data-cut-id="acém" points="455,455 565,455 565,585 450,585"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="cupim" points="565,455 670,465 665,585 565,585"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="contrafilé" points="670,465 790,470 785,590 665,585"></polygon>
+      <polygon class="slide2-cut tier-nobre" data-cut-id="filé-mignon" points="790,470 860,475 855,590 785,590"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="costela" points="565,585 785,590 770,690 550,685"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="fraldinha" points="785,590 865,590 855,700 770,690"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="alcatra" points="860,475 935,475 925,565 855,565"></polygon>
+      <polygon class="slide2-cut tier-nobre" data-cut-id="picanha" points="935,475 1030,505 1015,565 925,565"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="coxão-duro" points="925,565 1015,565 1010,690 925,690"></polygon>
+      <polygon class="slide2-cut tier-primeira" data-cut-id="coxão-mole" points="855,565 925,565 925,690 895,760 835,730"></polygon>
+      <polygon class="slide2-cut tier-segunda" data-cut-id="chambaril" points="480,775 550,770 525,840 470,840"></polygon>
+      <polygon class="slide2-cut tier-segunda" data-cut-id="chambaril-t" points="835,730 895,760 860,840 810,830"></polygon>
+
+      <!-- HOTSPOTS DE TEXTO CLICÁVEIS NO SLIDE 2 COM ILUMINAÇÃO PRÓPRIA -->
+      <rect class="slide2-label-hotspot" data-cut-id="pescoço" x="140" y="500" width="130" height="70" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="peito" x="160" y="575" width="130" height="80" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="paleta" x="190" y="700" width="130" height="85" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="acém" x="315" y="340" width="110" height="85" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="cupim" x="420" y="350" width="95" height="85" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="contrafilé" x="510" y="355" width="105" height="95" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="filé-mignon" x="600" y="355" width="95" height="95" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="alcatra" x="680" y="365" width="95" height="90" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="picanha" x="760" y="365" width="100" height="90" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="costela" x="440" y="715" width="120" height="85" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="fraldinha" x="555" y="720" width="120" height="85" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="chambaril" x="480" y="810" width="115" height="38" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="coxão-duro" x="780" y="570" width="130" height="95" rx="8"></rect>
+      <rect class="slide2-label-hotspot" data-cut-id="coxão-mole" x="780" y="675" width="130" height="95" rx="8"></rect>
+    `;
+
 
     return `
       <style>
@@ -1607,7 +1749,310 @@ window.BrigadaEspeciais = {
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* HERO MAP CARD */
+        
+        /* ========================================================================= */
+        /* CAROUSEL BOVINO (ARRASTAR PRO LADO - IMAGEM 1 & IMAGEM 2)                 */
+        /* ========================================================================= */
+        .bovine-carousel-wrapper {
+          position: relative;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        /* Tabs de Navegação no topo */
+        .carousel-nav-tabs {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(10, 16, 32, 0.7);
+          padding: 4px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-slide-tab {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+          border: 1px solid transparent;
+          background: transparent;
+          color: #94a3b8;
+          transition: all 0.2s cubic-bezier(0.2, 0, 0.1, 1);
+          user-select: none;
+        }
+
+        .btn-slide-tab:hover {
+          color: #f8fafc;
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-slide-tab.active {
+          background: rgba(99, 102, 241, 0.25);
+          border-color: rgba(99, 102, 241, 0.5);
+          color: #ffffff;
+          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-slide-tab.active.slide-red {
+          background: rgba(220, 38, 38, 0.3);
+          border-color: rgba(239, 68, 68, 0.55);
+          color: #ffffff;
+          box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+        }
+
+        .slide-badge {
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.1);
+          color: #cbd5e1;
+        }
+
+        .slide-badge.red {
+          background: rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .carousel-drag-hint {
+          font-size: 11px;
+          font-weight: 600;
+          color: #94a3b8;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 12px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px dashed rgba(255, 255, 255, 0.18);
+          user-select: none;
+        }
+
+        /* Setas de navegação direta */
+        .btn-carousel-arrow {
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 900;
+          background: rgba(255, 255, 255, 0.07);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #f1f5f9;
+          cursor: pointer;
+          transition: all 0.2s;
+          user-select: none;
+        }
+
+        .btn-carousel-arrow:hover {
+          background: rgba(245, 197, 66, 0.2);
+          border-color: #f5c542;
+          color: #f5c542;
+          transform: scale(1.05);
+        }
+
+        .carousel-indicator-badge {
+          font-size: 11px;
+          font-weight: 800;
+          color: #f5c542;
+          background: rgba(245, 197, 66, 0.12);
+          border: 1px solid rgba(245, 197, 66, 0.3);
+          padding: 4px 10px;
+          border-radius: 8px;
+          user-select: none;
+        }
+
+        /* CAROUSEL VIEWPORT & TRACK */
+        .bovine-carousel-viewport {
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+          cursor: grab;
+          user-select: none;
+          background: #0c1628;
+          touch-action: pan-y;
+        }
+
+        .bovine-carousel-viewport.is-dragging {
+          cursor: grabbing;
+        }
+
+        .bovine-carousel-track {
+          display: flex;
+          width: 200%;
+          transform: translateX(0%);
+          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+          will-change: transform;
+        }
+
+        .bovine-carousel-slide {
+          width: 50%;
+          flex: 0 0 50%;
+          box-sizing: border-box;
+          position: relative;
+        }
+
+        /* SETAS FLUTUANTES SOBRE O SLIDER */
+        .carousel-float-arrow {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 30;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(13, 22, 41, 0.85);
+          backdrop-filter: blur(8px);
+          border: 1.5px solid rgba(255, 255, 255, 0.25);
+          color: #ffffff;
+          font-size: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+          transition: all 0.2s cubic-bezier(0.2, 0, 0.1, 1);
+          user-select: none;
+        }
+
+        .carousel-float-arrow:hover {
+          background: rgba(245, 197, 66, 0.35);
+          border-color: #f5c542;
+          color: #f5c542;
+          box-shadow: 0 0 20px rgba(245, 197, 66, 0.6);
+          transform: translateY(-50%) scale(1.12);
+        }
+
+        .carousel-float-arrow.prev {
+          left: 12px;
+        }
+
+        .carousel-float-arrow.next {
+          right: 12px;
+        }
+
+        /* VIEWPORT DO SLIDE 2 (VERMELHO GASTRONÔMICO) */
+        .bovine-gastronomico-viewport {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 1000 / 670;
+          min-height: 480px;
+          max-height: 640px;
+          background: radial-gradient(circle at center, #70101b 0%, #3e070e 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        /* Hotspots do Slide 2 */
+        .slide2-cut {
+          fill: transparent;
+          stroke: transparent;
+          cursor: pointer;
+          transition: all 0.18s cubic-bezier(0.2, 0, 0.1, 1);
+          outline: none;
+        }
+
+        /* Efeito Alto Relevo Exclusivo da Imagem 2 */
+        .slide2-cut:hover,
+        .slide2-cut.hovered {
+          fill: rgba(255, 215, 0, 0.38) !important;
+          stroke: #fbbf24 !important;
+          stroke-width: 4 !important;
+          stroke-linejoin: round !important;
+          stroke-linecap: round !important;
+          filter: drop-shadow(0 0 22px rgba(245, 197, 66, 1)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8)) !important;
+        }
+
+        .slide2-cut.selected {
+          fill: rgba(245, 158, 11, 0.45) !important;
+          stroke: #f59e0b !important;
+          stroke-width: 4.5 !important;
+          stroke-linejoin: round !important;
+          stroke-linecap: round !important;
+          filter: drop-shadow(0 0 24px rgba(245, 158, 11, 1)) !important;
+        }
+
+        .slide2-label-hotspot {
+          fill: transparent;
+          stroke: transparent;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          outline: none;
+        }
+
+        .slide2-label-hotspot:hover,
+        .slide2-label-hotspot.hovered {
+          fill: rgba(251, 191, 36, 0.18) !important;
+          stroke: #f5c542 !important;
+          stroke-width: 2 !important;
+          filter: drop-shadow(0 0 10px rgba(245, 197, 66, 0.8)) !important;
+        }
+
+        .slide2-label-hotspot.selected {
+          fill: rgba(245, 158, 11, 0.22) !important;
+          stroke: #f59e0b !important;
+          stroke-width: 2.2 !important;
+        }
+
+        /* Dots no Rodapé */
+        .bovine-carousel-footer {
+          margin-top: 1rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          color: #94a3b8;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .carousel-dots-wrapper {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(0,0,0,0.3);
+          padding: 6px 12px;
+          border-radius: 9999px;
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .carousel-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.25);
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.2, 0, 0.1, 1);
+        }
+
+        .carousel-dot:hover {
+          background: rgba(255, 255, 255, 0.5);
+          transform: scale(1.2);
+        }
+
+        .carousel-dot.active {
+          width: 28px;
+          background: #f5c542;
+          box-shadow: 0 0 10px rgba(245, 197, 66, 0.8);
+        }
+
+/* HERO MAP CARD */
         .bovine-map-hero {
           background: rgba(13, 22, 41, 0.95);
           border: 1px solid rgba(99, 102, 241, 0.35);
@@ -1633,12 +2078,12 @@ window.BrigadaEspeciais = {
         .bovine-svg-viewport {
           position: relative;
           width: 100%;
-          aspect-ratio: 843 / 543;
+          aspect-ratio: 1000 / 680;
           min-height: 480px;
           max-height: 640px;
-          background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0f172a 70%, #060913 100%);
+          background: #0f2744;
           border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           overflow: hidden;
           box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.4);
           display: flex;
@@ -1653,6 +2098,35 @@ window.BrigadaEspeciais = {
           user-select: none;
         }
 
+        .bovine-leader-line {
+          pointer-events: stroke;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .bovine-leader-line:hover,
+        .bovine-leader-line.hovered {
+          stroke: #f5c542 !important;
+          stroke-width: 2.6 !important;
+          stroke-dasharray: none !important;
+          opacity: 1 !important;
+          filter: drop-shadow(0 0 8px rgba(245, 197, 66, 0.95));
+        }
+
+        .bovine-leader-line.selected {
+          stroke-width: 3 !important;
+          stroke-dasharray: none !important;
+          opacity: 1 !important;
+          filter: drop-shadow(0 0 10px rgba(245, 197, 66, 1)) !important;
+        }
+
+        .bovine-pointer-dot.hovered,
+        .bovine-pointer-dot.selected {
+          fill: #fbbf24 !important;
+          r: 5 !important;
+          filter: drop-shadow(0 0 8px #fbbf24) !important;
+        }
+
         /* Regiões Anatômicas Interativas sobre a Imagem Ilustrada */
         .bovine-cut-region {
           fill: transparent;
@@ -1662,14 +2136,28 @@ window.BrigadaEspeciais = {
           outline: none;
         }
 
-        /* Hover no Corte */
-        .bovine-cut-region:hover {
-          fill: rgba(255, 255, 255, 0.25) !important;
-          stroke: #ffffff !important;
-          stroke-width: 3 !important;
+        /* Hover no Corte — EFEITO ALTO RELEVO */
+        .bovine-cut-region:hover,
+        .bovine-cut-region.hovered {
+          fill: rgba(255, 220, 100, 0.28) !important;
+          stroke: #f5c542 !important;
+          stroke-width: 3.5 !important;
           stroke-linejoin: round !important;
           stroke-linecap: round !important;
-          filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
+          filter: drop-shadow(0 0 18px rgba(245, 197, 66, 0.9)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+          transform-origin: center center;
+          transition: all 0.15s cubic-bezier(0.2, 0, 0.1, 1);
+        }
+
+        /* Labels internos aos cortes — SEMPRE VISÍVEIS como no cartaz original */
+        .bovine-inner-label {
+          pointer-events: none;
+          opacity: 1;
+          transition: all 0.18s ease;
+          paint-order: stroke fill;
+        }
+        .bovine-inner-group {
+          cursor: pointer;
         }
 
         /* Corte Selecionado em Destaque Brilhante com Contorno Perfeito */
@@ -1706,23 +2194,38 @@ window.BrigadaEspeciais = {
           }
         }
 
-        /* Tooltip Flutuante */
+        /* Tooltip Flutuante — estilo premium */
         .bovine-tooltip {
           position: absolute;
           pointer-events: none;
-          background: rgba(15, 23, 42, 0.95);
-          border: 1px solid rgba(99, 102, 241, 0.5);
+          background: linear-gradient(135deg, rgba(10, 16, 35, 0.98) 0%, rgba(20, 30, 60, 0.98) 100%);
+          border: 1.5px solid rgba(245, 197, 66, 0.65);
           color: #ffffff;
-          padding: 8px 14px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 700;
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+          padding: 10px 18px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: 0.3px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 18px rgba(245, 197, 66, 0.35), inset 0 1px 0 rgba(255,255,255,0.08);
           z-index: 50;
           display: none;
-          transform: translate(-50%, -125%);
+          transform: translate(-50%, -135%);
           white-space: nowrap;
-          backdrop-filter: blur(6px);
+          backdrop-filter: blur(8px);
+        }
+        .bovine-tooltip .tt-tier {
+          font-size: 10px;
+          font-weight: 600;
+          color: #94a3b8;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          margin-top: 2px;
+        }
+        .bovine-tooltip .tt-codes {
+          font-size: 10px;
+          color: #f5c542;
+          font-weight: 700;
+          margin-top: 3px;
         }
 
         /* GRID INFERIOR: CONTROLES (LISTA DE CORTES + PAINEL DE DETALHES) */
@@ -1922,7 +2425,7 @@ window.BrigadaEspeciais = {
                 </span>
               </div>
               <p style="margin: 2px 0 0; font-size: 0.82rem; color: #94a3b8;">
-                Mapa anatômico bovino ilustrado de alta definição com 21 regiões anatômicas e 153 códigos especiais sincronizados.
+                Mapa oficial de Cortes Bovinos com 21 regiões anatômicas e 137 códigos especiais sincronizados.
               </p>
             </div>
           </div>
@@ -1934,56 +2437,129 @@ window.BrigadaEspeciais = {
           </div>
         </div>
 
-        <!-- HERO MAP: MAPA ANATÔMICO BOVINO ILUSTRADO -->
+        <!-- HERO MAP: CAROUSEL COM IMAGEM 1 (AZUL ANATÔMICO) E IMAGEM 2 (VERMELHO GASTRONÔMICO) -->
         <div class="bovine-map-hero">
           
+          <!-- CABEÇALHO DO CAROUSEL: TABS DE NAVEGAÇÃO ENTRE AS IMAGENS -->
           <div class="bovine-map-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981;"></span>
-              <span style="font-size: 13px; font-weight: 900; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.8px;">
-                MAPA ANATÔMICO BOVINO ILUSTRADO (INTERATIVO EM ALTA DEFINIÇÃO)
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div class="carousel-nav-tabs">
+                <button id="btn-slide-1" class="btn-slide-tab active" data-slide="0" title="Ver Imagem 1: Mapa Anatômico Oficial">
+                  <span>🖼️</span>
+                  <span>Imagem 1 · Mapa Anatômico</span>
+                  <span class="slide-badge">21 Cortes</span>
+                </button>
+                <button id="btn-slide-2" class="btn-slide-tab slide-red" data-slide="1" title="Ver Imagem 2: Mapa Gastronômico do Boi">
+                  <span>🥩</span>
+                  <span>Imagem 2 · Mapa Gastronômico</span>
+                  <span class="slide-badge red">Guia de Cozinha</span>
+                </button>
+              </div>
+
+              <span class="carousel-drag-hint">
+                <span>👈 Arraste para o lado 👉</span>
               </span>
             </div>
             
-            <div style="display: flex; gap: 14px; font-size: 11px; font-weight: 700;">
-              <span style="display: flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(245, 158, 11, 0.8);"></span> ⭐ Nobre
-              </span>
-              <span style="display: flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(16, 185, 129, 0.8);"></span> 🟢 1ª Linha
-              </span>
-              <span style="display: flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(56, 189, 248, 0.8);"></span> 🟡 2ª Linha
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <!-- Botões de Seta Anterior/Próximo -->
+              <div style="display: flex; gap: 6px;">
+                <button id="btn-carousel-prev" class="btn-carousel-arrow" title="Imagem Anterior (ou arraste para a direita)">
+                  ‹
+                </button>
+                <button id="btn-carousel-next" class="btn-carousel-arrow" title="Próxima Imagem (ou arraste para a esquerda)">
+                  ›
+                </button>
+              </div>
+
+              <!-- Indicador Numérico -->
+              <span id="carousel-indicator-badge" class="carousel-indicator-badge">
+                Imagem 1 / 2
               </span>
             </div>
           </div>
 
-          <!-- VIEWPORT SVG COM O MAPA OTIMIZADO -->
-          <div class="bovine-svg-viewport" id="bovine-svg-viewport">
+          <!-- CAROUSEL VIEWPORT INTERATIVO (COM SUPORTE A TOUCH SWIPE E MOUSE DRAG) -->
+          <div class="bovine-carousel-viewport" id="bovineCarouselViewport" title="Arraste para o lado para trocar de imagem">
             
-            <div id="bovine-tooltip" class="bovine-tooltip"></div>
+            <!-- Setas Flutuantes Laterais -->
+            <button class="carousel-float-arrow prev" id="float-carousel-prev" title="Imagem Anterior" aria-label="Imagem Anterior">‹</button>
+            <button class="carousel-float-arrow next" id="float-carousel-next" title="Próxima Imagem" aria-label="Próxima Imagem">›</button>
 
-            <svg class="bovine-svg" id="bovineSvg" viewBox="0 0 843 543" preserveAspectRatio="xMidYMid meet">
+            <!-- TRACK DESLIZANTE -->
+            <div class="bovine-carousel-track" id="bovineCarouselTrack">
               
-              <!-- IMAGEM ILUSTRADA DE ALTA RESOLUÇÃO COMO BASE DO MAPA -->
-              <image href="/static/cortes_bovinos.png" x="0" y="0" width="843" height="543" preserveAspectRatio="none" style="pointer-events: none; filter: contrast(1.12) brightness(1.1) saturate(1.15);" />
+              <!-- SLIDE 1: MAPA ANATÔMICO OFICIAL (AZUL) -->
+              <div class="bovine-carousel-slide" id="slide-1-container">
+                <div class="bovine-svg-viewport" id="bovine-svg-viewport">
+                  
+                  <div id="bovine-tooltip" class="bovine-tooltip"></div>
 
-              <!-- TODAS AS 21 REGIÕES ANATÔMICAS VETORIAIS CLICÁVEIS -->
-              <g id="bovine-cuts-group">
-                ${regionsSVG}
-              </g>
+                  <svg class="bovine-svg" id="bovineSvg" viewBox="0 0 1000 667" preserveAspectRatio="xMidYMid meet">
+                    
+                    <!-- IMAGEM ILUSTRADA DE ALTA DEFINIÇÃO DO CARTAZ (BASE LIMPA SEM TEXTO DUPLICADO) -->
+                    <image href="/static/mapa_cortes_bg.jpg" x="0" y="0" width="1000" height="667" preserveAspectRatio="xMidYMid meet" style="pointer-events: none;" />
 
-              <!-- RÓTULOS E NOMES DOS CORTES EM ALTA DEFINIÇÃO VETORIAL -->
-              <g id="bovine-labels-group">
-                ${labelsSVG}
-              </g>
+                    <!-- LINHAS GUIA / LEADER LINES VETORIAIS COM PONTOS DE FIXAÇÃO -->
+                    <g id="bovine-lines-group">
+                      ${linesSVG}
+                    </g>
 
-            </svg>
+                    <!-- TODAS AS 21 REGIÕES ANATÔMICAS VETORIAIS CLICÁVEIS -->
+                    <g id="bovine-cuts-group">
+                      ${regionsSVG}
+                    </g>
+
+                    <!-- NOMES INTERNOS DOS CORTES (dentro do boi, sempre visíveis) -->
+                    <g id="bovine-inner-labels-group">
+                      ${innerLabelsSVG}
+                    </g>
+
+                    <!-- RÓTULOS E LINHAS EXTERNAS DOS CORTES (leader lines) -->
+                    <g id="bovine-labels-group">
+                      ${labelsSVG}
+                    </g>
+
+                  </svg>
+                </div>
+              </div>
+
+              <!-- SLIDE 2: MAPA GASTRONÔMICO DO BOI (VERMELHO COM CORTES REAIS E DICAS CULINÁRIAS) -->
+              <div class="bovine-carousel-slide" id="slide-2-container">
+                <div class="bovine-gastronomico-viewport" id="bovine-gastronomico-viewport">
+                  
+                  <!-- Tooltip exclusivo do Slide 2 -->
+                  <div id="bovine-tooltip-slide2" class="bovine-tooltip"></div>
+
+                  <svg class="bovine-svg" id="bovineSvgSlide2" viewBox="0 0 1264 848" preserveAspectRatio="xMidYMid meet">
+                    <!-- Imagem Gastronômica HD Baseada no Modelo -->
+                    <image href="/static/mapa_boi_gastronomico_wide.jpg" x="0" y="0" width="1264" height="848" preserveAspectRatio="xMidYMid meet" style="pointer-events: none;" />
+
+                    <!-- Regiões Anatômicas e Hotspots Clicáveis do Slide 2 -->
+                    <g id="slide2-cuts-group">
+                      ${slide2HotspotsSVG}
+                    </g>
+                  </svg>
+                </div>
+              </div>
+
+            </div>
           </div>
 
-          <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #94a3b8; flex-wrap: wrap; gap: 8px;">
-            <span>💡 Passe o mouse ou clique sobre qualquer região do boi ou use a lista abaixo.</span>
-            <span id="map-status-indicator" style="font-weight: 800; color: #10b981; font-size: 13px;">Corte Ativo: Picanha</span>
+          <!-- FOOTER DO CAROUSEL: DOTS DE PAGINAÇÃO + INDICADOR DE CORTE ATIVO -->
+          <div class="bovine-carousel-footer">
+            <div class="carousel-dots-wrapper">
+              <span class="carousel-dot active" data-slide="0" title="Ir para Imagem 1"></span>
+              <span class="carousel-dot" data-slide="1" title="Ir para Imagem 2"></span>
+              <span style="font-size: 11px; font-weight: 700; color: #cbd5e1; margin-left: 4px;">
+                Deslize ou clique nas imagens
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span>💡 Dica: Clique em qualquer corte para abrir códigos e estoque.</span>
+              <span id="map-status-indicator" style="font-weight: 800; color: #10b981; font-size: 13px;">Corte Ativo: Picanha</span>
+            </div>
           </div>
 
         </div>
@@ -2097,105 +2673,100 @@ window.BrigadaEspeciais = {
               </p>
             </div>
 
-            <!-- Search input -->
-            <div style="min-width: 280px;">
-              <input type="text" id="input-search-codigos" placeholder="🔍 Buscar por código, código base ou descrição..." 
-                style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #ffffff; outline: none;">
+            <!-- Campo de Busca em Tempo Real -->
+            <div style="position: relative; min-width: 260px;">
+              <input type="text" id="input-search-codigos" placeholder="🔍 Filtrar código, descrição ou corte..." 
+                style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 8px 14px; font-size: 12px; color: #ffffff; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
             </div>
           </div>
 
-          <!-- Category Filters -->
-          <div id="codigos-cat-chips" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            <!-- Dynamically populated -->
+          <!-- Filtros de Categorias em Chips -->
+          <div id="codigos-cat-chips" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px;">
+            <!-- Chips dinâmicos -->
           </div>
 
-          <!-- Table Container -->
-          <div style="overflow-x: auto; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08);">
+          <!-- TABELA RESPONSIVA -->
+          <div style="overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
-              <thead>
-                <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 11px; text-transform: uppercase;">
-                  <th style="padding: 12px; font-weight: 700;">Código</th>
-                  <th style="padding: 12px; font-weight: 700;">Descrição</th>
-                  <th style="padding: 12px; font-weight: 700;">Categoria</th>
-                  <th style="padding: 12px; font-weight: 700;">Cód. Base</th>
-                  <th style="padding: 12px; font-weight: 700;">Corte no Boi</th>
-                  <th style="padding: 12px; font-weight: 700; text-align: center;">Ação</th>
+              <thead style="position: sticky; top: 0; background: #0b1329; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.12);">
+                <tr>
+                  <th style="padding: 10px 12px; color: #94a3b8; font-weight: 800;">CÓDIGO</th>
+                  <th style="padding: 10px 12px; color: #94a3b8; font-weight: 800;">DESCRIÇÃO OFICIAL</th>
+                  <th style="padding: 10px 12px; color: #94a3b8; font-weight: 800;">CATEGORIA</th>
+                  <th style="padding: 10px 12px; color: #94a3b8; font-weight: 800;">CÓD. BASE</th>
+                  <th style="padding: 10px 12px; color: #94a3b8; font-weight: 800;">CORTE / REGIÃO</th>
+                  <th style="padding: 10px 12px; color: #94a3b8; font-weight: 800; text-align: center;">AÇÃO</th>
                 </tr>
               </thead>
               <tbody id="tbody-codigos">
-                <!-- Rendered via JS -->
+                <!-- Injetado via JS -->
               </tbody>
             </table>
           </div>
+
         </div>
 
-        <!-- MODAL EXPANDIDO DE DETALHES DO CORTE -->
+        <!-- MODAL DETALHADO DO CORTE & ESTOQUE INTEGRADO -->
         <div id="esp-cut-modal" class="esp-modal-overlay">
           <div class="esp-modal-content">
             
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6);">
+            <!-- Modal Header -->
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="modal-badge" style="font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35);">
+                <span id="modal-badge" style="font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35);">
                   ⭐ Nobre
                 </span>
-                <h3 id="modal-title" style="margin: 0; font-size: 1.35rem; font-weight: 900; color: #ffffff;">
+                <h3 id="modal-title" style="margin: 0; font-size: 1.3rem; font-weight: 900; color: #ffffff;">
                   Picanha
                 </h3>
               </div>
-              <button id="btn-close-modal" style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 4px;">
-                &times;
+              <button id="btn-close-modal" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; padding: 4px; line-height: 1; transition: color 0.15s;">
+                ✕
               </button>
             </div>
 
-            <div style="padding: 1.5rem;">
+            <!-- Modal Body -->
+            <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
               
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.25rem;">
-                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 14px;">
-                  <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Região</div>
-                  <div id="modal-region" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 3px;">Traseiro</div>
+              <!-- Ficha Técnica -->
+              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">
+                  📍 Região Anatômica: <span id="modal-region" style="color: #f1f5f9; font-weight: 700; text-transform: none;">Dorso Posterior</span>
                 </div>
-                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 14px;">
-                  <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Preparo Ideal</div>
-                  <div id="modal-usage" style="font-size: 12px; font-weight: 700; color: #f5c542; margin-top: 3px;">Churrasco</div>
+                <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">
+                  🔥 Sugestão Culinária: <span id="modal-usage" style="color: #f5c542; font-weight: 700; text-transform: none;">Churrasco, grelhados</span>
                 </div>
-              </div>
-
-              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
-                <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-                  Características Anatômicas
-                </div>
-                <p id="modal-desc" style="margin: 0; font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">
-                  Descrição detalhada
+                <p id="modal-desc" style="margin: 6px 0 0; color: #cbd5e1; font-size: 0.85rem; line-height: 1.5;">
+                  Descrição
                 </p>
               </div>
 
-              <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 6px;">
-                    <span>⭐ Códigos Especiais Vinculados</span>
-                  </h4>
-                  <span id="modal-matched-codes-count" style="font-size: 11px; font-weight: 800; color: #f5c542;">
-                    4 itens
-                  </span>
-                </div>
-                <div id="modal-cut-codes-list" style="display: grid; gap: 8px; max-height: 200px; overflow-y: auto;">
-                  <!-- Lista de códigos vinculados -->
+              <!-- Lista de Códigos Especiais Vinculados -->
+              <div>
+                <h4 style="margin: 0 0 8px; font-size: 0.95rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
+                  <span>📋 Códigos Especiais Deste Corte</span>
+                  <span id="modal-matched-codes-count" style="font-size: 11px; color: #94a3b8; font-weight: normal;">4 itens</span>
+                </h4>
+                <div id="modal-cut-codes-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+                  <!-- Injetado dinamicamente -->
                 </div>
               </div>
 
+              <!-- Estoque Atual / Lotes no Sistema -->
               <div>
-                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 6px;">
-                  <span>📦 Lotes e Validades em Estoque</span>
+                <h4 style="margin: 0 0 8px; font-size: 0.95rem; font-weight: 800; color: #f8fafc;">
+                  📦 Lotes em Estoque (Geral)
                 </h4>
-                <div id="modal-stock-list" style="display: grid; gap: 8px;">
-                  <!-- Estoque -->
+                <div id="modal-stock-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+                  <!-- Injetado dinamicamente -->
                 </div>
               </div>
 
             </div>
 
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(15, 23, 42, 0.6); display: flex; justify-content: flex-end; gap: 10px;">
-              <button id="btn-modal-close-footer" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer;">
+            <!-- Modal Footer -->
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end;">
+              <button id="btn-modal-close-footer" style="padding: 8px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #f1f5f9; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; transition: all 0.15s;">
                 Fechar
               </button>
             </div>
@@ -2221,7 +2792,7 @@ window.BrigadaEspeciais = {
     if (products.length > 0) {
       const matched = products.filter(p => {
         const name = (p.name || p.descricao || '').toLowerCase();
-        return name.includes(cutKey) || codigos.some(c => name.includes(c.descricao.toLowerCase()));
+        return name.includes(cutKey) || codigos.some(c => c && c.descricao && name.includes(c.descricao.toLowerCase()));
       });
       if (matched.length > 0) return matched;
     }
@@ -2238,19 +2809,42 @@ window.BrigadaEspeciais = {
   selectCut(cutId, openModal = false) {
     const allRegions = document.querySelectorAll('.bovine-cut-region');
     const allButtons = document.querySelectorAll('.btn-cut-item');
+    const allLines = document.querySelectorAll('.bovine-leader-line');
+    const allDots = document.querySelectorAll('.bovine-pointer-dot');
+    const allLabels = document.querySelectorAll('.bovine-map-label');
     const statusIndicator = document.getElementById('map-status-indicator');
 
     // Modo "Todos os Cortes" / Reset
     if (!cutId || cutId === 'all') {
       this.activeCut = null;
-      allRegions.forEach(r => {
-        r.classList.remove('selected');
-      });
+      allRegions.forEach(r => r.classList.remove('selected', 'hovered'));
+      document.querySelectorAll('.slide2-cut').forEach(r => r.classList.remove('selected', 'hovered'));
+      document.querySelectorAll('.slide2-label-hotspot').forEach(h => h.classList.remove('selected', 'hovered'));
       allButtons.forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.bovine-map-label').forEach(l => {
-        l.classList.remove('selected');
+      allLines.forEach(l => {
+        l.classList.remove('selected', 'hovered');
+        l.setAttribute('stroke', '#ffffff');
+        l.setAttribute('stroke-width', '1.8');
+        l.setAttribute('stroke-dasharray', '3,3');
+        l.setAttribute('opacity', '0.85');
+      });
+      allDots.forEach(d => {
+        d.classList.remove('selected', 'hovered');
+        d.setAttribute('fill', '#ffffff');
+        d.setAttribute('r', '3');
+      });
+      allLabels.forEach(l => {
+        l.classList.remove('selected', 'hovered');
         l.setAttribute('fill', '#f8fafc');
-        l.style.fontSize = '12px';
+        l.style.fontSize = '13.5px';
+      });
+      // Reset inner labels
+      document.querySelectorAll('.bovine-inner-label').forEach(el => {
+        el.setAttribute('font-size', '11');
+        el.setAttribute('font-weight', '700');
+        el.setAttribute('fill', el.getAttribute('data-cut-id') === 'picanha' ? '#f5c542' : '#ffffff');
+        el.style.filter = '';
+        el.style.opacity = '';
       });
 
       if (statusIndicator) {
@@ -2267,7 +2861,7 @@ window.BrigadaEspeciais = {
 
     this.activeCut = cutId;
 
-    // Destaca o corte selecionado sobre a ilustração anatômica
+    // Destaca o corte selecionado sobre a ilustração anatômica (Slide 1)
     allRegions.forEach(r => {
       const id = r.getAttribute('data-cut-id');
       if (id === cutId) {
@@ -2277,17 +2871,80 @@ window.BrigadaEspeciais = {
       }
     });
 
-    const allLabels = document.querySelectorAll('.bovine-map-label');
+    // Destaca o corte selecionado no mapa gastronômico (Slide 2)
+    document.querySelectorAll('.slide2-cut').forEach(r => {
+      if (r.getAttribute('data-cut-id') === cutId) {
+        r.classList.add('selected');
+      } else {
+        r.classList.remove('selected');
+      }
+    });
+    document.querySelectorAll('.slide2-label-hotspot').forEach(h => {
+      if (h.getAttribute('data-cut-id') === cutId) {
+        h.classList.add('selected');
+      } else {
+        h.classList.remove('selected');
+      }
+    });
+
+    // Destaca linhas guia e pontos de fixação
+    allLines.forEach(line => {
+      const id = line.getAttribute('data-cut-id');
+      if (id === cutId) {
+        line.classList.add('selected');
+        line.setAttribute('stroke', cut.accentColor || '#fbbf24');
+        line.setAttribute('stroke-width', '3');
+        line.setAttribute('stroke-dasharray', 'none');
+        line.setAttribute('opacity', '1');
+      } else {
+        line.classList.remove('selected');
+        line.setAttribute('stroke', '#ffffff');
+        line.setAttribute('stroke-width', '1.8');
+        line.setAttribute('stroke-dasharray', '3,3');
+        line.setAttribute('opacity', '0.6');
+      }
+    });
+
+    allDots.forEach(dot => {
+      const id = dot.getAttribute('data-cut-id');
+      if (id === cutId) {
+        dot.classList.add('selected');
+        dot.setAttribute('fill', cut.accentColor || '#fbbf24');
+        dot.setAttribute('r', '5');
+      } else {
+        dot.classList.remove('selected');
+        dot.setAttribute('fill', '#ffffff');
+        dot.setAttribute('r', '3');
+      }
+    });
+
+    // Destaca rótulo do corte
     allLabels.forEach(l => {
       const id = l.getAttribute('data-cut-id');
       if (id === cutId) {
         l.classList.add('selected');
         l.setAttribute('fill', cut.accentColor || '#fbbf24');
-        l.style.fontSize = '13.5px';
+        l.style.fontSize = '15px';
       } else {
         l.classList.remove('selected');
         l.setAttribute('fill', '#f8fafc');
-        l.style.fontSize = '12px';
+        l.style.fontSize = '13.5px';
+      }
+    });
+
+    // Destaca labels internos do corte selecionado
+    document.querySelectorAll('.bovine-inner-label').forEach(el => {
+      const id = el.getAttribute('data-cut-id');
+      if (id === cutId) {
+        el.setAttribute('font-size', '13');
+        el.setAttribute('font-weight', '900');
+        el.setAttribute('fill', cut.accentColor || '#fbbf24');
+        el.style.filter = `drop-shadow(0 0 6px ${cut.accentColor || '#fbbf24'})`;
+      } else {
+        el.setAttribute('font-size', '11');
+        el.setAttribute('font-weight', '700');
+        el.setAttribute('fill', id === 'picanha' ? '#f5c542' : 'rgba(255,255,255,0.55)');
+        el.style.filter = '';
       }
     });
 
@@ -2335,7 +2992,7 @@ window.BrigadaEspeciais = {
     }
     if (region) region.textContent = 'Carcaça Completa';
     if (usage) usage.textContent = '💡 Selecione um corte na lista ou clique no mapa acima';
-    if (desc) desc.textContent = 'Explore as 21 regiões anatômicas bovinas. Cada corte possui especificações culinárias, classificação em linhas e vinculação aos 153 códigos especiais oficiais do açougue.';
+    if (desc) desc.textContent = 'Explore as 21 regiões anatômicas bovinas. Cada corte possui especificações culinárias, classificação em linhas e vinculação aos 137 códigos especiais oficiais do açougue.';
     if (countBadge) countBadge.textContent = `${this.codigosEspeciais.length} códigos`;
 
     if (codesList) {
@@ -2640,65 +3297,352 @@ window.BrigadaEspeciais = {
     this.renderCodigosTable(filtered);
   },
 
+  
+  // =========================================================================
+  // SISTEMA DE CAROUSEL E NAVEGAÇÃO "ARRASTAR PRO LADO" (SLIDE 1 & SLIDE 2)
+  // =========================================================================
+  currentSlide: 0,
+
+  goToSlide(index) {
+    this.currentSlide = index;
+    const track = document.getElementById('bovineCarouselTrack');
+    const tab1 = document.getElementById('btn-slide-1');
+    const tab2 = document.getElementById('btn-slide-2');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const badge = document.getElementById('carousel-indicator-badge');
+
+    if (track) {
+      track.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+      track.style.transform = `translateX(-${index * 50}%)`;
+    }
+
+    if (tab1 && tab2) {
+      if (index === 0) {
+        tab1.classList.add('active');
+        tab2.classList.remove('active');
+      } else {
+        tab2.classList.add('active');
+        tab1.classList.remove('active');
+      }
+    }
+
+    dots.forEach((d, i) => {
+      if (i === index) d.classList.add('active');
+      else d.classList.remove('active');
+    });
+
+    if (badge) {
+      badge.textContent = `Imagem ${index + 1} / 2`;
+      badge.style.color = index === 1 ? '#fca5a5' : '#f5c542';
+      badge.style.borderColor = index === 1 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 197, 66, 0.3)';
+    }
+  },
+
+  setupCarousel(container) {
+    const self = this;
+    const viewport = container.querySelector('#bovineCarouselViewport');
+    const track = container.querySelector('#bovineCarouselTrack');
+    const btn1 = container.querySelector('#btn-slide-1');
+    const btn2 = container.querySelector('#btn-slide-2');
+    const btnPrev = container.querySelector('#btn-carousel-prev');
+    const btnNext = container.querySelector('#btn-carousel-next');
+    const floatPrev = container.querySelector('#float-carousel-prev');
+    const floatNext = container.querySelector('#float-carousel-next');
+    const dots = container.querySelectorAll('.carousel-dot');
+
+    // Navegação via Tabs
+    btn1?.addEventListener('click', () => self.goToSlide(0));
+    btn2?.addEventListener('click', () => self.goToSlide(1));
+
+    // Navegação via Setas
+    const handlePrev = (e) => { e?.stopPropagation(); self.goToSlide(0); };
+    const handleNext = (e) => { e?.stopPropagation(); self.goToSlide(1); };
+
+    btnPrev?.addEventListener('click', handlePrev);
+    btnNext?.addEventListener('click', handleNext);
+    floatPrev?.addEventListener('click', handlePrev);
+    floatNext?.addEventListener('click', handleNext);
+
+    // Navegação via Dots
+    dots.forEach((dot, idx) => {
+      dot.addEventListener('click', () => self.goToSlide(idx));
+    });
+
+    // IMPLEMENTAÇÃO DE DRAG COM MOUSE & SWIPE TOUCH ("ARRASTA PRO LADO")
+    if (viewport && track) {
+      let isDragging = false;
+      let startX = 0;
+      let currentTranslate = 0;
+      let dragDistance = 0;
+
+      // Mouse Events
+      viewport.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.carousel-float-arrow') || e.target.closest('.bovine-cut-region') || e.target.closest('.slide2-cut') || e.target.closest('.slide2-label-hotspot')) {
+          return;
+        }
+        isDragging = true;
+        startX = e.clientX;
+        dragDistance = 0;
+        currentTranslate = self.currentSlide * -50;
+        viewport.classList.add('is-dragging');
+        track.style.transition = 'none';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const diffX = e.clientX - startX;
+        dragDistance = diffX;
+        const rect = viewport.getBoundingClientRect();
+        const percentMoved = (diffX / rect.width) * 50;
+        track.style.transform = `translateX(${currentTranslate + percentMoved}%)`;
+      });
+
+      window.addEventListener('mouseup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        viewport.classList.remove('is-dragging');
+        track.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+
+        if (dragDistance < -60) {
+          self.goToSlide(1);
+        } else if (dragDistance > 60) {
+          self.goToSlide(0);
+        } else {
+          self.goToSlide(self.currentSlide);
+        }
+      });
+
+      // Touch Events (Mobile e Tablets)
+      let touchStartX = 0;
+      let touchDiff = 0;
+
+      viewport.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchDiff = 0;
+        track.style.transition = 'none';
+      }, { passive: true });
+
+      viewport.addEventListener('touchmove', (e) => {
+        touchDiff = e.touches[0].clientX - touchStartX;
+        const rect = viewport.getBoundingClientRect();
+        const percentMoved = (touchDiff / rect.width) * 50;
+        const baseTranslate = self.currentSlide * -50;
+        track.style.transform = `translateX(${baseTranslate + percentMoved}%)`;
+      }, { passive: true });
+
+      viewport.addEventListener('touchend', () => {
+        track.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+        if (touchDiff < -45) {
+          self.goToSlide(1);
+        } else if (touchDiff > 45) {
+          self.goToSlide(0);
+        } else {
+          self.goToSlide(self.currentSlide);
+        }
+      });
+    }
+
+    // =========================================================================
+    // EVENTOS EXCLUSIVOS DA IMAGEM 2 (MAPA GASTRONÔMICO DO BOI)
+    // =========================================================================
+    const tooltip2 = container.querySelector('#bovine-tooltip-slide2');
+    const viewport2 = container.querySelector('#bovine-gastronomico-viewport');
+
+    const culinaryUsesMap = {
+      'picanha': 'Grelhados e assados',
+      'alcatra': 'Assados e grelhados',
+      'filé-mignon': 'Grelhados e assados',
+      'contrafilé': 'Assados e grelhados',
+      'cupim': 'Cozidos e assados',
+      'acém': 'Ensopados e cozidos',
+      'pescoço': 'Caldo e moído',
+      'peito': 'Moído, ensopados e cozidos',
+      'paleta': 'Ensopados e cozidos',
+      'costela': 'Assados, ensopados e cozidos',
+      'fraldinha': 'Grelhados e assados',
+      'coxão-duro': 'Cozidos e ensopados',
+      'coxão-mole': 'Cozidos e assados',
+      'chambaril': 'Ensopados e cozidos (Músculo dianteiro)',
+      'chambaril-t': 'Ensopados e cozidos (Músculo traseiro)'
+    };
+
+    const handleHoverSlide2 = (cutId, e) => {
+      const cut = self.cutsData[cutId];
+      if (!cut) return;
+
+      // Ilumina APENAS os elementos da Imagem 2
+      viewport2?.querySelectorAll(`.slide2-cut[data-cut-id="${cutId}"]`).forEach(el => el.classList.add('hovered'));
+      viewport2?.querySelectorAll(`.slide2-label-hotspot[data-cut-id="${cutId}"]`).forEach(el => el.classList.add('hovered'));
+
+      if (tooltip2 && viewport2) {
+        const rect = viewport2.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const codes = self.getCodigosForCut(cutId);
+        const culinaryUse = culinaryUsesMap[cutId] || cut.usage;
+
+        tooltip2.style.left = `${x}px`;
+        tooltip2.style.top = `${y - 12}px`;
+        tooltip2.style.display = 'block';
+        tooltip2.style.borderColor = cut.accentColor || '#f5c542';
+        tooltip2.innerHTML = `
+          <div style="font-weight: 900; font-size: 15px; color: ${cut.accentColor || '#f5c542'}; letter-spacing: 0.2px;">🥩 ${cut.name.toUpperCase()}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #fef08a; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+            🔥 <span>Indicação: ${culinaryUse}</span>
+          </div>
+          <div style="font-size: 10px; font-weight: 600; color: #fca5a5; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">
+            ${cut.tierLabel} · ${cut.region}
+          </div>
+          ${codes.length > 0 ? `<div style="font-size: 11px; color: #cbd5e1; margin-top: 4px; font-weight: 700;">📦 ${codes.length} código(s) no açougue</div>` : ''}
+          <div style="font-size: 10px; color: #94a3b8; margin-top: 3px; font-style: italic;">Clique para ver detalhes e estoque</div>
+        `;
+      }
+    };
+
+    const handleLeaveSlide2 = (cutId) => {
+      viewport2?.querySelectorAll(`.slide2-cut[data-cut-id="${cutId}"]`).forEach(el => el.classList.remove('hovered'));
+      viewport2?.querySelectorAll(`.slide2-label-hotspot[data-cut-id="${cutId}"]`).forEach(el => el.classList.remove('hovered'));
+      if (tooltip2) tooltip2.style.display = 'none';
+    };
+
+    // Eventos nas Regiões do Slide 2
+    viewport2?.querySelectorAll('.slide2-cut').forEach(cutEl => {
+      const cutId = cutEl.getAttribute('data-cut-id');
+      cutEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        self.selectCut(cutId, false);
+      });
+      cutEl.addEventListener('mousemove', (e) => handleHoverSlide2(cutId, e));
+      cutEl.addEventListener('mouseleave', () => handleLeaveSlide2(cutId));
+    });
+
+    // Eventos nos Hotspots de Texto do Slide 2
+    viewport2?.querySelectorAll('.slide2-label-hotspot').forEach(hotspot => {
+      const cutId = hotspot.getAttribute('data-cut-id');
+      hotspot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        self.selectCut(cutId, false);
+      });
+      hotspot.addEventListener('mousemove', (e) => handleHoverSlide2(cutId, e));
+      hotspot.addEventListener('mouseleave', () => handleLeaveSlide2(cutId));
+    });
+  },
+
   bindEvents(container) {
+    this.setupCarousel(container);
+
     const self = this;
 
     this.populateCategoryChips();
 
-    // 1. Eventos nas Regiões Anatômicas SVG
-    const regions = container.querySelectorAll('.bovine-cut-region');
-    const tooltip = container.querySelector('#bovine-tooltip');
-    const viewport = container.querySelector('#bovine-svg-viewport');
+    // =========================================================================
+    // EVENTOS EXCLUSIVOS DA IMAGEM 1 (MAPA ANATÔMICO AZUL)
+    // =========================================================================
+    const tooltip1 = container.querySelector('#bovine-tooltip');
+    const viewport1 = container.querySelector('#bovine-svg-viewport');
 
-    regions.forEach(region => {
-      const cutId = region.getAttribute('data-cut-id');
+    const handleHoverSlide1 = (cutId, e) => {
       const cut = self.cutsData[cutId];
+      if (!cut) return;
 
+      // Ilumina APENAS os elementos da Imagem 1
+      viewport1?.querySelectorAll(`.bovine-cut-region[data-cut-id="${cutId}"]`).forEach(el => el.classList.add('hovered'));
+      viewport1?.querySelectorAll(`.bovine-leader-line[data-cut-id="${cutId}"]`).forEach(el => el.classList.add('hovered'));
+      viewport1?.querySelectorAll(`.bovine-pointer-dot[data-cut-id="${cutId}"]`).forEach(el => el.classList.add('hovered'));
+      viewport1?.querySelectorAll(`.bovine-map-label[data-cut-id="${cutId}"]`).forEach(el => el.classList.add('hovered'));
+      viewport1?.querySelectorAll(`.bovine-inner-label[data-cut-id="${cutId}"]`).forEach(el => {
+        el.setAttribute('font-size', '12');
+        el.setAttribute('font-weight', '900');
+        el.setAttribute('fill', cut.accentColor || '#fbbf24');
+        el.style.filter = 'drop-shadow(0 0 8px rgba(245,197,66,0.9))';
+      });
+
+      if (tooltip1 && viewport1) {
+        const rect = viewport1.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const codes = self.getCodigosForCut(cutId);
+        tooltip1.style.left = `${x}px`;
+        tooltip1.style.top = `${y - 12}px`;
+        tooltip1.style.display = 'block';
+        tooltip1.style.borderColor = cut.accentColor || 'rgba(245,197,66,0.65)';
+        tooltip1.innerHTML = `
+          <div style="font-weight: 900; font-size: 15px; color: ${cut.accentColor || '#f5c542'}; letter-spacing: 0.2px;">🐂 ${cut.name}</div>
+          <div style="font-size: 10px; font-weight: 600; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;">${cut.tierLabel} · ${cut.region}</div>
+          ${codes.length > 0 ? `<div style="font-size: 11px; color: #fcd34d; margin-top: 4px; font-weight: 700;">📦 ${codes.length} código(s) especial(is)</div>` : ''}
+          <div style="font-size: 10px; color: #64748b; margin-top: 3px; font-style: italic;">Clique para ver detalhes</div>
+        `;
+      }
+    };
+
+    const handleLeaveSlide1 = (cutId) => {
+      viewport1?.querySelectorAll(`.bovine-cut-region[data-cut-id="${cutId}"]`).forEach(el => el.classList.remove('hovered'));
+      viewport1?.querySelectorAll(`.bovine-leader-line[data-cut-id="${cutId}"]`).forEach(el => el.classList.remove('hovered'));
+      viewport1?.querySelectorAll(`.bovine-pointer-dot[data-cut-id="${cutId}"]`).forEach(el => el.classList.remove('hovered'));
+      viewport1?.querySelectorAll(`.bovine-map-label[data-cut-id="${cutId}"]`).forEach(el => el.classList.remove('hovered'));
+      viewport1?.querySelectorAll(`.bovine-inner-label[data-cut-id="${cutId}"]`).forEach(el => {
+        el.setAttribute('font-size', '11');
+        el.setAttribute('font-weight', '700');
+        el.setAttribute('fill', el.getAttribute('data-cut-id') === 'picanha' ? '#f5c542' : '#ffffff');
+        el.style.filter = '';
+      });
+      if (tooltip1) tooltip1.style.display = 'none';
+    };
+
+    // 1. Regiões Anatômicas da Imagem 1 (APENAS dentro de #bovine-svg-viewport)
+    const slide1Regions = viewport1?.querySelectorAll('.bovine-cut-region') || [];
+    slide1Regions.forEach(region => {
+      const cutId = region.getAttribute('data-cut-id');
       region.addEventListener('click', (e) => {
         e.stopPropagation();
         self.selectCut(cutId, false);
       });
-
-      // Acessibilidade por Teclado
       region.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           self.selectCut(cutId, false);
         }
       });
-
-      // Hover / Tooltip
-      region.addEventListener('mousemove', (e) => {
-        if (!tooltip || !viewport || !cut) return;
-        const rect = viewport.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const codes = self.getCodigosForCut(cutId);
-        tooltip.style.left = `${x}px`;
-        tooltip.style.top = `${y - 12}px`;
-        tooltip.style.display = 'block';
-        tooltip.innerHTML = `
-          <div style="font-weight: 800; font-size: 12px; color: #f8fafc;">${cut.name}</div>
-          <div style="font-size: 10px; color: ${cut.badgeColor}; margin-top: 1px;">
-            ${cut.tierLabel} · ${codes.length} códigos especiais
-          </div>
-        `;
-      });
-
-      region.addEventListener('mouseleave', () => {
-        if (tooltip) tooltip.style.display = 'none';
-      });
+      region.addEventListener('mousemove', (e) => handleHoverSlide1(cutId, e));
+      region.addEventListener('mouseleave', () => handleLeaveSlide1(cutId));
     });
 
-    // 1.1 Eventos nos Rótulos de Texto SVG
-    const mapLabels = container.querySelectorAll('.bovine-map-label');
+    // 1.1 Linhas Guia da Imagem 1
+    const leaderGroups = viewport1?.querySelectorAll('.bovine-leader-group') || [];
+    leaderGroups.forEach(grp => {
+      const cutId = grp.getAttribute('data-cut-id');
+      grp.addEventListener('click', (e) => {
+        e.stopPropagation();
+        self.selectCut(cutId, false);
+      });
+      grp.addEventListener('mousemove', (e) => handleHoverSlide1(cutId, e));
+      grp.addEventListener('mouseleave', () => handleLeaveSlide1(cutId));
+    });
+
+    // 1.2 Rótulos Externos da Imagem 1
+    const mapLabels = viewport1?.querySelectorAll('.bovine-label-group') || [];
     mapLabels.forEach(label => {
       const cutId = label.getAttribute('data-cut-id');
       label.addEventListener('click', (e) => {
         e.stopPropagation();
         self.selectCut(cutId, false);
       });
+      label.addEventListener('mousemove', (e) => handleHoverSlide1(cutId, e));
+      label.addEventListener('mouseleave', () => handleLeaveSlide1(cutId));
+    });
+
+    // 1.3 Rótulos Internos da Imagem 1
+    const innerGroups = viewport1?.querySelectorAll('.bovine-inner-group') || [];
+    innerGroups.forEach(grp => {
+      const cutId = grp.getAttribute('data-cut-id');
+      grp.style.cursor = 'pointer';
+      grp.addEventListener('click', (e) => {
+        e.stopPropagation();
+        self.selectCut(cutId, false);
+      });
+      grp.addEventListener('mousemove', (e) => handleHoverSlide1(cutId, e));
+      grp.addEventListener('mouseleave', () => handleLeaveSlide1(cutId));
     });
 
     // 2. Busca de Cortes na Lista

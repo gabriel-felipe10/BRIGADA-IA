@@ -1,38 +1,10 @@
 [
   {
-    "codigo": "1068",
-    "descricao": "FRANGO INTEIRO RESF NATTO",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "10013",
-    "corte_bovino": "aves"
-  },
-  {
-    "codigo": "1190",
-    "descricao": "FRANGO INTEIRO RESF MAURICEA",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "11914",
-    "corte_bovino": "aves"
-  },
-  {
     "codigo": "1439",
     "descricao": "BANANINHA CONGELADA FRIBOI",
     "categoria": "BOVINO CONGELADO",
     "codigo_base": null,
     "corte_bovino": "costela"
-  },
-  {
-    "codigo": "1800",
-    "descricao": "ASA / COXA COM SOBRE FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20043",
-    "corte_bovino": "aves"
-  },
-  {
-    "codigo": "1801",
-    "descricao": "CORAÇÃO DE FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20048",
-    "corte_bovino": "aves"
   },
   {
     "codigo": "1829",
@@ -91,13 +63,6 @@
     "corte_bovino": "patinho"
   },
   {
-    "codigo": "1873",
-    "descricao": "BUCHO CONGELADO FRIBOI",
-    "categoria": "VÍSCERAS BOVINAS",
-    "codigo_base": null,
-    "corte_bovino": "vísceras"
-  },
-  {
     "codigo": "1903",
     "descricao": "PICADINHO BOVINO KG",
     "categoria": "BOVINO RESFRIADO",
@@ -112,46 +77,11 @@
     "corte_bovino": "peito"
   },
   {
-    "codigo": "1943",
-    "descricao": "COXA DE FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20047",
-    "corte_bovino": "aves"
-  },
-  {
-    "codigo": "1944",
-    "descricao": "MOELA FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20048",
-    "corte_bovino": "aves"
-  },
-  {
-    "codigo": "1945",
-    "descricao": "COXINHA DA ASA FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20049",
-    "corte_bovino": "aves"
-  },
-  {
     "codigo": "1946",
     "descricao": "PEITO FG RESF MAURICEA KG",
     "categoria": "AVES RESFRIADAS",
     "codigo_base": "20050",
     "corte_bovino": "peito"
-  },
-  {
-    "codigo": "1947",
-    "descricao": "FÍGADO DE FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20051",
-    "corte_bovino": "aves"
-  },
-  {
-    "codigo": "1948",
-    "descricao": "SOBRECOXA FG RESF MAURICEA KG",
-    "categoria": "AVES RESFRIADAS",
-    "codigo_base": "20052",
-    "corte_bovino": "aves"
   },
   {
     "codigo": "1985",
@@ -308,39 +238,11 @@
     "corte_bovino": "chambaril"
   },
   {
-    "codigo": "2239",
-    "descricao": "BUCHO BOV INT CG KG",
-    "categoria": "VÍSCERAS BOVINAS",
-    "codigo_base": "20809",
-    "corte_bovino": "vísceras"
-  },
-  {
     "codigo": "2240",
     "descricao": "RABADA BOV INT CG KG",
     "categoria": "VÍSCERAS BOVINAS",
     "codigo_base": "20810",
     "corte_bovino": "rabo"
-  },
-  {
-    "codigo": "2257",
-    "descricao": "CARRÉ SUÍNO CONGELADO PEÇA",
-    "categoria": "SUÍNO CONGELADO",
-    "codigo_base": "20916",
-    "corte_bovino": "suíno"
-  },
-  {
-    "codigo": "2258",
-    "descricao": "CARRÉ SUÍNO SEARA PEDAÇO KG",
-    "categoria": "SUÍNO CONGELADO",
-    "codigo_base": "20917",
-    "corte_bovino": "suíno"
-  },
-  {
-    "codigo": "2259",
-    "descricao": "BISTECA SUÍNA CG FATIADA KG",
-    "categoria": "SUÍNO CONGELADO",
-    "codigo_base": "20918",
-    "corte_bovino": "suíno"
   },
   {
     "codigo": "2273",
@@ -973,13 +875,6 @@
     "corte_bovino": "paleta"
   },
   {
-    "codigo": "2620",
-    "descricao": "BIFE PARA MILANESA MASTERBOI",
-    "categoria": "DIANTEIRO ESPECIAL",
-    "codigo_base": "22019",
-    "corte_bovino": "outros"
-  },
-  {
     "codigo": "2621",
     "descricao": "PEIXINHO TRADICIONAL MASTERBOI",
     "categoria": "DIANTEIRO ESPECIAL",
@@ -1062,12 +957,5 @@
     "categoria": "TRASEIRO TRADICIONAL",
     "codigo_base": "22033",
     "corte_bovino": "cupim"
-  },
-  {
-    "codigo": "2635",
-    "descricao": "BIFE MASTERBOI ESPECIAL",
-    "categoria": "DIANTEIRO ESPECIAL",
-    "codigo_base": "22034",
-    "corte_bovino": "outros"
   }
 ]
