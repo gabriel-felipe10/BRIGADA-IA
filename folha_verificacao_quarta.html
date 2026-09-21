@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Folha de Verificação — Quarta-feira — BRIGADA-IA</title>
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  @page {
+    size: A4 portrait;
+    margin: 6mm 7mm 7mm 7mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #0f172a;
+    background: #ffffff;
+    font-size: 8pt;
+    line-height: 1.25;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 100%;
+    height: 100%;
+    min-height: 280mm;
+    max-height: 283mm;
+    page-break-after: always;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  .page:last-child {
+    page-break-after: avoid;
+  }
+
+  /* Header */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+  }
+
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-badge {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13pt;
+  }
+
+  .title-group h1 {
+    font-size: 12pt;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+    line-height: 1.1;
+  }
+
+  .title-group .subtitle {
+    font-size: 7.2pt;
+    color: #475569;
+    font-weight: 600;
+  }
+
+  .meta-right {
+    text-align: right;
+    font-size: 7pt;
+    color: #475569;
+    line-height: 1.3;
+  }
+
+  .day-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  /* Preenchimento / Meta auditoria */
+  .audit-meta-bar {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1.6fr 1.1fr 1.1fr;
+    gap: 8px;
+    font-size: 7.2pt;
+    align-items: center;
+  }
+
+  .audit-field strong {
+    color: #334155;
+  }
+
+  .fill-line {
+    display: inline-block;
+    border-bottom: 1px dashed #64748b;
+    min-width: 60px;
+    height: 12px;
+    vertical-align: middle;
+  }
+
+  /* Section Titles */
+  .section-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f1f5f9;
+    border-left: 3.5px solid #0284c7;
+    padding: 3px 6px;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 4px;
+    margin-top: 2px;
+  }
+
+  .section-bar h2 {
+    font-size: 8.2pt;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .section-bar .sub-badge {
+    font-size: 6.8pt;
+    background: #e2e8f0;
+    color: #334155;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  /* Grids and Tables */
+  .col-grid {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .col-card {
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+
+  .col-card-header {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 3px 6px;
+    font-size: 7.2pt;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  table.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.8pt;
+  }
+
+  table.compact-table th {
+    background: #f1f5f9;
+    color: #334155;
+    padding: 2.5px 4px;
+    font-weight: 700;
+    border-bottom: 1px solid #cbd5e1;
+    text-align: left;
+  }
+
+  table.compact-table td {
+    padding: 2.5px 4px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+    vertical-align: middle;
+  }
+
+  table.compact-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .checkbox-square {
+    width: 11px;
+    height: 11px;
+    border: 1px solid #64748b;
+    border-radius: 2px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Piso de Loja Table */
+  table.piso-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7pt;
+    margin-bottom: 6px;
+  }
+
+  table.piso-table th {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 3px 5px;
+    font-weight: 600;
+    text-align: left;
+    font-size: 6.8pt;
+  }
+
+  table.piso-table td {
+    padding: 3px 5px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  table.piso-table tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  .fz-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    display: inline-block;
+    font-size: 7.2pt;
+  }
+
+  /* Divergencias Table */
+  table.anomaly-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.8pt;
+    margin-bottom: 6px;
+  }
+
+  table.anomaly-table th {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    padding: 2.5px 4px;
+    font-weight: 700;
+    color: #334155;
+    text-align: left;
+  }
+
+  table.anomaly-table td {
+    border: 1px solid #cbd5e1;
+    height: 16px;
+    padding: 1px 4px;
+    background: #ffffff;
+  }
+
+  /* POP Box */
+  .pop-strip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #0284c7;
+    border-radius: 4px;
+    padding: 3px 6px;
+    margin-bottom: 6px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    font-size: 6.5pt;
+    color: #334155;
+  }
+
+  .pop-strip strong {
+    color: #0284c7;
+    display: block;
+    font-size: 6.8pt;
+  }
+
+  /* Signatures */
+  .signatures-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-top: 2px;
+    margin-bottom: 3px;
+  }
+
+  .sig-item {
+    text-align: center;
+  }
+
+  .sig-line {
+    border-bottom: 1px solid #64748b;
+    height: 18px;
+    margin-bottom: 2px;
+  }
+
+  .sig-role {
+    font-size: 6.8pt;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .sig-desc {
+    font-size: 6pt;
+    color: #64748b;
+  }
+
+  .footer-strip {
+    font-size: 6.2pt;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 2px;
+  }
+
+</style>
+</head>
+<body>
+
+    <!-- PÁGINA: FOLHA DE AUDITORIA DIÁRIA — QUARTA-FEIRA -->
+    <div class="page">
+      <!-- HEADER -->
+      <div class="doc-header">
+        <div class="logo-block">
+          <div class="logo-badge">🛡️</div>
+          <div class="title-group">
+            <h1>BRIGADA-IA — Folha de Auditoria Diária</h1>
+            <div class="subtitle">Setor: <strong>AÇOUGUE & PERECÍVEIS</strong> • Controle Rigoroso de Validade & Giro PVPS</div>
+          </div>
+        </div>
+        <div class="meta-right">
+          <span class="day-pill" style="background: #fef3c7; color: #b45309;">🗓️ QUARTA-FEIRA</span><br>
+          <span style="font-size: 6.5pt; color: #64748b;">Protocolo Operacional • Ciclo Único Semanal</span>
+        </div>
+      </div>
+
+      <!-- BARRA DE PREENCHIMENTO DO AUDITOR -->
+      <div class="audit-meta-bar">
+        <div class="audit-field">
+          <strong>Data:</strong> <span class="fill-line" style="min-width: 75px;">___/___/______</span>
+        </div>
+        <div class="audit-field">
+          <strong>Turno:</strong> <span class="checkbox-square"></span> 1º &nbsp; <span class="checkbox-square"></span> 2º
+        </div>
+        <div class="audit-field">
+          <strong>Auditor:</strong> <span class="fill-line" style="min-width: 110px;"></span>
+        </div>
+        <div class="audit-field">
+          <strong>Horário:</strong> <span class="fill-line" style="min-width: 45px;">___:___</span> às <span class="fill-line" style="min-width: 45px;">___:___</span>
+        </div>
+        <div class="audit-field">
+          <strong>Temp. Câmara:</strong> <span class="fill-line" style="min-width: 45px;">____°C</span>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 1: CÂMARA CONGELADA (-18,5°C) -->
+      <div class="section-bar" style="border-left-color: #6366f1;">
+        <h2>❄️ 1. Câmara Congelada (-18,5°C) — Escala do Dia: Coluna 10, Coluna 11</h2>
+        <span class="sub-badge" style="background: #e0e7ff; color: #4338ca;">16 Posições de Paletes (2 Colunas)</span>
+      </div>
+
+      <div class="col-grid" style="grid-template-columns: repeat(2, 1fr);">
+        
+        <div class="col-card">
+          <div class="col-card-header">
+            <span>❄️ Coluna 10 (Rack 10)</span>
+            <span style="background: rgba(255,255,255,0.2); padding: 0 4px; border-radius: 3px; font-size: 6.2pt;">8 Paletes</span>
+          </div>
+          <table class="compact-table">
+            <thead>
+              <tr>
+                <th style="width: 18%;">Pos.</th>
+                <th style="width: 48%;">Cód / Produto / Lote</th>
+                <th style="width: 22%;">Validade</th>
+                <th style="width: 12%; text-align: center;">OK</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>N4-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Topo)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N4-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Topo)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N3-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Alto)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N3-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Alto)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N2-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Méd)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N2-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Méd)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N1-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Chão)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N1-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Chão)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="col-card">
+          <div class="col-card-header">
+            <span>❄️ Coluna 11 (Rack 11)</span>
+            <span style="background: rgba(255,255,255,0.2); padding: 0 4px; border-radius: 3px; font-size: 6.2pt;">8 Paletes</span>
+          </div>
+          <table class="compact-table">
+            <thead>
+              <tr>
+                <th style="width: 18%;">Pos.</th>
+                <th style="width: 48%;">Cód / Produto / Lote</th>
+                <th style="width: 22%;">Validade</th>
+                <th style="width: 12%; text-align: center;">OK</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>N4-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Topo)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N4-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Topo)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N3-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Alto)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N3-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Alto)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N2-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Méd)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N2-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Méd)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N1-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Chão)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+              <tr>
+                <td><strong>N1-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Chão)</span></td>
+                <td>___________________</td>
+                <td>___/___/___</td>
+                <td style="text-align: center;"><span class="checkbox-square"></span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+      </div>
+
+      <!-- SEÇÃO 2: PISO DE LOJA (-18°C a -22°C) -->
+      <div class="section-bar" style="border-left-color: #0284c7;">
+        <h2>🛒 2. Piso de Loja — Freezers do Dia: F41, F17, F18, F19</h2>
+        <span class="sub-badge" style="background: #e0f2fe; color: #0284c7;">4 Equipamentos • 🐮 Bovino (F41) + 🐔 Aves Congeladas (F17, F18, F19)</span>
+      </div>
+
+      <table class="piso-table">
+        <thead>
+          <tr>
+            <th style="width: 8%;">Freezer</th>
+            <th style="width: 32%;">Categoria / Cortes em Exposição</th>
+            <th style="width: 13%; text-align: center;">Temp. (°C)</th>
+            <th style="width: 17%; text-align: center;">Giro PVPS</th>
+            <th style="width: 10%; text-align: center;">Etiquetas</th>
+            <th style="width: 10%; text-align: center;">Val. + Curta</th>
+            <th style="width: 10%; text-align: center;">Visto</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        <tr>
+          <td><span class="fz-badge">F41</span></td>
+          <td><strong>Bovinos — Peças Inteiras a Vácuo & Costelas</strong></td>
+          <td style="text-align: center; color: #475569;">[ _____ °C ]</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> Sim &nbsp; <span class="checkbox-square"></span> Ajustado</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> OK</td>
+          <td style="text-align: center; color: #475569;">___/___/___</td>
+          <td style="text-align: center; color: #475569;">[ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</td>
+        </tr>
+        
+        <tr>
+          <td><span class="fz-badge">F17</span></td>
+          <td><strong>Aves — Coxas & Sobrecoxas Pacote Congelado</strong></td>
+          <td style="text-align: center; color: #475569;">[ _____ °C ]</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> Sim &nbsp; <span class="checkbox-square"></span> Ajustado</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> OK</td>
+          <td style="text-align: center; color: #475569;">___/___/___</td>
+          <td style="text-align: center; color: #475569;">[ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</td>
+        </tr>
+        
+        <tr>
+          <td><span class="fz-badge">F18</span></td>
+          <td><strong>Aves — Peito de Frango Congelado (Com/Sem Osso)</strong></td>
+          <td style="text-align: center; color: #475569;">[ _____ °C ]</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> Sim &nbsp; <span class="checkbox-square"></span> Ajustado</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> OK</td>
+          <td style="text-align: center; color: #475569;">___/___/___</td>
+          <td style="text-align: center; color: #475569;">[ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</td>
+        </tr>
+        
+        <tr>
+          <td><span class="fz-badge">F19</span></td>
+          <td><strong>Aves — Asas, Meio da Asa & Coxinhas da Asa</strong></td>
+          <td style="text-align: center; color: #475569;">[ _____ °C ]</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> Sim &nbsp; <span class="checkbox-square"></span> Ajustado</td>
+          <td style="text-align: center;"><span class="checkbox-square"></span> OK</td>
+          <td style="text-align: center; color: #475569;">___/___/___</td>
+          <td style="text-align: center; color: #475569;">[ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</td>
+        </tr>
+        
+        </tbody>
+      </table>
+
+      <!-- SEÇÃO 3: ANOMALIAS E PRODUTOS EM RISCO -->
+      <div class="section-bar" style="border-left-color: #f59e0b;">
+        <h2>⚠️ 3. Apontamento de Produtos Críticos / Validade Curta (&le; 10 Dias) / Avarias</h2>
+        <span class="sub-badge" style="background: #fef3c7; color: #b45309;">Ação Preventiva Imediata</span>
+      </div>
+
+      <table class="anomaly-table">
+        <thead>
+          <tr style="background: #f8fafc;">
+            <th style="width: 10%;">PLU / Cód</th>
+            <th style="width: 28%;">Descrição do Produto</th>
+            <th style="width: 10%;">Freezer/Col</th>
+            <th style="width: 10%;">Lote</th>
+            <th style="width: 10%;">Val. Física</th>
+            <th style="width: 7%;">Qtd (kg)</th>
+            <th style="width: 18%;">Ação Tomada</th>
+            <th style="width: 7%; text-align: center;">Visto</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[ ] Degrau &nbsp; [ ] Troca &nbsp; [ ] Quebra</td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[ ] Degrau &nbsp; [ ] Troca &nbsp; [ ] Quebra</td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[ ] Degrau &nbsp; [ ] Troca &nbsp; [ ] Quebra</td><td></td></tr>
+    
+        </tbody>
+      </table>
+
+      <!-- SEÇÃO 4: REGRAS POP RÁPIDAS -->
+      <div class="pop-strip">
+        <div><strong>1. PVPS Obrigatório</strong> Primeiro que vence é o primeiro que sai. Menor validade sempre à frente no freezer.</div>
+        <div><strong>2. Alerta de Vencimento</strong> Produtos com &le;10 dias devem receber degrau de preço ou transferência imediata.</div>
+        <div><strong>3. Cadeia de Frio</strong> Temperatura da câmara &le; -18,5°C e freezers entre -18°C e -22°C. Não tapar fluxo de ar.</div>
+        <div><strong>4. Validação & Registro</strong> Todos os itens identificados devem ser atualizados imediatamente no BRIGADA-IA.</div>
+      </div>
+
+      <!-- ASSINATURAS E RESPONSABILIDADES -->
+      <div class="signatures-bar">
+        <div class="sig-item">
+          <div class="sig-line"></div>
+          <div class="sig-role">Auditor Responsável</div>
+          <div class="sig-desc">Setor Açougue / Perecíveis</div>
+        </div>
+        <div class="sig-item">
+          <div class="sig-line"></div>
+          <div class="sig-role">Líder do Açougue</div>
+          <div class="sig-desc">Felipe Gabriel — BRIGADA-IA</div>
+        </div>
+        <div class="sig-item">
+          <div class="sig-line"></div>
+          <div class="sig-role">Prevenção de Perdas / Gerência</div>
+          <div class="sig-desc">Auditoria Diária Concluída</div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="footer-strip">
+        <span>BRIGADA-IA • Folha Diária de Verificação (QUARTA-FEIRA)</span>
+        <span>Página 1 de 1</span>
+        <span>Auditoria Operacional de Validade • Açougue</span>
+      </div>
+    </div>
+    
+</body>
+</html>
