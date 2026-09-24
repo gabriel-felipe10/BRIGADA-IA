@@ -699,11 +699,8 @@ window.BrigadaPisoLoja = {
                 <a href="/static/Folha_Auditoria_Freezer.pdf" target="_blank" title="Folha em branco para preencher com o número do freezer e dados de validade" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 14px; border-radius: 8px; text-decoration: none; color: #ffffff; background: linear-gradient(135deg, #0ea5e9, #0284c7); font-weight: 700; box-shadow: 0 2px 6px rgba(14, 165, 233, 0.25);">
                   📋 Folha para Freezer (Em Branco)
                 </a>
-                <a href="/static/Folha_Verificacao_${selectedSched.dayKey}.pdf" target="_blank" title="Baixar folha individual A4 pronta para imprimir" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 14px; border-radius: 8px; text-decoration: none; color: #ffffff; background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
-                  📄 Folha de ${selectedSched.dayName} (1 Pág)
-                </a>
-                <a href="/static/Esquema_Verificacao_Validade_BRIGADA_IA.pdf" target="_blank" title="Caderno semanal oficial com 1 folha para cada dia da semana" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; text-decoration: none; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">
-                  📚 Caderno Completo (7 Folhas)
+                <a href="/static/Esquema_Verificacao_Validade_BRIGADA_IA.pdf" target="_blank" title="Caderno semanal oficial de verificação dos freezers do piso de loja" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; text-decoration: none; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">
+                  📚 Caderno Semanal (Freezers)
                 </a>
               </div>
             </div>

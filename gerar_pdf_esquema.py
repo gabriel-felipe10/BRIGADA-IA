@@ -475,472 +475,203 @@ CSS_STYLES = """
 """
 
 def generate_cover_page_html():
-    """Gera a página 1 (Capa / Resumo Executivo Semanal)."""
+    """Gera a Folha Única de Cronograma Semanal de Auditoria dos Freezers (Piso de Loja), preenchendo toda a folha A4."""
     return f"""
-    <!-- PÁGINA 1: RESUMO EXECUTIVO SEMANAL -->
-    <div class="page" style="justify-content: flex-start; gap: 8px;">
-      <div class="doc-header" style="border-bottom: 3px solid #0284c7; padding-bottom: 8px;">
-        <div class="logo-block">
-          <div class="logo-badge" style="width: 40px; height: 40px; font-size: 16pt;">🛡️</div>
+    <!-- PÁGINA 1: CRONOGRAMA OPERACIONAL SEMANAL DOS FREEZERS (FOLHA CHEIA) -->
+    <div class="page" style="justify-content: space-between; min-height: 280mm; max-height: 283mm; padding: 2mm 0;">
+      <!-- CABEÇALHO -->
+      <div class="doc-header" style="border-bottom: 3px solid #0284c7; padding-bottom: 10px; margin-bottom: 2px;">
+        <div class="logo-block" style="gap: 12px;">
+          <div class="logo-badge" style="width: 44px; height: 44px; font-size: 18pt; border-radius: 8px;">🛡️</div>
           <div class="title-group">
-            <h1 style="font-size: 15pt;">BRIGADA-IA — Gestão & Auditoria de Validade</h1>
-            <div class="subtitle" style="font-size: 8.5pt;">Setor: <strong>AÇOUGUE & PERECÍVEIS</strong> • Caderno Semanal Oficial de Auditoria</div>
+            <h1 style="font-size: 15.5pt; letter-spacing: -0.3px;">BRIGADA-IA — Gestão & Auditoria de Validade</h1>
+            <div class="subtitle" style="font-size: 8.8pt; margin-top: 2px;">Setor: <strong>AÇOUGUE & PERECÍVEIS</strong> • Cronograma Semanal Oficial dos Freezers (Piso de Loja)</div>
           </div>
         </div>
-        <div class="meta-right">
-          <span style="background: #0284c7; color: white; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 7.5pt;">CADERNO SEMANAL</span><br>
-          <strong>Ciclo Completo:</strong> Domingo a Sábado<br>
-          <strong>Emissão:</strong> 21/09/2026 • Versão Oficial 2.0
+        <div class="meta-right" style="font-size: 7.8pt; line-height: 1.4;">
+          <span style="background: #0284c7; color: white; padding: 4px 10px; border-radius: 4px; font-weight: 800; font-size: 8.5pt; display: inline-block; margin-bottom: 3px;">CRONOGRAMA SEMANAL</span><br>
+          <strong>Ciclo Operacional:</strong> Domingo a Sábado<br>
+          <span style="color: #64748b;">Emissão: 21/09/2026 • Versão Oficial 2.0</span>
         </div>
       </div>
 
-      <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 8px 12px; font-size: 7.8pt; color: #0369a1; line-height: 1.4;">
-        🎯 <strong>DIRETRIZ OPERACIONAL SEMANAL:</strong> Este documento compõe o dossiê oficial de auditoria preventiva de validade do Açougue. Cada dia da semana possui sua <strong>Folha Própria e Exclusiva de Auditoria</strong> (Páginas 2 a 8). Os auditores devem preencher a folha do respectivo dia, conferindo 100% dos paletes das colunas programadas da câmara congelada e 100% dos freezers do piso de loja.
+      <!-- DIRETRIZ OPERACIONAL -->
+      <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 8px; padding: 10px 14px; font-size: 8.2pt; color: #0369a1; line-height: 1.45;">
+        🎯 <strong>DIRETRIZ OPERACIONAL SEMANAL:</strong> Este documento estabelece o cronograma oficial de auditoria preventiva de validade do Açougue. Os auditores devem conferir diariamente 100% dos equipamentos escalados para o piso de loja, utilizando a <strong>Folha de Auditoria de Freezer</strong> para o registro físico detalhado de validades, lotes e aplicação rigorosa do giro PVPS.
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 4px 0;">
-        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; text-align: center;">
-          <div style="font-size: 16pt; font-weight: 800; color: #0284c7;">31</div>
-          <div style="font-size: 6.8pt; font-weight: 700; color: #64748b; text-transform: uppercase;">Freezers Piso de Loja</div>
+      <!-- CARDS DE DESTAQUE -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div style="background: #ffffff; border: 2px solid #0284c7; border-radius: 8px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="font-size: 26pt; font-weight: 800; color: #0284c7; line-height: 1;">31</div>
+          <div style="font-size: 7.8pt; font-weight: 700; color: #475569; text-transform: uppercase; margin-top: 4px;">Freezers Piso de Loja</div>
         </div>
-        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; text-align: center;">
-          <div style="font-size: 16pt; font-weight: 800; color: #6366f1;">16</div>
-          <div style="font-size: 6.8pt; font-weight: 700; color: #64748b; text-transform: uppercase;">Colunas Câmara Cong.</div>
+        <div style="background: #ffffff; border: 2px solid #10b981; border-radius: 8px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="font-size: 26pt; font-weight: 800; color: #10b981; line-height: 1;">100%</div>
+          <div style="font-size: 7.8pt; font-weight: 700; color: #475569; text-transform: uppercase; margin-top: 4px;">Cobertura Semanal Sem Repetição</div>
         </div>
-        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; text-align: center;">
-          <div style="font-size: 16pt; font-weight: 800; color: #10b981;">128</div>
-          <div style="font-size: 6.8pt; font-weight: 700; color: #64748b; text-transform: uppercase;">Paletes Auditados</div>
-        </div>
-        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; text-align: center;">
-          <div style="font-size: 16pt; font-weight: 800; color: #f59e0b;">7 Dias</div>
-          <div style="font-size: 6.8pt; font-weight: 700; color: #64748b; text-transform: uppercase;">1 Folha por Dia</div>
+        <div style="background: #ffffff; border: 2px solid #f59e0b; border-radius: 8px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="font-size: 26pt; font-weight: 800; color: #f59e0b; line-height: 1;">7 Dias</div>
+          <div style="font-size: 7.8pt; font-weight: 700; color: #475569; text-transform: uppercase; margin-top: 4px;">Ciclo Completo (Domingo a Sábado)</div>
         </div>
       </div>
 
       <!-- TABELA CRONOGRAMA UNIFICADO -->
-      <div class="section-bar" style="margin-top: 6px;">
-        <h2>🗓️ Cronograma Semanal Sincronizado — Piso de Loja & Câmara Fria</h2>
-        <span class="sub-badge">Ciclo Único sem Repetição</span>
+      <div>
+        <div class="section-bar" style="margin-bottom: 5px; padding: 5px 8px;">
+          <h2 style="font-size: 9pt;">🗓️ Cronograma Semanal de Auditoria — Freezers do Piso de Loja</h2>
+          <span class="sub-badge" style="font-size: 7.5pt; padding: 2px 8px;">Ciclo Único sem Repetição • 31 Equipamentos</span>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 8.2pt; border: 1.5px solid #94a3b8;">
+          <thead>
+            <tr style="background: #0f172a; color: white;">
+              <th style="padding: 8px 10px; text-align: left; width: 17%; border: 1px solid #334155; font-weight: 700;">Dia da Semana</th>
+              <th style="padding: 8px 10px; text-align: left; width: 33%; border: 1px solid #334155; font-weight: 700;">Piso de Loja (Freezers)</th>
+              <th style="padding: 8px 10px; text-align: left; width: 36%; border: 1px solid #334155; font-weight: 700;">Categorias / Cortes em Exposição</th>
+              <th style="padding: 8px 10px; text-align: center; width: 14%; border: 1px solid #334155; font-weight: 700;">Meta Temp.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #0284c7; font-size: 8.5pt;">DOMINGO</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F42, F43, F44, F45, F46 <span style="color: #64748b; font-weight: 500;">(5 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🐟 Pescados (Filés, Postas, Frutos do Mar)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="background: #f8fafc; height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #7e22ce; font-size: 8.5pt;">SEGUNDA-FEIRA</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F47, F48, F34, F35 <span style="color: #64748b; font-weight: 500;">(4 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🐟 Pescados (47,48) + 🐷 Suínos (34,35)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #c2410c; font-size: 8.5pt;">TERÇA-FEIRA</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F36, F37, F38, F39, F40 <span style="color: #64748b; font-weight: 500;">(5 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🍱 Misto Bov/Suíno/Aves (36–39) + 🐮 Bovino (40)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="background: #f8fafc; height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #b45309; font-size: 8.5pt;">QUARTA-FEIRA</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F41, F17, F18, F19 <span style="color: #64748b; font-weight: 500;">(4 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🐮 Bovino (41) + 🐔 Aves (17, 18, 19)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #047857; font-size: 8.5pt;">QUINTA-FEIRA</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F20, F21, F22, F23, F24 <span style="color: #64748b; font-weight: 500;">(5 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🐔 Aves (Cortes Nobres, Peito, Passarinho)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="background: #f8fafc; height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #be185d; font-size: 8.5pt;">SEXTA-FEIRA</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F25, F26, F27, F28 <span style="color: #64748b; font-weight: 500;">(4 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🐔 Aves (25) + 🐮 Bovino Congelado (26–28)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="height: 30px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1;"><strong style="color: #4338ca; font-size: 8.5pt;">SÁBADO</strong></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e293b;">F29, F30, F31, F32 <span style="color: #64748b; font-weight: 500;">(4 un)</span></td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #334155;">🐔 Aves Congeladas (Coxas, Asas, Atacado)</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #0284c7;">-18°C a -22°C</td>
+            </tr>
+            <tr style="background: #e2e8f0; font-weight: 800; height: 32px;">
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; font-size: 8.5pt;">TOTAL SEMANAL</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #0284c7; font-size: 9pt;">31 Freezers Auditados</td>
+              <td style="padding: 8px 10px; border: 1px solid #cbd5e1; color: #047857; font-size: 8.8pt;" colspan="2">✔ 100% de Cobertura Semanal Sem Repetição</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table style="width: 100%; border-collapse: collapse; font-size: 7.2pt; border: 1px solid #cbd5e1;">
-        <thead>
-          <tr style="background: #1e293b; color: white;">
-            <th style="padding: 5px; text-align: left; width: 14%;">Dia da Semana</th>
-            <th style="padding: 5px; text-align: left; width: 22%;">Câmara Congelada (Racks)</th>
-            <th style="padding: 5px; text-align: center; width: 10%;">Paletes</th>
-            <th style="padding: 5px; text-align: left; width: 26%;">Piso de Loja (Freezers)</th>
-            <th style="padding: 5px; text-align: left; width: 28%;">Categorias / Produtos</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #0284c7;">DOMINGO</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Colunas 01, 02, 03 (3 colunas)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">24</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F42, F43, F44, F45, F46 (5 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🐟 Pescados (Filés, Postas, Frutos do Mar)</td>
-          </tr>
-          <tr style="background: #f8fafc;">
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #7e22ce;">SEGUNDA-FEIRA</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Colunas 04, 05, 06 (3 colunas)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">24</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F47, F48, F34, F35 (4 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🐟 Pescados (47,48) + 🐷 Suínos (34,35)</td>
-          </tr>
-          <tr>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #c2410c;">TERÇA-FEIRA</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Colunas 07, 08, 09 (3 colunas)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">24</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F36, F37, F38, F39, F40 (5 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🍱 Misto Bov/Suíno/Aves (36–39) + 🐮 Bovino (40)</td>
-          </tr>
-          <tr style="background: #f8fafc;">
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #b45309;">QUARTA-FEIRA</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Colunas 10, 11 (2 colunas)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">16</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F41, F17, F18, F19 (4 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🐮 Bovino (41) + 🐔 Aves (17, 18, 19)</td>
-          </tr>
-          <tr>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #047857;">QUINTA-FEIRA</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Colunas 12, 13 (2 colunas)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">16</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F20, F21, F22, F23, F24 (5 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🐔 Aves (Cortes Nobres, Peito, Passarinho)</td>
-          </tr>
-          <tr style="background: #f8fafc;">
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #be185d;">SEXTA-FEIRA</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Colunas 14, 15 (2 colunas)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">16</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F25, F26, F27, F28 (4 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🐔 Aves (25) + 🐮 Bovino Congelado (26–28)</td>
-          </tr>
-          <tr>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;"><strong style="color: #4338ca;">SÁBADO</strong></td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">Coluna 16 (1 coluna)</td>
-            <td style="padding: 4.5px 5px; text-align: center; border-bottom: 1px solid #e2e8f0; font-weight: 700;">8</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">F29, F30, F31, F32 (4 un)</td>
-            <td style="padding: 4.5px 5px; border-bottom: 1px solid #e2e8f0;">🐔 Aves Congeladas (Coxas, Asas, Atacado)</td>
-          </tr>
-          <tr style="background: #e2e8f0; font-weight: 800;">
-            <td style="padding: 5px;">TOTAL SEMANAL</td>
-            <td style="padding: 5px;">16 Colunas / Racks</td>
-            <td style="padding: 5px; text-align: center; color: #0284c7;">128</td>
-            <td style="padding: 5px;">31 Freezers Auditados</td>
-            <td style="padding: 5px; color: #047857;">✔ 100% de Cobertura Sem Repetição</td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- INSTRUÇÕES OPERACIONAIS POP -->
+      <div>
+        <div class="section-bar" style="margin-bottom: 5px; padding: 5px 8px;">
+          <h2 style="font-size: 9pt;">📋 Procedimento Padrão de Auditoria — Instruções aos Auditores</h2>
+          <span class="sub-badge" style="font-size: 7.5pt; padding: 2px 8px;">POP de Validade</span>
+        </div>
 
-      <!-- INSTRUÇÕES OPERACIONAIS -->
-      <div class="section-bar" style="margin-top: 6px;">
-        <h2>📋 Procedimento Padrão de Auditoria — Instruções aos Auditores</h2>
-        <span class="sub-badge">POP de Validade</span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 7.2pt; color: #334155;">
-        <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 8px; background: #ffffff;">
-          <strong style="color: #0284c7; display: block; margin-bottom: 2px;">1. Uso Diário da Folha de Verificação</strong>
-          Cada dia da semana tem sua folha específica anexada a este caderno (páginas 2 a 8). O auditor deve destacar ou imprimir a folha do dia e preenchê-la à caneta no momento da auditoria.
-        </div>
-        <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 8px; background: #ffffff;">
-          <strong style="color: #0284c7; display: block; margin-bottom: 2px;">2. Rigor Absoluto na Regra PVPS (FIFO)</strong>
-          Primeiro que vence é o primeiro que sai. No piso de loja, os produtos com menor prazo SEMPRE devem ficar na frente/topo. Na câmara, o palete com validade mais curta deve ficar na posição de saída.
-        </div>
-        <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 8px; background: #ffffff;">
-          <strong style="color: #0284c7; display: block; margin-bottom: 2px;">3. Sinalização & Ação Imediata (Zona Amarela)</strong>
-          Itens com validade igual ou inferior a 10 dias devem ser obrigatoriamente anotados na folha do dia para acionamento imediato de degrau de preço (rebaixa comercial) ou reposição rápida.
-        </div>
-        <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 8px; background: #ffffff;">
-          <strong style="color: #0284c7; display: block; margin-bottom: 2px;">4. Auditoria de Temperatura & Assinaturas</strong>
-          Aferir a temperatura da câmara congelada (padrão -18,5°C) e de cada freezer do piso (-18°C a -22°C). Ao término da ronda, colher assinatura do Líder do Açougue e Fiscal de Prevenção.
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 7.8pt; color: #334155;">
+          <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <strong style="color: #0284c7; font-size: 8.2pt; display: block; margin-bottom: 3px;">1. Execução Diária da Auditoria</strong>
+            Seguir rigorosamente a escala de freezers definida para cada dia da semana acima, utilizando a Folha de Auditoria de Freezer para conferência física detalhada e preenchimento à caneta.
+          </div>
+          <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <strong style="color: #0284c7; font-size: 8.2pt; display: block; margin-bottom: 3px;">2. Rigor Absoluto na Regra PVPS (FIFO)</strong>
+            Primeiro que vence é o primeiro que sai. No piso de loja, os produtos com menor prazo SEMPRE devem ficar na frente e no topo de cada freezer para garantir o giro de estoque.
+          </div>
+          <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <strong style="color: #0284c7; font-size: 8.2pt; display: block; margin-bottom: 3px;">3. Sinalização & Ação Imediata (Zona Amarela)</strong>
+            Itens com validade igual ou inferior a 10 dias devem ser obrigatoriamente sinalizados para acionamento de degrau de preço (rebaixa comercial imediata) ou reposição rápida.
+          </div>
+          <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <strong style="color: #0284c7; font-size: 8.2pt; display: block; margin-bottom: 3px;">4. Auditoria de Temperatura & Assinaturas</strong>
+            Aferir a temperatura de cada freezer do piso (meta: -18°C a -22°C). Ao término da ronda diária, colher visto do Líder do Açougue e Fiscal de Prevenção de Perdas.
+          </div>
         </div>
       </div>
 
       <!-- ASSINATURAS DO CADERNO -->
-      <div class="signatures-bar" style="margin-top: 15px;">
+      <div class="signatures-bar" style="margin-top: 6px; padding-top: 6px;">
         <div class="sig-item">
-          <div class="sig-line"></div>
-          <div class="sig-role">Auditor Responsável</div>
-          <div class="sig-desc">Setor Açougue / Perecíveis</div>
+          <div class="sig-line" style="height: 32px; border-bottom: 1.5px solid #64748b; margin-bottom: 4px;"></div>
+          <div class="sig-role" style="font-size: 7.8pt;">Auditor Responsável</div>
+          <div class="sig-desc" style="font-size: 6.8pt;">Setor Açougue / Perecíveis</div>
         </div>
         <div class="sig-item">
-          <div class="sig-line"></div>
-          <div class="sig-role">Líder do Açougue</div>
-          <div class="sig-desc">Felipe Gabriel — BRIGADA-IA</div>
+          <div class="sig-line" style="height: 32px; border-bottom: 1.5px solid #64748b; margin-bottom: 4px;"></div>
+          <div class="sig-role" style="font-size: 7.8pt;">Líder do Açougue</div>
+          <div class="sig-desc" style="font-size: 6.8pt;">Visto / Validação Operacional</div>
         </div>
         <div class="sig-item">
-          <div class="sig-line"></div>
-          <div class="sig-role">Prevenção de Perdas / Gerência</div>
-          <div class="sig-desc">Validação do Ciclo Semanal</div>
+          <div class="sig-line" style="height: 32px; border-bottom: 1.5px solid #64748b; margin-bottom: 4px;"></div>
+          <div class="sig-role" style="font-size: 7.8pt;">Prevenção de Perdas / Gerência</div>
+          <div class="sig-desc" style="font-size: 6.8pt;">Validação do Ciclo Semanal</div>
         </div>
       </div>
 
-      <div class="footer-strip" style="margin-top: 8px;">
+      <!-- RODAPÉ -->
+      <div class="footer-strip" style="margin-top: 4px; padding-top: 4px; font-size: 6.8pt; border-top: 1px solid #e2e8f0;">
         <span>BRIGADA-IA • Sistema de Gestão de Validade & Auditoria</span>
-        <span>Página 1 de 8 — Resumo Executivo Semanal</span>
-        <span>Documento Oficial de Uso Obrigatório</span>
-      </div>
-    </div>
-    """
-
-def generate_daily_page_html(day_data, page_num=2, total_pages=8):
-    """Gera o HTML de 1 página A4 dedicada para um dia específico da semana."""
-    day_key = day_data["dayKey"]
-    day_name = day_data["dayName"].upper()
-    badge_bg = day_data["badgeBg"]
-    badge_color = day_data["badgeColor"]
-    columns = day_data["columns"]
-    pallets = day_data["palletsCount"]
-    freezer_details = day_data["freezerDetails"]
-
-    # Monta os cards das colunas da câmara
-    col_grid_cols = len(columns)
-    col_cards_html = ""
-    for col_num in columns:
-        col_str = f"Coluna {col_num:02d}"
-        col_cards_html += f"""
-        <div class="col-card">
-          <div class="col-card-header">
-            <span>❄️ {col_str} (Rack {col_num:02d})</span>
-            <span style="background: rgba(255,255,255,0.2); padding: 0 4px; border-radius: 3px; font-size: 6.2pt;">8 Paletes</span>
-          </div>
-          <table class="compact-table">
-            <thead>
-              <tr>
-                <th style="width: 18%;">Pos.</th>
-                <th style="width: 48%;">Cód / Produto / Lote</th>
-                <th style="width: 22%;">Validade</th>
-                <th style="width: 12%; text-align: center;">OK</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>N4-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Topo)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N4-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Topo)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N3-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Alto)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N3-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Alto)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N2-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Méd)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N2-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Méd)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N1-E</strong> <span style="font-size: 5.5pt; color:#64748b;">(Chão)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-              <tr>
-                <td><strong>N1-D</strong> <span style="font-size: 5.5pt; color:#64748b;">(Chão)</span></td>
-                <td>___________________</td>
-                <td>___/___/___</td>
-                <td style="text-align: center;"><span class="checkbox-square"></span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        """
-
-    # Monta a tabela do Piso de Loja
-    piso_rows_html = ""
-    for fz in freezer_details:
-        piso_rows_html += f"""
-        <tr>
-          <td><span class="fz-badge">{fz["id"]}</span></td>
-          <td><strong>{fz["desc"]}</strong></td>
-          <td style="text-align: center; color: #475569;">[ _____ °C ]</td>
-          <td style="text-align: center;"><span class="checkbox-square"></span> Sim &nbsp; <span class="checkbox-square"></span> Ajustado</td>
-          <td style="text-align: center;"><span class="checkbox-square"></span> OK</td>
-          <td style="text-align: center; color: #475569;">___/___/___</td>
-          <td style="text-align: center; color: #475569;">[ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</td>
-        </tr>
-        """
-
-    # Linhas de anomalia / produtos com validade curta
-    anomaly_rows_html = """
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[ ] Degrau &nbsp; [ ] Troca &nbsp; [ ] Quebra</td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[ ] Degrau &nbsp; [ ] Troca &nbsp; [ ] Quebra</td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[ ] Degrau &nbsp; [ ] Troca &nbsp; [ ] Quebra</td><td></td></tr>
-    """
-
-    cols_desc = ", ".join([f"Coluna {c:02d}" for c in columns])
-    freezers_desc = ", ".join([f["id"] for f in freezer_details])
-
-    return f"""
-    <!-- PÁGINA: FOLHA DE AUDITORIA DIÁRIA — {day_name} -->
-    <div class="page">
-      <!-- HEADER -->
-      <div class="doc-header">
-        <div class="logo-block">
-          <div class="logo-badge">🛡️</div>
-          <div class="title-group">
-            <h1>BRIGADA-IA — Folha de Auditoria Diária</h1>
-            <div class="subtitle">Setor: <strong>AÇOUGUE & PERECÍVEIS</strong> • Controle Rigoroso de Validade & Giro PVPS</div>
-          </div>
-        </div>
-        <div class="meta-right">
-          <span class="day-pill" style="background: {badge_bg}; color: {badge_color};">🗓️ {day_name}</span><br>
-          <span style="font-size: 6.5pt; color: #64748b;">Protocolo Operacional • Ciclo Único Semanal</span>
-        </div>
-      </div>
-
-      <!-- BARRA DE PREENCHIMENTO DO AUDITOR -->
-      <div class="audit-meta-bar">
-        <div class="audit-field">
-          <strong>Data:</strong> <span class="fill-line" style="min-width: 75px;">___/___/______</span>
-        </div>
-        <div class="audit-field">
-          <strong>Turno:</strong> <span class="checkbox-square"></span> 1º &nbsp; <span class="checkbox-square"></span> 2º
-        </div>
-        <div class="audit-field">
-          <strong>Auditor:</strong> <span class="fill-line" style="min-width: 110px;"></span>
-        </div>
-        <div class="audit-field">
-          <strong>Horário:</strong> <span class="fill-line" style="min-width: 45px;">___:___</span> às <span class="fill-line" style="min-width: 45px;">___:___</span>
-        </div>
-        <div class="audit-field">
-          <strong>Temp. Câmara:</strong> <span class="fill-line" style="min-width: 45px;">____°C</span>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 1: CÂMARA CONGELADA (-18,5°C) -->
-      <div class="section-bar" style="border-left-color: #6366f1;">
-        <h2>❄️ 1. Câmara Congelada (-18,5°C) — Escala do Dia: {cols_desc}</h2>
-        <span class="sub-badge" style="background: #e0e7ff; color: #4338ca;">{pallets} Posições de Paletes ({len(columns)} Colunas)</span>
-      </div>
-
-      <div class="col-grid" style="grid-template-columns: repeat({col_grid_cols}, 1fr);">
-        {col_cards_html}
-      </div>
-
-      <!-- SEÇÃO 2: PISO DE LOJA (-18°C a -22°C) -->
-      <div class="section-bar" style="border-left-color: #0284c7;">
-        <h2>🛒 2. Piso de Loja — Freezers do Dia: {freezers_desc}</h2>
-        <span class="sub-badge" style="background: #e0f2fe; color: #0284c7;">{len(freezer_details)} Equipamentos • {day_data['freezersCategory']}</span>
-      </div>
-
-      <table class="piso-table">
-        <thead>
-          <tr>
-            <th style="width: 8%;">Freezer</th>
-            <th style="width: 32%;">Categoria / Cortes em Exposição</th>
-            <th style="width: 13%; text-align: center;">Temp. (°C)</th>
-            <th style="width: 17%; text-align: center;">Giro PVPS</th>
-            <th style="width: 10%; text-align: center;">Etiquetas</th>
-            <th style="width: 10%; text-align: center;">Val. + Curta</th>
-            <th style="width: 10%; text-align: center;">Visto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {piso_rows_html}
-        </tbody>
-      </table>
-
-      <!-- SEÇÃO 3: ANOMALIAS E PRODUTOS EM RISCO -->
-      <div class="section-bar" style="border-left-color: #f59e0b;">
-        <h2>⚠️ 3. Apontamento de Produtos Críticos / Validade Curta (&le; 10 Dias) / Avarias</h2>
-        <span class="sub-badge" style="background: #fef3c7; color: #b45309;">Ação Preventiva Imediata</span>
-      </div>
-
-      <table class="anomaly-table">
-        <thead>
-          <tr style="background: #f8fafc;">
-            <th style="width: 10%;">PLU / Cód</th>
-            <th style="width: 28%;">Descrição do Produto</th>
-            <th style="width: 10%;">Freezer/Col</th>
-            <th style="width: 10%;">Lote</th>
-            <th style="width: 10%;">Val. Física</th>
-            <th style="width: 7%;">Qtd (kg)</th>
-            <th style="width: 18%;">Ação Tomada</th>
-            <th style="width: 7%; text-align: center;">Visto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {anomaly_rows_html}
-        </tbody>
-      </table>
-
-      <!-- SEÇÃO 4: REGRAS POP RÁPIDAS -->
-      <div class="pop-strip">
-        <div><strong>1. PVPS Obrigatório</strong> Primeiro que vence é o primeiro que sai. Menor validade sempre à frente no freezer.</div>
-        <div><strong>2. Alerta de Vencimento</strong> Produtos com &le;10 dias devem receber degrau de preço ou transferência imediata.</div>
-        <div><strong>3. Cadeia de Frio</strong> Temperatura da câmara &le; -18,5°C e freezers entre -18°C e -22°C. Não tapar fluxo de ar.</div>
-        <div><strong>4. Validação & Registro</strong> Todos os itens identificados devem ser atualizados imediatamente no BRIGADA-IA.</div>
-      </div>
-
-      <!-- ASSINATURAS E RESPONSABILIDADES -->
-      <div class="signatures-bar">
-        <div class="sig-item">
-          <div class="sig-line"></div>
-          <div class="sig-role">Auditor Responsável</div>
-          <div class="sig-desc">Setor Açougue / Perecíveis</div>
-        </div>
-        <div class="sig-item">
-          <div class="sig-line"></div>
-          <div class="sig-role">Líder do Açougue</div>
-          <div class="sig-desc">Felipe Gabriel — BRIGADA-IA</div>
-        </div>
-        <div class="sig-item">
-          <div class="sig-line"></div>
-          <div class="sig-role">Prevenção de Perdas / Gerência</div>
-          <div class="sig-desc">Auditoria Diária Concluída</div>
-        </div>
-      </div>
-
-      <!-- FOOTER -->
-      <div class="footer-strip">
-        <span>BRIGADA-IA • Folha Diária de Verificação ({day_name})</span>
-        <span>Página {page_num} de {total_pages}</span>
-        <span>Auditoria Operacional de Validade • Açougue</span>
+        <span>Página 1 de 1 — Cronograma Operacional Semanal</span>
+        <span>Açougue & Perecíveis • Documento Oficial</span>
       </div>
     </div>
     """
 
 def generate_full_caderno_html():
-    """Monta o documento completo com Capa (Resumo) + 7 Folhas Diárias (1 para cada dia)."""
-    pages_html = [generate_cover_page_html()]
-    for idx, day_data in enumerate(DAYS_DATA):
-        page_num = idx + 2
-        pages_html.append(generate_daily_page_html(day_data, page_num=page_num, total_pages=8))
-
+    """Monta o documento com Folha Única (1 página): Cronograma Semanal de Auditoria dos Freezers."""
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Caderno de Verificação de Validade — BRIGADA-IA</title>
+<title>Cronograma Semanal de Auditoria dos Freezers — BRIGADA-IA</title>
 <style>
 {CSS_STYLES}
 </style>
 </head>
 <body>
-{"".join(pages_html)}
+{generate_cover_page_html()}
 </body>
 </html>
 """
 
-def generate_single_day_html(day_data):
-    """Monta o HTML de folha única (1 página) para um dia avulso."""
-    page_html = generate_daily_page_html(day_data, page_num=1, total_pages=1)
-    return f"""<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Folha de Verificação — {day_data['dayName']} — BRIGADA-IA</title>
-<style>
-{CSS_STYLES}
-</style>
-</head>
-<body>
-{page_html}
-</body>
-</html>
-"""
 
 def generate_freezer_sheet_html():
     """Monta a Folha Operacional A4 de Auditoria de Freezer Individual (com espaço em branco para o número do freezer)."""
     rows_html = ""
-    for i in range(1, 21):
+    for i in range(1, 31):
         bg = "#ffffff" if i % 2 != 0 else "#f8fafc"
         rows_html += f"""
-        <tr style="background: {bg}; height: 21px;">
-          <td style="text-align: center; font-weight: 700; color: #64748b;">{i:02d}</td>
-          <td style="border-bottom: 1px solid #e2e8f0;"></td>
-          <td style="border-bottom: 1px solid #e2e8f0; text-align: center;"></td>
-          <td style="border-bottom: 1px solid #e2e8f0; text-align: center;"></td>
-          <td style="border-bottom: 1px solid #e2e8f0; text-align: center;"></td>
-          <td style="border-bottom: 1px solid #e2e8f0; text-align: center;"></td>
-          <td style="border-bottom: 1px solid #e2e8f0; text-align: center;"></td>
-          <td style="border-bottom: 1px solid #e2e8f0; font-size: 6.2pt; color: #475569;">[ ] OK &nbsp; [ ] Reb &nbsp; [ ] Queb</td>
-        </tr>
-        """
+        <tr style="background: {bg}; height: 16.5px;">
+          <td style="border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #64748b; padding: 1.5px 2px;">{i:02d}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 1.5px 6px;"></td>
+          <td style="border: 1px solid #cbd5e1; text-align: center; padding: 1.5px 2px;"></td>
+          <td style="border: 1px solid #cbd5e1; text-align: center; padding: 1.5px 2px;"></td>
+          <td style="border: 1px solid #cbd5e1; text-align: center; padding: 1.5px 2px;"></td>
+          <td style="border: 1px solid #cbd5e1; text-align: center; padding: 1.5px 2px;"></td>
+          <td style="border: 1px solid #cbd5e1; text-align: center; padding: 1.5px 2px;"></td>
+        </tr>"""
 
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
@@ -952,34 +683,34 @@ def generate_freezer_sheet_html():
 </style>
 </head>
 <body>
-  <div class="page" style="justify-content: flex-start; gap: 6px;">
+  <div class="page" style="justify-content: flex-start; gap: 4px;">
     <!-- HEADER -->
-    <div class="doc-header">
+    <div class="doc-header" style="margin-bottom: 4px; padding-bottom: 4px;">
       <div class="logo-block">
-        <div class="logo-badge" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">🧊</div>
+        <div class="logo-badge" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); width: 28px; height: 28px; font-size: 11pt;">🧊</div>
         <div class="title-group">
-          <h1>BRIGADA-IA — Folha de Auditoria de Freezer</h1>
-          <div class="subtitle">Setor: <strong>AÇOUGUE & PERECÍVEIS</strong> • Controle Individual de Equipamento (Piso de Loja)</div>
+          <h1 style="font-size: 11pt;">BRIGADA-IA — Folha de Auditoria de Freezer</h1>
+          <div class="subtitle" style="font-size: 6.8pt;">Setor: <strong>AÇOUGUE & PERECÍVEIS</strong> • Controle Individual de Equipamento (Piso de Loja)</div>
         </div>
       </div>
       <div class="meta-right">
-        <span class="day-pill" style="background: #e0f2fe; color: #0284c7;">AUDITORIA DE EQUIPAMENTO</span><br>
-        <span style="font-size: 6.5pt; color: #64748b;">Giro PVPS • Validade • Zero Vencidos</span>
+        <span class="day-pill" style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; font-size: 7.5pt;">AUDITORIA DE EQUIPAMENTO</span><br>
+        <span style="font-size: 6.2pt; color: #64748b;">Giro PVPS • Validade • Zero Vencidos</span>
       </div>
     </div>
 
     <!-- CAIXA DE IDENTIFICAÇÃO DO FREEZER COM ESPAÇO EM BRANCO -->
-    <div style="background: #f8fafc; border: 1.5px solid #0284c7; border-radius: 6px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.6rem;">🛒</span>
+    <div style="background: #f8fafc; border: 1.5px solid #0284c7; border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.4rem;">🛒</span>
         <div>
-          <span style="font-size: 7pt; font-weight: 700; color: #475569; text-transform: uppercase;">Identificação do Equipamento:</span>
-          <div style="font-size: 13pt; font-weight: 800; color: #0f172a; display: flex; align-items: baseline; gap: 6px;">
-            FREEZER Nº: <span style="display: inline-block; border-bottom: 2px solid #0284c7; min-width: 140px; height: 22px; text-align: center; color: #0284c7;">&nbsp;</span>
+          <span style="font-size: 6.8pt; font-weight: 700; color: #475569; text-transform: uppercase;">Identificação do Equipamento:</span>
+          <div style="font-size: 12pt; font-weight: 800; color: #0f172a; display: flex; align-items: baseline; gap: 6px;">
+            FREEZER Nº: <span style="display: inline-block; border-bottom: 2px solid #0284c7; min-width: 140px; height: 20px; text-align: center; color: #0284c7;">&nbsp;</span>
           </div>
         </div>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(3, auto); gap: 10px; font-size: 7.2pt;">
+      <div style="display: grid; grid-template-columns: repeat(3, auto); gap: 4px 10px; font-size: 7pt;">
         <div><strong>Data:</strong> <span class="fill-line" style="min-width: 65px;">___/___/______</span></div>
         <div><strong>Turno:</strong> <span class="checkbox-square"></span> 1º &nbsp; <span class="checkbox-square"></span> 2º</div>
         <div><strong>Auditor:</strong> <span class="fill-line" style="min-width: 90px;"></span></div>
@@ -990,22 +721,21 @@ def generate_freezer_sheet_html():
     </div>
 
     <!-- TABELA PRINCIPAL SOLICITADA -->
-    <div class="section-bar" style="border-left-color: #0ea5e9; margin-top: 2px;">
-      <h2>📋 Itens em Exposição no Freezer</h2>
-      <span class="sub-badge" style="background: #e0f2fe; color: #0369a1;">Conferência de Estoque Físico & Datas</span>
+    <div class="section-bar" style="border-left-color: #0ea5e9; margin-top: 2px; margin-bottom: 2px; padding: 2px 6px;">
+      <h2 style="font-size: 7.8pt;">📋 Itens em Exposição no Freezer</h2>
+      <span class="sub-badge" style="background: #e0f2fe; color: #0369a1; font-size: 6.5pt;">Conferência de Estoque Físico & Datas</span>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse; font-size: 7pt; border: 1px solid #cbd5e1; margin-bottom: 4px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 6.8pt; border: 1.5px solid #94a3b8; margin-bottom: 3px;">
       <thead>
         <tr style="background: #0f172a; color: white;">
-          <th style="padding: 4px; width: 4%; text-align: center;">Item</th>
-          <th style="padding: 4px; width: 34%; text-align: left;">Nome do Produto</th>
-          <th style="padding: 4px; width: 11%; text-align: center;">PLU / Cód</th>
-          <th style="padding: 4px; width: 9%; text-align: center;">Lote</th>
-          <th style="padding: 4px; width: 11%; text-align: center;">Data Validade</th>
-          <th style="padding: 4px; width: 10%; text-align: center; background: #0284c7;">Total Itens</th>
-          <th style="padding: 4px; width: 11%; text-align: center; background: #ea580c;">Qtd Próx. Vencer</th>
-          <th style="padding: 4px; width: 10%; text-align: left;">Ação Imediata</th>
+          <th style="padding: 3px 2px; width: 4.5%; text-align: center; border: 1px solid #334155; font-weight: 700;">Item</th>
+          <th style="padding: 3px 6px; width: 45.5%; text-align: left; border: 1px solid #334155; font-weight: 700;">Nome do Produto</th>
+          <th style="padding: 3px 2px; width: 12%; text-align: center; border: 1px solid #334155; font-weight: 700;">PLU / Cód</th>
+          <th style="padding: 3px 2px; width: 10%; text-align: center; border: 1px solid #334155; font-weight: 700;">Lote</th>
+          <th style="padding: 3px 2px; width: 12%; text-align: center; border: 1px solid #334155; font-weight: 700;">Data Validade</th>
+          <th style="padding: 3px 2px; width: 8%; text-align: center; background: #0284c7; border: 1px solid #0369a1; font-weight: 700;">Total Itens</th>
+          <th style="padding: 3px 2px; width: 8%; text-align: center; background: #ea580c; border: 1px solid #c2410c; font-weight: 700;">Qtd Próx. Vencer</th>
         </tr>
       </thead>
       <tbody>
@@ -1016,28 +746,28 @@ def generate_freezer_sheet_html():
     <!-- TOTAIS CONSOLIDADOS E CHECKLIST DO FREEZER -->
     <div style="display: grid; grid-template-columns: 1.4fr 1.6fr; gap: 8px; margin-top: 2px;">
       <!-- Totais -->
-      <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 5px 8px; background: #ffffff;">
-        <div style="font-size: 7.2pt; font-weight: 700; color: #0f172a; margin-bottom: 4px; text-transform: uppercase;">
+      <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 4px 8px; background: #ffffff;">
+        <div style="font-size: 7pt; font-weight: 700; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
           📊 Resumo Quantitativo do Freezer
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 6.8pt;">
-          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 4px; text-align: center;">
-            <div style="font-size: 6.2pt; color: #0369a1; font-weight: 700; text-transform: uppercase;">Total de Itens Contados</div>
-            <div style="font-size: 11pt; font-weight: 800; color: #0284c7; height: 16px;">&nbsp;</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 6.5pt;">
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 3px; text-align: center;">
+            <div style="font-size: 6pt; color: #0369a1; font-weight: 700; text-transform: uppercase;">Total de Itens Contados</div>
+            <div style="font-size: 10pt; font-weight: 800; color: #0284c7; height: 14px;">&nbsp;</div>
           </div>
-          <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 4px; padding: 4px; text-align: center;">
-            <div style="font-size: 6.2pt; color: #c2410c; font-weight: 700; text-transform: uppercase;">Qtd Próxima de Vencer</div>
-            <div style="font-size: 11pt; font-weight: 800; color: #ea580c; height: 16px;">&nbsp;</div>
+          <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 4px; padding: 3px; text-align: center;">
+            <div style="font-size: 6pt; color: #c2410c; font-weight: 700; text-transform: uppercase;">Qtd Próxima de Vencer</div>
+            <div style="font-size: 10pt; font-weight: 800; color: #ea580c; height: 14px;">&nbsp;</div>
           </div>
         </div>
       </div>
 
       <!-- Checklist de Boas Práticas -->
-      <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 5px 8px; background: #ffffff;">
-        <div style="font-size: 7.2pt; font-weight: 700; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
+      <div style="border: 1px solid #cbd5e1; border-radius: 5px; padding: 4px 8px; background: #ffffff;">
+        <div style="font-size: 7pt; font-weight: 700; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
           ✅ Checklist Operacional do Equipamento
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 6px; font-size: 6.5pt; color: #334155;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; font-size: 6.4pt; color: #334155;">
           <div><span class="checkbox-square"></span> Regra PVPS aplicada (frente/topo)</div>
           <div><span class="checkbox-square"></span> Sem produtos vencidos</div>
           <div><span class="checkbox-square"></span> Etiquetas e preços legíveis</div>
@@ -1047,26 +777,26 @@ def generate_freezer_sheet_html():
     </div>
 
     <!-- ASSINATURAS -->
-    <div class="signatures-bar" style="margin-top: 4px;">
+    <div class="signatures-bar" style="margin-top: 2px; padding-top: 1px; margin-bottom: 2px;">
       <div class="sig-item">
-        <div class="sig-line"></div>
+        <div class="sig-line" style="height: 14px; margin-bottom: 2px;"></div>
         <div class="sig-role">Auditor Responsável</div>
         <div class="sig-desc">Conferência Física do Freezer</div>
       </div>
       <div class="sig-item">
-        <div class="sig-line"></div>
+        <div class="sig-line" style="height: 14px; margin-bottom: 2px;"></div>
         <div class="sig-role">Líder do Açougue</div>
-        <div class="sig-desc">Felipe Gabriel — BRIGADA-IA</div>
+        <div class="sig-desc">Visto / Validação Operacional</div>
       </div>
       <div class="sig-item">
-        <div class="sig-line"></div>
+        <div class="sig-line" style="height: 14px; margin-bottom: 2px;"></div>
         <div class="sig-role">Prevenção de Perdas / Gerência</div>
         <div class="sig-desc">Validação e Visto Operacional</div>
       </div>
     </div>
 
     <!-- FOOTER -->
-    <div class="footer-strip">
+    <div class="footer-strip" style="margin-top: 1px;">
       <span>BRIGADA-IA • Folha de Auditoria Individual de Freezer</span>
       <span>Documento Operacional de Uso Diário</span>
       <span>Açougue & Perecíveis</span>
@@ -1094,16 +824,11 @@ def compile_pdf_with_edge(html_file, output_pdf):
     ]
     subprocess.run(cmd, check=True)
 
-def generate_all_pdfs():
+def generate_esquema_only():
     workspace_dir = os.path.abspath(os.path.dirname(__file__))
     static_dir = os.path.join(workspace_dir, "app", "static")
     os.makedirs(static_dir, exist_ok=True)
 
-    print("=" * 70)
-    print("BRIGADA-IA: Gerando Caderno Semanal, Folhas Diárias e Folha de Freezer...")
-    print("=" * 70)
-
-    # 1. Gerar Caderno Semanal Completo (8 Páginas: Capa + 7 Folhas)
     full_html_path = os.path.join(workspace_dir, "esquema_verificacao.html")
     full_pdf_root = os.path.join(workspace_dir, "Esquema_Verificacao_Validade_BRIGADA_IA.pdf")
     full_pdf_static = os.path.join(static_dir, "Esquema_Verificacao_Validade_BRIGADA_IA.pdf")
@@ -1111,33 +836,36 @@ def generate_all_pdfs():
     with open(full_html_path, "w", encoding="utf-8") as f:
         f.write(generate_full_caderno_html())
 
-    print("\n[1/9] Compilando Caderno Semanal Completo (8 páginas)...")
+    print("Compilando Caderno Semanal de Freezers (8 páginas)...")
     compile_pdf_with_edge(full_html_path, full_pdf_root)
     shutil.copyfile(full_pdf_root, full_pdf_static)
     size_kb = os.path.getsize(full_pdf_root) / 1024
     print(f" -> Gerado: Esquema_Verificacao_Validade_BRIGADA_IA.pdf ({size_kb:.1f} KB)")
 
-    # 2. Gerar cada Folha Diária Individual (1 página por dia da semana)
-    for idx, day_data in enumerate(DAYS_DATA):
-        day_key = day_data["dayKey"]
-        day_name = day_data["dayName"]
-        single_html_name = f"folha_verificacao_{day_key}.html"
-        single_pdf_name = f"Folha_Verificacao_{day_key}.pdf"
+def generate_all_pdfs():
+    workspace_dir = os.path.abspath(os.path.dirname(__file__))
+    static_dir = os.path.join(workspace_dir, "app", "static")
+    os.makedirs(static_dir, exist_ok=True)
 
-        single_html_path = os.path.join(workspace_dir, single_html_name)
-        single_pdf_root = os.path.join(workspace_dir, single_pdf_name)
-        single_pdf_static = os.path.join(static_dir, single_pdf_name)
+    print("=" * 70)
+    print("BRIGADA-IA: Gerando Cronograma Semanal (1 Página) e Folha de Freezer (1 Página)...")
+    print("=" * 70)
 
-        with open(single_html_path, "w", encoding="utf-8") as f:
-            f.write(generate_single_day_html(day_data))
+    # 1. Cronograma Semanal dos Freezers (Folha Única - 1 Página)
+    generate_esquema_only()
 
-        print(f"[{idx+2}/9] Compilando Folha Individual de {day_name} (1 página)...")
-        compile_pdf_with_edge(single_html_path, single_pdf_root)
-        shutil.copyfile(single_pdf_root, single_pdf_static)
-        day_size_kb = os.path.getsize(single_pdf_root) / 1024
-        print(f" -> Gerado: {single_pdf_name} ({day_size_kb:.1f} KB)")
+    # 2. Folha Individual de Freezer em Branco (30 Itens - 1 Página)
+    generate_freezer_only()
 
-    # 3. Gerar Folha Individual de Freezer em Branco
+    print("\n" + "=" * 70)
+    print("CONCLUÍDO COM SUCESSO! Folhas geradas em 1 página cada.")
+    print("=" * 70)
+
+def generate_freezer_only():
+    workspace_dir = os.path.abspath(os.path.dirname(__file__))
+    static_dir = os.path.join(workspace_dir, "app", "static")
+    os.makedirs(static_dir, exist_ok=True)
+
     freezer_html_path = os.path.join(workspace_dir, "folha_auditoria_freezer.html")
     freezer_pdf_root = os.path.join(workspace_dir, "Folha_Auditoria_Freezer.pdf")
     freezer_pdf_static = os.path.join(static_dir, "Folha_Auditoria_Freezer.pdf")
@@ -1145,18 +873,17 @@ def generate_all_pdfs():
     with open(freezer_html_path, "w", encoding="utf-8") as f:
         f.write(generate_freezer_sheet_html())
 
-    print("\n[9/9] Compilando Folha de Auditoria de Freezer Individual (1 página)...")
+    print("Compilando Folha de Auditoria de Freezer Individual (1 página)...")
     compile_pdf_with_edge(freezer_html_path, freezer_pdf_root)
     shutil.copyfile(freezer_pdf_root, freezer_pdf_static)
     fz_size_kb = os.path.getsize(freezer_pdf_root) / 1024
     print(f" -> Gerado: Folha_Auditoria_Freezer.pdf ({fz_size_kb:.1f} KB)")
 
-    print("\n" + "=" * 70)
-    print("CONCLUÍDO COM SUCESSO!")
-    print(f"Caderno Semanal: {full_pdf_static}")
-    print(f"Folha para Freezer: {freezer_pdf_static}")
-    print(f"Total de Folhas Salvas em: {static_dir}")
-    print("=" * 70)
-
 if __name__ == "__main__":
-    generate_all_pdfs()
+    import sys
+    if "--freezer" in sys.argv:
+        generate_freezer_only()
+    elif "--esquema" in sys.argv:
+        generate_esquema_only()
+    else:
+        generate_all_pdfs()

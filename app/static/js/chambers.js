@@ -809,12 +809,6 @@ window.BrigadaChambers = {
             <a href="/static/Folha_Auditoria_Freezer.pdf" target="_blank" title="Folha de auditoria em branco para freezers individuais" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 14px; border-radius: 8px; text-decoration: none; color: #ffffff; background: linear-gradient(135deg, #0ea5e9, #0284c7); font-weight: 700; box-shadow: 0 2px 6px rgba(14, 165, 233, 0.25);">
               📋 Folha para Freezer (Em Branco)
             </a>
-            <a href="/static/Folha_Verificacao_${selectedSched.dayKey}.pdf" target="_blank" title="Baixar folha individual A4 pronta para imprimir" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 14px; border-radius: 8px; text-decoration: none; color: #ffffff; background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
-              📄 Folha de ${selectedSched.dayName} (1 Pág)
-            </a>
-            <a href="/static/Esquema_Verificacao_Validade_BRIGADA_IA.pdf" target="_blank" title="Caderno semanal oficial com 1 folha para cada dia da semana" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; text-decoration: none; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); font-weight: 700;">
-              📚 Caderno Completo (7 Folhas)
-            </a>
           </div>
         </div>
 
