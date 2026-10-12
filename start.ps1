@@ -1,3 +1,7 @@
+param(
+    [switch]$Update
+)
+
 # BRIGADA-IA - Script de Inicialização para PowerShell
 $Host.UI.RawUI.WindowTitle = "BRIGADA-IA - Servidor"
 Clear-Host
@@ -25,6 +29,8 @@ if (Test-Path venv) {
     }
 }
 
+$VenvRecemCriada = $false
+
 # Cria o ambiente virtual se não existir
 if (-not (Test-Path venv)) {
     Write-Host "[INFO] Criando ambiente virtual (venv) usando $PyCmd..." -ForegroundColor Yellow
@@ -34,16 +40,23 @@ if (-not (Test-Path venv)) {
         Read-Host "Pressione Enter para sair..."
         exit
     }
+    $VenvRecemCriada = $true
 }
 
 # Ativa o ambiente virtual
 Write-Host "[INFO] Ativando ambiente virtual..." -ForegroundColor Yellow
 . .\venv\Scripts\Activate.ps1
 
-# Instala dependências
-Write-Host "[INFO] Verificando e instalando dependências..." -ForegroundColor Yellow
-python -m pip install --upgrade pip | Out-Null
-pip install -r requirements.txt
+# Instala dependências apenas na primeira criação ou se -Update for fornecido
+if ($Update) {
+    Write-Host "[INFO] Atualizando dependências solicitadas..." -ForegroundColor Yellow
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+} elseif ($VenvRecemCriada) {
+    Write-Host "[INFO] Instalando dependências pela primeira vez (isso ocorre apenas no 1º uso)..." -ForegroundColor Yellow
+    python -m pip install --upgrade pip | Out-Null
+    pip install -r requirements.txt
+}
 
 Write-Host "====================================================" -ForegroundColor Green
 Write-Host "Servidor pronto! Iniciando a aplicação..." -ForegroundColor Green

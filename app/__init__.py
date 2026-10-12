@@ -63,20 +63,25 @@ def create_app():
 
 
 def _ensure_supabase_schema():
-    """Verifica se as colunas necessárias existem no Supabase."""
-    try:
-        from app.utils.supabase_client import supabase
-        logger.info("Verificando estrutura da tabela 'produtos' no Supabase...")
-        res = supabase.table("produtos").select("id, is_awaiting_reduction").limit(1).execute()
-        logger.info("Tabela 'produtos' possui a coluna 'is_awaiting_reduction' ✅")
-    except Exception as e:
-        logger.warning(
-            "\n"
-            "========================================================================\n"
-            "⚠️ ATENÇÃO: A coluna 'is_awaiting_reduction' não existe ou não está acessível no Supabase.\n"
-            "Por favor, execute o seguinte comando SQL no SQL Editor do seu Supabase Dashboard:\n\n"
-            "   ALTER TABLE produtos ADD COLUMN IF NOT EXISTS is_awaiting_reduction BOOLEAN DEFAULT false;\n\n"
-            "Os produtos continuarão funcionando com fallback temporário local em memória.\n"
-            "========================================================================"
-        )
+    """Verifica se as colunas necessárias existem no Supabase (em segundo plano para não travar o startup)."""
+    import threading
+
+    def _check():
+        try:
+            from app.utils.supabase_client import supabase
+            logger.info("Verificando estrutura da tabela 'produtos' no Supabase...")
+            res = supabase.table("produtos").select("id, is_awaiting_reduction").limit(1).execute()
+            logger.info("Tabela 'produtos' possui a coluna 'is_awaiting_reduction' ✅")
+        except Exception as e:
+            logger.warning(
+                "\n"
+                "========================================================================\n"
+                "⚠️ ATENÇÃO: A coluna 'is_awaiting_reduction' não existe ou não está acessível no Supabase.\n"
+                "Por favor, execute o seguinte comando SQL no SQL Editor do seu Supabase Dashboard:\n\n"
+                "   ALTER TABLE produtos ADD COLUMN IF NOT EXISTS is_awaiting_reduction BOOLEAN DEFAULT false;\n\n"
+                "Os produtos continuarão funcionando com fallback temporário local em memória.\n"
+                "========================================================================"
+            )
+
+    threading.Thread(target=_check, daemon=True).start()
 

@@ -25,6 +25,15 @@
   <!-- jsPDF and AutoTable for native robust vector PDFs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Three.js Importmap for 3D Digital Twin -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
   <div id="print-area"></div>
@@ -146,6 +155,7 @@
   <script src="{{ url_for('static', filename='js/cracha.js') }}?v=2.6.1"></script>
   <script src="{{ url_for('static', filename='js/resumo_mensal.js') }}?v=2.0.0"></script>
   <script src="{{ url_for('static', filename='js/verse_of_the_day.js') }}?v=2.0.0"></script>
+  <script src="{{ url_for('static', filename='js/twin3d.js') }}?v=1.0.0"></script>
 
   <!-- Main router (bootstraps the app) -->
   <script src="{{ url_for('static', filename='js/catalog.js') }}?v=2.0.0"></script>

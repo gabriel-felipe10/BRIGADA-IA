@@ -987,6 +987,9 @@ window.BrigadaRouter = {
   },
 
   async navigate(page) {
+    if (this.currentPage === 'gemeo-digital' && page !== 'gemeo-digital' && window.BrigadaTwin) {
+      window.BrigadaTwin.destroy();
+    }
     this.currentPage = page;
     const root = document.getElementById('app-root');
     if (!root) return;
@@ -1317,6 +1320,12 @@ window.BrigadaRouter = {
             <a class="sidebar__link ${activePage === 'piso-loja' ? 'sidebar__link--active' : ''}" data-page="piso-loja" href="#">
               <span class="sidebar__link-icon">🏪</span>
               <span>Piso de Loja</span>
+            </a>
+            ` : ''}
+            ${!window.BrigadaAuth.isPromotor() ? `
+            <a class="sidebar__link ${activePage === 'gemeo-digital' ? 'sidebar__link--active' : ''}" data-page="gemeo-digital" href="#">
+              <span class="sidebar__link-icon">🧊</span>
+              <span>Gêmeo Digital</span>
             </a>
             ` : ''}
             ${!window.BrigadaAuth.isPromotor() ? `
@@ -1800,6 +1809,12 @@ window.BrigadaRouter = {
         window.BrigadaPisoLoja.render(container);
       } else {
         container.innerHTML = `<div class="empty-state">Erro ao carregar Piso de Loja</div>`;
+      }
+    } else if (page === 'gemeo-digital' || page === 'twin' || page === 'gemeo_digital') {
+      if (window.BrigadaTwin) {
+        window.BrigadaTwin.render(container);
+      } else {
+        container.innerHTML = `<div class="empty-state">Erro ao carregar Gêmeo Digital</div>`;
       }
     } else if (page === 'pereciveis') {
       if (!window.BrigadaAuth.hasSectorAccess('pereciveis')) {

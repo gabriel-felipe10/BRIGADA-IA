@@ -32,6 +32,7 @@ if exist venv (
 )
 
 :: Cria o ambiente virtual venv se nao existir
+set VENV_RECEM_CRIADA=0
 if not exist venv (
     echo [INFO] Criando ambiente virtual (venv) com %PY_CMD%...
     %PY_CMD% -m venv venv
@@ -40,16 +41,22 @@ if not exist venv (
         pause
         exit /b
     )
+    set VENV_RECEM_CRIADA=1
 )
 
 :: Ativa o ambiente virtual
-echo [INFO] Ativando ambiente virtual...
 call venv\Scripts\activate
 
-:: Instala ou atualiza as dependencias
-echo [INFO] Verificando e instalando dependencias...
-python -m pip install --upgrade pip > nul
-pip install -r requirements.txt
+:: Instala ou atualiza as dependencias apenas se for primeira execucao ou se passar 'update'
+if "%1"=="update" (
+    echo [INFO] Atualizando dependencias solicitadas...
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+) else if "%VENV_RECEM_CRIADA%"=="1" (
+    echo [INFO] Instalando dependencias pela primeira vez (isso ocorre apenas no 1o uso)...
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+)
 
 :: Inicializa o servidor Flask
 echo ====================================================
