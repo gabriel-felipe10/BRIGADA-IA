@@ -280,6 +280,15 @@ window.BrigadaData = {
       this.users = resUsers;
       this.catalog = resCatalog;
 
+      // Sincroniza usuário logado com dados mais recentes do backend (ex: WhatsApp, avatar)
+      if (window.BrigadaAuth?.currentUser && Array.isArray(resUsers)) {
+        const freshUser = resUsers.find(u => u.id === window.BrigadaAuth.currentUser.id || (u.email && u.email.toLowerCase() === (window.BrigadaAuth.currentUser.email || '').toLowerCase()));
+        if (freshUser) {
+          window.BrigadaAuth.currentUser = { ...window.BrigadaAuth.currentUser, ...freshUser };
+          sessionStorage.setItem('brigada_user', JSON.stringify(window.BrigadaAuth.currentUser));
+        }
+      }
+
       // Merge items from PRODUCTS_DB into products and catalog if missing
       const seenProdKeys = new Set(this.products.map(p => `${p.category}-${p.plu}`));
       PRODUCTS_DB.forEach(p => {
@@ -935,6 +944,33 @@ window.BrigadaData = {
   },
 
   // Formata localização de produto de forma amigável
+  // Normaliza telefone para formato internacional com DDI (ex: 5581995214035)
+  normalizePhone(raw) {
+    if (!raw) return '';
+    let digits = String(raw).replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.length === 10 || digits.length === 11) {
+      digits = '55' + digits;
+    }
+    return digits;
+  },
+
+  // Formata telefone amigavelmente para exibição (ex: (81) 99521-4035)
+  formatPhoneDisplay(raw) {
+    if (!raw) return '';
+    let digits = String(raw).replace(/\D/g, '');
+    if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
+      digits = digits.slice(2);
+    }
+    if (digits.length === 11) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return raw;
+  },
+
   formatLocationFriendly(p) {
     if (!p) return '—';
     const loc = typeof p === 'string' ? p : p.location;
@@ -5422,5 +5458,208 @@ window.BrigadaData = {
     }
 
     return { success: true };
+  },
+
+  // ── APOIO À DECISÃO / GESTÃO DE PERECÍVEIS (COM INTERVENÇÃO HUMANA) ───────
+  // ── APOIO À DECISÃO / GESTÃO DE PERECÍVEIS (COM INTERVENÇÃO HUMANA) ───────
+  getUnitsPerBoxForProduct(product) {
+    if (!product) return null;
+    if (product.unitsPerBox && !isNaN(product.unitsPerBox) && Number(product.unitsPerBox) > 0) {
+      return Number(product.unitsPerBox);
+    }
+    try {
+      const map = JSON.parse(localStorage.getItem('brigada_units_per_box') || '{}');
+      if (product.plu && map[String(product.plu).trim()]) return Number(map[String(product.plu).trim()]);
+      if (product.id && map[String(product.id).trim()]) return Number(map[String(product.id).trim()]);
+    } catch (e) {}
+    return null;
+  },
+
+  setUnitsPerBoxForProduct(pluOrId, unitsPerBox) {
+    if (!pluOrId) return;
+    try {
+      const map = JSON.parse(localStorage.getItem('brigada_units_per_box') || '{}');
+      const val = Number(unitsPerBox);
+      if (!isNaN(val) && val > 0) {
+        map[String(pluOrId).trim()] = val;
+      } else {
+        delete map[String(pluOrId).trim()];
+      }
+      localStorage.setItem('brigada_units_per_box', JSON.stringify(map));
+    } catch (e) {
+      console.warn('Erro ao salvar unidades por caixa no localStorage:', e);
+    }
+  },
+
+  parseProductPackaging(product) {
+    if (!product) return { unitWeightKg: 1, unitsPerBox: 10, unit: 'un', isUserCustomBox: false };
+    const name = (product.name || '').toUpperCase();
+    const rawUnit = (product.unit || 'un').toLowerCase().trim();
+    const unit = (rawUnit === 'kg' || rawUnit === 'quilo' || rawUnit === 'kilo') ? 'kg' : 'un';
+
+    // 1. Verifica se foi informado pelo usuário (no produto ou no localStorage)
+    const customUnitsPerBox = this.getUnitsPerBoxForProduct(product);
+    let unitsPerBox = customUnitsPerBox;
+    let unitWeightKg = null;
+
+    // Detecta peso unitário no nome (ex: PCT5KG, 600G, 350G, 700G, 1KG, 1.5KG, etc.)
+    const kgMatch = name.match(/(\d+(?:[.,]\d+)?)\s*(?:KG|QUILOS?)/i);
+    const gMatch = name.match(/(\d+(?:[.,]\d+)?)\s*(?:G|GRAMAS?)/i);
+
+    if (kgMatch) {
+      unitWeightKg = parseFloat(kgMatch[1].replace(',', '.'));
+    } else if (gMatch) {
+      unitWeightKg = parseFloat(gMatch[1].replace(',', '.')) / 1000.0;
+    }
+
+    if (!unitsPerBox) {
+      if (unit === 'kg') {
+        if (!unitWeightKg) unitWeightKg = 1.0;
+        unitsPerBox = Math.max(1, Math.round(15.0 / unitWeightKg));
+      } else {
+        if (!unitWeightKg) unitWeightKg = 1.0;
+        if (unitWeightKg >= 4.0) {
+          unitsPerBox = 3; // Ex: 3 pacotes de 5kg = 15kg/caixa
+        } else if (unitWeightKg >= 1.0) {
+          unitsPerBox = 10; // Ex: 10 pacotes de 1kg = 10kg/caixa
+        } else if (unitWeightKg >= 0.5) {
+          unitsPerBox = 16; // Ex: 16 pct de 600g/700g = ~10kg/caixa
+        } else if (unitWeightKg >= 0.3) {
+          unitsPerBox = 24; // Ex: 24 pct de 350g = 8.4kg/caixa
+        } else {
+          unitsPerBox = 10;
+        }
+      }
+    }
+
+    return {
+      unitWeightKg: unitWeightKg || 1.0,
+      unitsPerBox: unitsPerBox || 10,
+      unit: unit,
+      isUserCustomBox: !!customUnitsPerBox
+    };
+  },
+
+  evaluateDecisionSupport(product, customDailyTurnover = null) {
+    if (!product) return null;
+    const status = this.getProductStatus(product);
+    const days = status.days;
+    const stock = Number(product.quantity !== undefined ? product.quantity : 0);
+    const packInfo = this.parseProductPackaging(product);
+    const unit = packInfo.unit;
+
+    // Giro diário padrão se não fornecido pelo usuário/produto
+    const defaultTurnover = 3.0;
+    const dailyTurnover = (customDailyTurnover !== null && !isNaN(customDailyTurnover))
+      ? Number(customDailyTurnover)
+      : (product.dailyTurnover ? Number(product.dailyTurnover) : defaultTurnover);
+
+    // REGRA DE OURO:
+    // SE vence em menos de 5 dias (days >= 0 && days < 5)
+    // E estoque atual > 50 unidades (ou kg)
+    // E giro diário < 5 unidades
+    const isCriticalDays = (days >= 0 && days < 5);
+    const isHighStock = stock > 50;
+    const isLowTurnover = dailyTurnover < 5;
+    const triggerRule = isCriticalDays && isHighStock && isLowTurnover && !product.expiredAction;
+
+    // Dias restantes válidos para cálculo de demanda (pelo menos 1 para o próprio dia)
+    const effectiveDays = Math.max(1, Math.ceil(days > 0 ? days : 1));
+
+    // Consumo esperado no giro atual até a data de validade
+    const expectedSalesUntilExpiry = Math.min(stock, +(effectiveDays * dailyTurnover).toFixed(1));
+
+    // Estoque em risco de quebra/vencimento
+    const riskStock = Math.max(0, stock - expectedSalesUntilExpiry);
+
+    // CÁLCULO DE ABASTECIMENTO POR DIA LEVANDO EM CONSIDERAÇÃO A QUANTIDADE TOTAL DO ITEM:
+    // Quanto abastecer por dia para liquidar 100% do estoque antes do vencimento:
+    let dailyQuantity = 0;
+    let dailyBoxesFloat = 0;
+    let dailyUn = null;
+    let dailyKg = null;
+
+    if (unit === 'kg') {
+      dailyQuantity = +(stock / effectiveDays).toFixed(1);
+      dailyKg = dailyQuantity;
+      dailyBoxesFloat = +(dailyKg / (packInfo.unitWeightKg * packInfo.unitsPerBox)).toFixed(1);
+    } else {
+      dailyQuantity = Math.ceil(stock / effectiveDays);
+      dailyUn = dailyQuantity;
+      dailyBoxesFloat = +(dailyUn / packInfo.unitsPerBox).toFixed(1);
+    }
+
+    let dailyBoxesFormatted = '';
+    if (dailyBoxesFloat <= 0) {
+      dailyBoxesFormatted = '0 cx/dia';
+    } else if (dailyBoxesFloat < 1) {
+      dailyBoxesFormatted = `< 1 cx/dia (~${dailyQuantity} ${unit}/dia)`;
+    } else if (Number.isInteger(dailyBoxesFloat)) {
+      dailyBoxesFormatted = `${dailyBoxesFloat} cx/dia`;
+    } else {
+      dailyBoxesFormatted = `~${dailyBoxesFloat} cx/dia (${Math.ceil(dailyBoxesFloat)} cx/dia)`;
+    }
+
+    // Meta de giro diário necessária para zerar todo o estoque
+    const promoTurnoverNeeded = +(stock / effectiveDays).toFixed(1);
+
+    const summaryText = unit === 'kg'
+      ? `${dailyKg} kg/dia (${dailyBoxesFormatted})`
+      : `${dailyUn} un/dia (${dailyBoxesFormatted})`;
+
+    const explanationText = `Abasteça ${dailyQuantity} ${unit} por dia durante os próximos ${effectiveDays} dias para escoar todo o estoque de ${stock} ${unit} antes do vencimento.`;
+
+    return {
+      triggerRule,
+      isCriticalDays,
+      isHighStock,
+      isLowTurnover,
+      days,
+      effectiveDays,
+      stock,
+      unit,
+      dailyTurnover,
+      expectedSalesUntilExpiry,
+      riskStock: Math.round(riskStock * 10) / 10,
+      promoTurnoverNeeded,
+      replenishment: {
+        raw: dailyQuantity,
+        daily: dailyQuantity,
+        dailyFormatted: `${dailyQuantity} ${unit}/dia`,
+        dailyUnits: dailyUn,
+        dailyKg: dailyKg,
+        dailyBoxes: dailyBoxesFloat,
+        dailyBoxesFormatted: dailyBoxesFormatted,
+        units: dailyUn !== null ? dailyUn : Math.round(dailyQuantity / packInfo.unitWeightKg),
+        unitsFormatted: `${dailyUn !== null ? dailyUn : Math.round(dailyQuantity / packInfo.unitWeightKg)} un/dia`,
+        kg: dailyKg !== null ? dailyKg : +(dailyQuantity * packInfo.unitWeightKg).toFixed(1),
+        kgFormatted: `${dailyKg !== null ? dailyKg : +(dailyQuantity * packInfo.unitWeightKg).toFixed(1)} kg/dia`,
+        boxes: dailyBoxesFloat,
+        boxesFormatted: dailyBoxesFormatted,
+        totalStock: stock,
+        effectiveDays: effectiveDays,
+        summary: summaryText,
+        explanation: explanationText
+      },
+      packInfo
+    };
+  },
+
+  getDecisionSupportProducts() {
+    return (this.products || []).filter(p => {
+      const decision = this.evaluateDecisionSupport(p);
+      return decision && decision.triggerRule;
+    });
+  },
+
+  async applyDecisionDiscount(productId, discountPercent = null) {
+    const product = (this.products || []).find(p => p.id === productId);
+    if (!product) return { success: false, error: 'Produto não encontrado' };
+    
+    await this.setAwaitingReduction([productId], true, 'aguardando');
+    product.appliedDiscount = discountPercent;
+    product.appliedDiscountDate = new Date().toISOString();
+    
+    return { success: true, product };
   }
 };

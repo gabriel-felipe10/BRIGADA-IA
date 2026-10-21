@@ -363,6 +363,23 @@
 
       // Delegação de eventos (rail + drawer)
       root.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-guardar-rail')) {
+          e.preventDefault();
+          this.toggleRail(false);
+          return;
+        }
+        const crachaBtn = e.target.closest('[data-twin-cracha]');
+        if (crachaBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const pId = crachaBtn.dataset.twinCracha;
+          const prod = window.BrigadaData.products.find(x => String(x.id) === String(pId));
+          if (prod) {
+            const ent = this.selectedKey && this.model.entities.get(this.selectedKey);
+            window.BrigadaUI?.showEditableCrachaModal?.(prod, ent);
+          }
+          return;
+        }
         const go = e.target.closest('[data-go]');
         if (go) { e.preventDefault(); this.focusEntity(go.dataset.go); return; }
         const pv = e.target.closest('[data-product]');
@@ -402,6 +419,12 @@
       this.renderRail();
       this.renderLegend();
       this.renderDrawer();
+
+      const toggleBtn = this.container?.querySelector('#twin-toggle-rail');
+      if (toggleBtn) {
+        const alertCount = this.model?.alerts?.length || 0;
+        toggleBtn.innerHTML = this.railOpen ? '◀ Guardar Painel' : `▶ Puxar Painel (${alertCount})`;
+      }
     },
 
     renderRail() {
@@ -410,7 +433,17 @@
       const m = this.model;
       const matches = this.search ? this._searchMatches() : null;
 
-      let html = '';
+      let html = `
+        <div class="twin-rail__header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.65rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border);">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="font-size: 1.15rem;">🚨</span>
+            <strong style="font-size: 0.95rem; color: var(--text-primary);">Painel de Alertas</strong>
+          </div>
+          <button type="button" class="btn btn--sm" id="btn-guardar-rail" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--text-primary); font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Guardar / Ocultar este painel">
+            ◀ Guardar
+          </button>
+        </div>
+      `;
       if (matches) {
         html += `<div class="twin-rail__section">🔎 Resultado da busca <span class="twin-badge">${matches.size}</span></div>`;
         if (!matches.size) html += `<div class="twin-rail__empty">Nenhum local contém "${esc(this.search)}".</div>`;
@@ -488,7 +521,7 @@
       const subtitle = e.type === 'freezer'
         ? `${e.sector === 'acougue' ? '🥩 Açougue' : '🥗 Perecíveis'} · ${esc(window.BrigadaPisoLoja?.FREEZER_CATEGORY_LABELS?.[e.category] || e.category || '')}`
         : e.type === 'chamber' ? `🌡️ ${esc(e.temp)} · Ocupação ${e.occupied}/${e.capacity} posições (${Math.round((e.occupied / e.capacity) * 100)}%)`
-        : e.type === 'slot' ? (e.products.length ? `Palete ${e.palletType === 'misto' ? 'misto' : 'cheio'}` : 'Posição livre')
+        : e.type === 'slot' ? (e.products.length ? (e.products.length > 1 ? `Palete misto (${e.products.length} lotes / crachás)` : `Palete cheio (1 lote / crachá)`) : 'Posição livre')
         : `${e.products.length} item(ns) na coluna`;
 
       const sorted = [...e.products].sort((a, b) => (b.sev ?? -2) - (a.sev ?? -2) || String(a.p.endDate).localeCompare(String(b.p.endDate)));
@@ -500,18 +533,24 @@
           return c ? `<span class="twin-row__where">C${pad2(c.column)}·N${c.level}·${c.pos}</span>` : '';
         })() : '';
         return `
-          <button class="twin-row" data-product="${esc(p.id)}" style="--sev:${color}">
-            <span class="twin-row__bar"></span>
-            <span class="twin-row__main">
-              <strong>${esc(p.name || 'Sem nome')}</strong>
-              <small>PLU ${esc(p.plu || '—')} · ${esc(p.quantity ?? 0)} ${esc(p.unit || '')} · Val. ${esc(D.formatDate ? D.formatDate(p.endDate) : p.endDate)} ${where}</small>
-            </span>
-            <span class="twin-row__status">${st.icon} ${esc(st.label)}${p.isAwaitingReduction ? '<em>🏷️ Rebaixa</em>' : ''}</span>
-          </button>`;
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <button class="twin-row" data-product="${esc(p.id)}" style="--sev:${color}; flex:1;">
+              <span class="twin-row__bar"></span>
+              <span class="twin-row__main">
+                <strong>${esc(p.name || 'Sem nome')}</strong>
+                <small>PLU ${esc(p.plu || '—')} · ${esc(p.quantity ?? 0)} ${esc(p.unit || '')} · Val. ${esc(D.formatDate ? D.formatDate(p.endDate) : p.endDate)} ${where}</small>
+              </span>
+              <span class="twin-row__status">${st.icon} ${esc(st.label)}${p.isAwaitingReduction ? '<em>🏷️ Rebaixa</em>' : ''}</span>
+            </button>
+            <button type="button" class="btn btn--sm btn--outline" data-twin-cracha="${esc(p.id)}" style="padding: 7px 10px; font-weight: 700; font-size: 0.72rem; border-color: rgba(99,102,241,0.5); color: #a5b4fc; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" title="Gerar e Imprimir Crachá Deste Produto">
+              🏷️ Crachá
+            </button>
+          </div>`;
       }).join('');
 
       const reducible = e.products.filter(({ p, sev }) => (sev === SEV.WARN || sev === SEV.TODAY) && !p.isAwaitingReduction);
       const actions = [];
+      if (e.products && e.products.length) actions.push(`<button class="btn btn--primary btn--sm" data-action="print-cracha" style="background:#6366f1; border:none; font-weight:700;">🏷️ Gerar Crachá${e.products.length > 1 ? "s (" + e.products.length + " lotes)" : ""}</button>`);
       if (e.type === 'chamber') actions.push(`<button class="btn btn--primary btn--sm" data-action="enter" data-chamber="${e.chamberKey}">🚪 Entrar na câmara</button>`);
       if (reducible.length) actions.push(`<button class="btn btn--outline btn--sm" data-action="rebaixa">🏷️ Marcar rebaixa (${reducible.length})</button>`);
       actions.push(`<button class="btn btn--ghost btn--sm" data-action="open-module">↗ Abrir no módulo</button>`);
@@ -527,6 +566,7 @@
         </div>
         ${e.scheduled ? `<div class="twin-drawer__notice">📅 Este local está na <strong>agenda de verificação de hoje</strong>.</div>` : ''}
         <div class="twin-drawer__pills">${chips || '<span class="twin-pill">Sem itens ativos</span>'}${e.rebaixa ? `<span class="twin-pill" style="--sev:#a855f7">🏷️ ${e.rebaixa} em rebaixa</span>` : ''}</div>
+        ${e.type === 'slot' && e.products.length > 1 ? `<div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 6px 10px; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px;">📦 <b>Palete com múltiplos lotes:</b> Este palete possui ${e.products.length} lotes alocados. Cada lote possui seu próprio crachá de identificação.</div>` : ''}
         <div class="twin-drawer__actions">${actions.join('')}</div>
         <div class="twin-drawer__list">
           ${rows || `<div class="twin-rail__empty">Nenhum produto alocado neste local.</div>`}
@@ -538,6 +578,13 @@
       const e = this.selectedKey && this.model.entities.get(this.selectedKey);
       if (action === 'close') { this.select(null); return; }
       if (action === 'enter') { this.setView(data.chamber); return; }
+      if (action === 'print-cracha') {
+        const first = e.products[0]?.p;
+        if (first) {
+          window.BrigadaUI?.showEditableCrachaModal?.(first, e);
+        }
+        return;
+      }
       if (!e) return;
 
       if (action === 'rebaixa') {
@@ -800,6 +847,9 @@
         label.position.set(c.x, c.h + 0.9, c.z);
         g.add(label);
       });
+
+      // Equipe operacional e empilhadeiras em atividade na loja
+      this._buildStoreActivity(g);
     },
 
     _chamberRackPositions(chKey) {
@@ -896,6 +946,666 @@
       const title = this._label(`❄️ ${CHAMBER_NAMES[chKey]}`, { size: 1.4, flat: true, bg: null, color: isLight ? '#1e3a8a' : '#c7d2fe' });
       title.position.set(conf.offset.x, 0.03, conf.offset.z + floorD / 2 - 1.5);
       g.add(title);
+
+      // Operador trabalhando dentro do corredor da câmara (ex: ORLANDO O MELHOR na Câmara Congelada)
+      const chamberWorker = this._createWorker({
+        name: chKey === 'congelado' ? 'ORLANDO O MELHOR' : 'CONFERENTE RESFRIADOS',
+        x: conf.offset.x - 1.2,
+        z: conf.offset.z,
+        rotY: chKey === 'congelado' ? 0.3 : Math.PI * 0.5,
+        role: chKey === 'congelado' ? 'thermal' : 'clipboard',
+        vestColor: chKey === 'congelado' ? 0x0284c7 : 0x84cc16,
+        helmetColor: 0xffffff,
+        waypoints: [
+          { x: conf.offset.x - 1.2, z: conf.offset.z, facingY: 0.3 },
+          { x: conf.offset.x + 5.0, z: conf.offset.z, facingY: -Math.PI * 0.4 },
+          { x: conf.offset.x - 5.5, z: conf.offset.z, facingY: Math.PI * 0.5 }
+        ],
+        speed: 0.95
+      });
+      g.add(chamberWorker);
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 4. ELEMENTOS OPERACIONAIS (BONECOS E EMPILHADEIRAS 3D)
+    // ════════════════════════════════════════════════════════════════════════
+
+    _buildStoreActivity(g) {
+      if (!this._ctx) return;
+      this._ctx.animatedActors = this._ctx.animatedActors || [];
+
+      // ── 1. DUAS EMPILHADEIRAS INDUSTRIAIS COM MANOBRA PERIÓDICA ──
+      // RAFAEL: Manobra entre o corredor central e a entrada da Câmara Congelada
+      const fork1 = this._createForklift({
+        x: -3.2, z: -4.5, rotY: -0.35,
+        color: 0xf59e0b, counterColor: 0x1e293b,
+        hasPallet: true, forkHeight: 0.35,
+        driverName: 'RAFAEL', driverHelmet: 0xffffff,
+        waypoints: [
+          { x: -3.2, z: -4.5, facingY: -0.35 },
+          { x: -8.0, z: -4.5, facingY: -Math.PI * 0.5 },
+          { x: -5.5, z: -2.8, facingY: 0.2 }
+        ],
+        speed: 1.3
+      });
+      g.add(fork1);
+
+      // GILMAR: Manobra entre o corredor lateral e a Câmara Resfriada
+      const fork2 = this._createForklift({
+        x: 18.0, z: -4.0, rotY: 1.15,
+        color: 0x0284c7, counterColor: 0x0f172a,
+        hasPallet: false, forkHeight: 0.65,
+        driverName: 'GILMAR', driverHelmet: 0xeab308,
+        waypoints: [
+          { x: 18.0, z: -4.0, facingY: 1.15 },
+          { x: 18.0, z: 0.5,  facingY: Math.PI * 0.5 },
+          { x: 14.5, z: -2.5, facingY: -0.4 }
+        ],
+        speed: 1.4
+      });
+      g.add(fork2);
+
+      // ── 2. EQUIPE OPERACIONAL COM ROTAS DE RONDA E INSPEÇÃO PERIÓDICA ──
+      // FELIPE: Coordenador andando pelo corredor central fiscalizando ambos os lados
+      const felipe = this._createWorker({
+        name: 'FELIPE',
+        x: 0.5, z: 2.2, rotY: -0.5,
+        role: 'leader',
+        vestColor: 0xf97316, helmetColor: 0xffffff,
+        waypoints: [
+          { x: 0.5, z: 2.2,  facingY: -Math.PI * 0.4 },
+          { x: 0.5, z: 6.5,  facingY: Math.PI * 0.4 },
+          { x: 0.5, z: -1.2, facingY: -Math.PI * 0.9 }
+        ],
+        speed: 0.95
+      });
+      g.add(felipe);
+
+      // JEFFERSON: Puxando transpaleteira manual ao longo do corredor cruzado
+      const jefferson = this._createWorker({
+        name: 'JEFFERSON',
+        x: 4.8, z: -3.8, rotY: Math.PI * 0.5,
+        role: 'pallet_jack',
+        vestColor: 0x84cc16, helmetColor: 0xeab308,
+        waypoints: [
+          { x: 4.8, z: -3.8, facingY: Math.PI * 0.5 },
+          { x: 9.5, z: -3.8, facingY: Math.PI * 0.5 },
+          { x: 2.5, z: -3.8, facingY: -Math.PI * 0.5 }
+        ],
+        speed: 0.85
+      });
+      g.add(jefferson);
+
+      // HUGO: Conferente andando e checando os acessos da Câmara Congelada
+      const hugo = this._createWorker({
+        name: 'HUGO',
+        x: -11.5, z: -5.8, rotY: Math.PI * 0.95,
+        role: 'thermal',
+        vestColor: 0x0284c7, helmetColor: 0xffffff,
+        waypoints: [
+          { x: -11.5, z: -5.8, facingY: Math.PI * 0.95 },
+          { x: -16.0, z: -5.8, facingY: Math.PI },
+          { x: -7.5,  z: -5.8, facingY: Math.PI * 0.8 }
+        ],
+        speed: 0.9
+      });
+      g.add(hugo);
+
+      // JUARES: Conferente inspecionando o recebimento em frente à Câmara Resfriada
+      const juares = this._createWorker({
+        name: 'JUARES',
+        x: 11.2, z: -5.8, rotY: Math.PI * 0.9,
+        role: 'clipboard',
+        vestColor: 0x84cc16, helmetColor: 0xffffff,
+        waypoints: [
+          { x: 11.2, z: -5.8, facingY: Math.PI * 0.9 },
+          { x: 7.0,  z: -5.8, facingY: Math.PI * 0.75 },
+          { x: 13.5, z: -5.8, facingY: Math.PI }
+        ],
+        speed: 0.9
+      });
+      g.add(juares);
+
+      // IMPERADOR: Abastecedor caminhando com caixa entre as gôndolas de Perecíveis
+      const imperador = this._createWorker({
+        name: 'IMPERADOR',
+        x: 10.0, z: 2.4, rotY: 0.3,
+        role: 'box',
+        vestColor: 0xf97316, helmetColor: 0xeab308,
+        waypoints: [
+          { x: 10.0, z: 2.4, facingY: 0.3 },
+          { x: 15.5, z: 2.4, facingY: Math.PI * 0.4 },
+          { x: 5.5,  z: 2.4, facingY: -Math.PI * 0.3 }
+        ],
+        speed: 0.9
+      });
+      g.add(imperador);
+
+      // LIU: Conferente auditando validades ao longo do corredor do Açougue
+      const liu = this._createWorker({
+        name: 'LIU',
+        x: -10.0, z: 2.4, rotY: -Math.PI * 0.4,
+        role: 'clipboard',
+        vestColor: 0x84cc16, helmetColor: 0xeab308,
+        waypoints: [
+          { x: -10.0, z: 2.4, facingY: -Math.PI * 0.4 },
+          { x: -15.5, z: 2.4, facingY: -Math.PI * 0.6 },
+          { x: -5.5,  z: 2.4, facingY: -Math.PI * 0.3 }
+        ],
+        speed: 0.9
+      });
+      g.add(liu);
+
+      // ISABEL: Repositora circulando na fileira intermediária de Perecíveis
+      const isabel = this._createWorker({
+        name: 'ISABEL',
+        x: 14.5, z: 6.1, rotY: -Math.PI * 0.35,
+        role: 'box',
+        vestColor: 0x84cc16, helmetColor: 0xffffff,
+        waypoints: [
+          { x: 14.5, z: 6.1, facingY: -Math.PI * 0.35 },
+          { x: 9.0,  z: 6.1, facingY: -Math.PI * 0.5 },
+          { x: 19.5, z: 6.1, facingY: Math.PI * 0.5 }
+        ],
+        speed: 0.92
+      });
+      g.add(isabel);
+
+      // ROSE: Auditora de carnes conferindo gôndolas na fileira do Açougue
+      const rose = this._createWorker({
+        name: 'ROSE',
+        x: -7.5, z: 6.1, rotY: Math.PI * 0.3,
+        role: 'clipboard',
+        vestColor: 0xf97316, helmetColor: 0xffffff,
+        waypoints: [
+          { x: -7.5,  z: 6.1, facingY: Math.PI * 0.3 },
+          { x: -13.5, z: 6.1, facingY: -Math.PI * 0.3 },
+          { x: -4.0,  z: 6.1, facingY: Math.PI * 0.5 }
+        ],
+        speed: 0.92
+      });
+      g.add(rose);
+    },
+
+    _createForklift({ x = 0, z = 0, rotY = 0, color = 0xf59e0b, counterColor = 0x1e293b, hasPallet = false, forkHeight = 0.35, driverName = '', driverHelmet = 0xffffff, waypoints = null, speed = 1.3 } = {}) {
+      const { THREE } = this._ctx;
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+      group.rotation.y = rotY;
+
+      const bodyMat = new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.4 });
+      const counterMat = new THREE.MeshStandardMaterial({ color: counterColor, metalness: 0.5, roughness: 0.5 });
+      const blackSteelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
+      const rubberMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.25 });
+      const lightMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xfbbf24, emissiveIntensity: 0.7 });
+      const beaconMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 1.0, transparent: true, opacity: 0.85 });
+
+      // 1. Chassi principal
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.65, 1.8), bodyMat);
+      chassis.position.set(0, 0.52, -0.1);
+      chassis.castShadow = true; chassis.receiveShadow = true;
+      group.add(chassis);
+
+      // Contrapeso traseiro arredondado
+      const counterWeight = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.68, 0.6), counterMat);
+      counterWeight.position.set(0, 0.54, -1.05);
+      counterWeight.castShadow = true;
+      group.add(counterWeight);
+
+      // 2. Rodas industriais (4 rodas)
+      const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.22, 16);
+      const hubGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.23, 12);
+      const wheelMeshes = [];
+      const wheelPos = [
+        [-0.58, 0.26, 0.55],  // dianteira esquerda
+        [0.58, 0.26, 0.55],   // dianteira direita
+        [-0.54, 0.26, -0.95], // traseira esquerda
+        [0.54, 0.26, -0.95],  // traseira direita
+      ];
+      wheelPos.forEach(([wx, wy, wz]) => {
+        const wheel = new THREE.Mesh(wheelGeo, rubberMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, wy, wz);
+        wheel.castShadow = true;
+        group.add(wheel);
+        wheelMeshes.push(wheel);
+
+        const hub = new THREE.Mesh(hubGeo, blackSteelMat);
+        hub.rotation.z = Math.PI / 2;
+        hub.position.set(wx, wy, wz);
+        group.add(hub);
+      });
+
+      // 3. Cabine / Gaiola de Proteção (ROPS)
+      const postGeo = new THREE.BoxGeometry(0.06, 1.35, 0.06);
+      const cagePosts = [
+        [-0.52, 1.48, 0.45],
+        [0.52, 1.48, 0.45],
+        [-0.52, 1.48, -0.75],
+        [0.52, 1.48, -0.75]
+      ];
+      cagePosts.forEach(([px, py, pz]) => {
+        const p = new THREE.Mesh(postGeo, blackSteelMat);
+        p.position.set(px, py, pz);
+        p.castShadow = true;
+        group.add(p);
+      });
+
+      // Teto da gaiola com grade
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.06, 1.3), blackSteelMat);
+      roof.position.set(0, 2.15, -0.15);
+      roof.castShadow = true;
+      group.add(roof);
+
+      // Giroflex / Warning Beacon no teto
+      const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.14, 12), beaconMat);
+      beacon.position.set(0, 2.25, -0.15);
+      group.add(beacon);
+      if (this._ctx.animatedActors) {
+        this._ctx.animatedActors.push({ type: 'beacon', mesh: beacon, phase: Math.random() * Math.PI * 2 });
+      }
+
+      // Crachá flutuante com o nome do operador da empilhadeira
+      if (driverName) {
+        const forkTag = this._label(`🚜 ${driverName}`, { size: 0.46, color: '#fef08a', bg: 'rgba(15, 23, 42, 0.92)' });
+        forkTag.position.set(0, 2.65, -0.15);
+        group.add(forkTag);
+      }
+
+      // Faróis dianteiros
+      [-0.42, 0.42].forEach(fx => {
+        const headLight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.08), lightMat);
+        headLight.position.set(fx, 1.7, 0.48);
+        group.add(headLight);
+      });
+
+      // Banco do operador
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.45), blackSteelMat);
+      seat.position.set(0, 0.98, -0.35);
+      group.add(seat);
+
+      // Volante e coluna de direção
+      const colDirection = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8), blackSteelMat);
+      colDirection.position.set(0, 1.1, 0.15);
+      colDirection.rotation.x = -Math.PI * 0.18;
+      group.add(colDirection);
+
+      const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 8, 16), blackSteelMat);
+      steerWheel.position.set(0, 1.28, 0.08);
+      steerWheel.rotation.x = Math.PI * 0.32;
+      group.add(steerWheel);
+
+      // Operador sentado na empilhadeira
+      const driverGroup = new THREE.Group();
+      driverGroup.position.set(0, 1.05, -0.28);
+      // Tronco do motorista
+      const dTorso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.22), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+      dTorso.position.y = 0.22;
+      driverGroup.add(dTorso);
+      // Colete refletivo
+      const dVest = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.38, 0.24), new THREE.MeshStandardMaterial({ color: 0x84cc16 }));
+      dVest.position.y = 0.22;
+      driverGroup.add(dVest);
+      // Cabeça e capacete
+      const dHead = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfcd34d }));
+      dHead.position.y = 0.52;
+      driverGroup.add(dHead);
+      const dHelmet = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), new THREE.MeshStandardMaterial({ color: driverHelmet }));
+      dHelmet.position.y = 0.55;
+      driverGroup.add(dHelmet);
+      // Braços estendidos até o volante
+      [-0.16, 0.16].forEach(ax => {
+        const dArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.28, 0.08), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+        dArm.position.set(ax, 0.25, 0.16);
+        dArm.rotation.x = Math.PI * 0.35;
+        driverGroup.add(dArm);
+      });
+      group.add(driverGroup);
+
+      // 4. Torre de Elevação (Mast) e Garfos dianteiros
+      const mastH = 2.2;
+      const mastRailGeo = new THREE.BoxGeometry(0.08, mastH, 0.1);
+      [-0.38, 0.38].forEach(mx => {
+        const rail = new THREE.Mesh(mastRailGeo, steelMat);
+        rail.position.set(mx, mastH / 2 + 0.1, 0.88);
+        rail.castShadow = true;
+        group.add(rail);
+      });
+      // Travessas da torre
+      [0.6, 1.2, 1.8, 2.2].forEach(ty => {
+        const cross = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.06, 0.06), steelMat);
+        cross.position.set(0, ty, 0.88);
+        group.add(cross);
+      });
+
+      // Carro porta-garfos (móvel conforme forkHeight)
+      const carriage = new THREE.Group();
+      carriage.position.set(0, forkHeight, 0.94);
+
+      const carriagePlate = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.45, 0.06), blackSteelMat);
+      carriagePlate.position.set(0, 0.22, 0);
+      carriage.add(carriagePlate);
+
+      // 2 Garfos de aço
+      const forkGeo = new THREE.BoxGeometry(0.09, 0.04, 1.15);
+      [-0.26, 0.26].forEach(fx => {
+        const forkV = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.46, 0.05), steelMat);
+        forkV.position.set(fx, 0.23, 0.04);
+        carriage.add(forkV);
+        const forkH = new THREE.Mesh(forkGeo, steelMat);
+        forkH.position.set(fx, 0.02, 0.6);
+        forkH.castShadow = true;
+        carriage.add(forkH);
+      });
+
+      // Se tiver carga de palete e caixas na empilhadeira
+      if (hasPallet) {
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.9 });
+        const boxMat1 = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.85 });
+        const boxMat2 = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.85 });
+
+        // Palete de madeira
+        const pallet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.12, 1.05), woodMat);
+        pallet.position.set(0, 0.1, 0.62);
+        pallet.castShadow = true;
+        carriage.add(pallet);
+
+        // Caixas empilhadas no palete
+        const boxes = [
+          { x: -0.24, y: 0.32, z: 0.40, w: 0.45, h: 0.32, d: 0.42, mat: boxMat1 },
+          { x: 0.24,  y: 0.32, z: 0.40, w: 0.45, h: 0.32, d: 0.42, mat: boxMat2 },
+          { x: -0.24, y: 0.32, z: 0.82, w: 0.45, h: 0.32, d: 0.42, mat: boxMat2 },
+          { x: 0.24,  y: 0.32, z: 0.82, w: 0.45, h: 0.32, d: 0.42, mat: boxMat1 },
+          { x: -0.15, y: 0.62, z: 0.55, w: 0.55, h: 0.30, d: 0.55, mat: boxMat1 },
+          { x: 0.18,  y: 0.62, z: 0.68, w: 0.48, h: 0.30, d: 0.48, mat: boxMat2 }
+        ];
+        boxes.forEach(b => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), b.mat);
+          m.position.set(b.x, b.y, b.z);
+          m.castShadow = true;
+          carriage.add(m);
+        });
+      }
+
+      group.add(carriage);
+
+      if (this._ctx.animatedActors) {
+        const wpList = Array.isArray(waypoints) && waypoints.length >= 2 ? waypoints : [
+          { x, z, facingY: rotY },
+          { x: x + 4, z: z, facingY: rotY }
+        ];
+        this._ctx.animatedActors.push({
+          type: 'forklift',
+          driverName,
+          group,
+          baseY: group.position.y,
+          wheels: wheelMeshes,
+          waypoints: wpList,
+          currentWp: 0,
+          targetWp: 1,
+          state: 'moving',
+          stateTimer: 0.5,
+          speed: Math.max(speed, 1.8),
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+
+      return group;
+    },
+
+    _createWorker({ name = '', x = 0, z = 0, rotY = 0, role = 'clipboard', vestColor = 0x84cc16, helmetColor = 0xffffff, waypoints = null, speed = 0.92 } = {}) {
+      const { THREE } = this._ctx;
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+      group.rotation.y = rotY;
+
+      // Materiais do operador
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.6 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+      const bootsMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+      const vestMat = new THREE.MeshStandardMaterial({ color: vestColor, roughness: 0.4 });
+      const stripeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, emissive: 0xffffff, emissiveIntensity: 0.2 });
+      const helmetMat = new THREE.MeshStandardMaterial({ color: helmetColor, roughness: 0.3 });
+      const shirtMat = new THREE.MeshStandardMaterial({ color: role === 'thermal' ? 0x0284c7 : 0x334155, roughness: 0.6 });
+
+      // Pernas com articulação no quadril para animação de caminhada
+      const legGeo = new THREE.BoxGeometry(0.13, 0.58, 0.14);
+      const bootGeo = new THREE.BoxGeometry(0.14, 0.12, 0.20);
+      
+      const legLGroup = new THREE.Group();
+      legLGroup.position.set(-0.10, 0.68, 0); // pivô no quadril
+      const legL = new THREE.Mesh(legGeo, pantsMat);
+      legL.position.set(0, -0.26, 0);
+      legL.castShadow = true;
+      legLGroup.add(legL);
+      const bootL = new THREE.Mesh(bootGeo, bootsMat);
+      bootL.position.set(0, -0.58, 0.03);
+      bootL.castShadow = true;
+      legLGroup.add(bootL);
+      group.add(legLGroup);
+
+      const legRGroup = new THREE.Group();
+      legRGroup.position.set(0.10, 0.68, 0); // pivô no quadril
+      const legR = new THREE.Mesh(legGeo, pantsMat);
+      legR.position.set(0, -0.26, 0);
+      legR.castShadow = true;
+      legRGroup.add(legR);
+      const bootR = new THREE.Mesh(bootGeo, bootsMat);
+      bootR.position.set(0, -0.58, 0.03);
+      bootR.castShadow = true;
+      legRGroup.add(bootR);
+      group.add(legRGroup);
+
+      // Tronco e Camisa
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.22), shirtMat);
+      torso.position.set(0, 0.98, 0);
+      torso.castShadow = true;
+      group.add(torso);
+
+      // Colete refletivo (EPI)
+      if (role !== 'thermal') {
+        const vest = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.42, 0.24), vestMat);
+        vest.position.set(0, 0.98, 0);
+        vest.castShadow = true;
+        group.add(vest);
+
+        // Faixa refletiva prateada no colete
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.41, 0.06, 0.25), stripeMat);
+        stripe.position.set(0, 0.96, 0);
+        group.add(stripe);
+      } else {
+        // Jaqueta térmica acolchoada para câmara fria
+        const coat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.54, 0.26), shirtMat);
+        coat.position.set(0, 0.98, 0);
+        coat.castShadow = true;
+        group.add(coat);
+      }
+
+      // Cabeça
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 12), skinMat);
+      head.position.set(0, 1.34, 0);
+      group.add(head);
+
+      // Capacete de Segurança com aba
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), helmetMat);
+      helmet.position.set(0, 1.38, 0);
+      group.add(helmet);
+      const brim = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.22), helmetMat);
+      brim.position.set(0, 1.37, 0.05);
+      group.add(brim);
+
+      // Braços e Ações conforme o papel (role)
+      let rightArmGroup = null;
+
+      if (role === 'clipboard' || role === 'thermal') {
+        // Braço esquerdo segurando a prancheta à frente
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.32, 0.09), shirtMat);
+        armL.position.set(-0.21, 1.05, 0.12);
+        armL.rotation.x = Math.PI * 0.35;
+        group.add(armL);
+
+        // Prancheta com folha branca
+        const boardMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
+        const paperMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+        const board = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.32, 0.015), boardMat);
+        board.position.set(-0.08, 1.10, 0.26);
+        board.rotation.x = -Math.PI * 0.25;
+        board.rotation.y = Math.PI * 0.1;
+        group.add(board);
+        const paper = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.26, 0.018), paperMat);
+        paper.position.copy(board.position);
+        paper.rotation.copy(board.rotation);
+        group.add(paper);
+
+        // Braço direito com caneta apontando
+        const armR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.32, 0.09), shirtMat);
+        armR.position.set(0.21, 1.05, 0.10);
+        armR.rotation.x = Math.PI * 0.28;
+        armR.rotation.z = -Math.PI * 0.15;
+        group.add(armR);
+        rightArmGroup = armR;
+
+      } else if (role === 'box') {
+        // Carregando caixa à frente com ambas as mãos
+        [-0.22, 0.22].forEach(bx => {
+          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.32, 0.09), shirtMat);
+          arm.position.set(bx, 1.02, 0.14);
+          arm.rotation.x = Math.PI * 0.45;
+          group.add(arm);
+        });
+
+        // Caixa de papelão
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.32, 0.38), boxMat);
+        box.position.set(0, 1.02, 0.32);
+        box.castShadow = true;
+        group.add(box);
+
+        // Etiqueta branca na caixa
+        const label = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.39), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        label.position.set(0, 1.02, 0.32);
+        group.add(label);
+
+      } else if (role === 'pallet_jack') {
+        // Operador com as duas mãos puxando o timão da paleteira manual
+        [-0.18, 0.18].forEach(ax => {
+          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.09), shirtMat);
+          arm.position.set(ax, 1.02, 0.12);
+          arm.rotation.x = Math.PI * 0.38;
+          group.add(arm);
+        });
+
+        // ── Paleteira Manual (Transpaleteira Hidráulica) ──
+        const jackGroup = new THREE.Group();
+        jackGroup.position.set(0, 0, 0.25);
+
+        const orangeJackMat = new THREE.MeshStandardMaterial({ color: 0xea580c, metalness: 0.4, roughness: 0.4 });
+        const steelJackMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
+
+        // Timão / Alavanca de puxar com empunhadura
+        const tiller = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.85, 8), steelJackMat);
+        tiller.position.set(0, 0.65, 0.08);
+        tiller.rotation.x = -Math.PI * 0.25;
+        jackGroup.add(tiller);
+
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.08), orangeJackMat);
+        handle.position.set(0, 0.98, -0.06);
+        jackGroup.add(handle);
+
+        // Corpo da bomba hidráulica e rodas frontais
+        const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.42, 12), orangeJackMat);
+        pump.position.set(0, 0.28, 0.32);
+        jackGroup.add(pump);
+
+        // Garfos da paleteira
+        [-0.20, 0.20].forEach(gx => {
+          const fork = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, 1.15), orangeJackMat);
+          fork.position.set(gx, 0.12, 0.95);
+          fork.castShadow = true;
+          jackGroup.add(fork);
+        });
+
+        // Palete de madeira sobre a paleteira
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.9 });
+        const pallet = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, 1.05), woodMat);
+        pallet.position.set(0, 0.22, 0.95);
+        pallet.castShadow = true;
+        jackGroup.add(pallet);
+
+        // Caixas empilhadas no palete da paleteira
+        const cMat1 = new THREE.MeshStandardMaterial({ color: 0xd97706 });
+        const cMat2 = new THREE.MeshStandardMaterial({ color: 0xb45309 });
+        [
+          { x: -0.22, y: 0.42, z: 0.75, mat: cMat1 },
+          { x: 0.22,  y: 0.42, z: 0.75, mat: cMat2 },
+          { x: -0.22, y: 0.42, z: 1.15, mat: cMat2 },
+          { x: 0.22,  y: 0.42, z: 1.15, mat: cMat1 }
+        ].forEach(bx => {
+          const cBox = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.30, 0.38), bx.mat);
+          cBox.position.set(bx.x, bx.y, bx.z);
+          cBox.castShadow = true;
+          jackGroup.add(cBox);
+        });
+
+        group.add(jackGroup);
+
+      } else {
+        // Líder gesticulando / apontando com prancheta/rádio
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.09), shirtMat);
+        armL.position.set(-0.21, 1.02, 0.08);
+        armL.rotation.x = Math.PI * 0.25;
+        group.add(armL);
+
+        // Braço direito apontando para a câmara/gôndola
+        const armR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.36, 0.09), shirtMat);
+        armR.position.set(0.24, 1.18, 0.20);
+        armR.rotation.x = Math.PI * 0.48;
+        armR.rotation.z = -Math.PI * 0.15;
+        group.add(armR);
+        rightArmGroup = armR;
+      }
+
+      // Crachá flutuante sobre a cabeça com o nome do colaborador
+      if (name) {
+        const isOrlando = name.includes('ORLANDO');
+        const isLeader = role === 'leader' || name === 'FELIPE';
+        const icon = isOrlando ? '⭐ ' : (isLeader ? '⭐ ' : '👤 ');
+        const tag = this._label(`${icon}${name}`, {
+          size: isOrlando ? 0.46 : 0.40,
+          color: isOrlando ? '#fef08a' : (isLeader ? '#38bdf8' : '#ffffff'),
+          bg: isOrlando ? 'rgba(120, 53, 15, 0.95)' : (isLeader ? 'rgba(30, 58, 138, 0.92)' : 'rgba(15, 23, 42, 0.88)')
+        });
+        tag.position.set(0, 1.76, 0);
+        group.add(tag);
+      }
+
+      if (this._ctx.animatedActors) {
+        const wpList = Array.isArray(waypoints) && waypoints.length >= 2 ? waypoints : [
+          { x, z, facingY: rotY },
+          { x: x + (Math.random() > 0.5 ? 2.5 : -2.5), z, facingY: rotY }
+        ];
+        this._ctx.animatedActors.push({
+          type: 'worker',
+          name,
+          group,
+          baseY: group.position.y,
+          legL: legLGroup,
+          legR: legRGroup,
+          arm: rightArmGroup,
+          baseArmRotX: rightArmGroup ? rightArmGroup.rotation.x : 0,
+          waypoints: wpList,
+          currentWp: 0,
+          targetWp: 1,
+          state: Math.random() > 0.4 ? 'moving' : 'idle',
+          stateTimer: 0.3 + Math.random() * 1.2, // inicia quase imediatamente
+          walkCycle: Math.random() * Math.PI * 2,
+          speed: Math.max(speed, 1.4),
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+
+      return group;
     },
 
     _buildSelectionMarker() {
@@ -1022,7 +1732,7 @@
           <span>${e.products.length} item(ns)${e.rebaixa ? ` · 🏷️ ${e.rebaixa} rebaixa` : ''}${e.type === 'chamber' ? ` · ${e.occupied}/${e.capacity} posições` : ''}</span>
           ${top ? `<span class="twin__tooltip-top">${esc(top.p.name)}</span>` : ''}
           ${e.scheduled ? '<span>📅 Verificar hoje</span>' : ''}
-          <em>${e.type === 'chamber' ? 'Clique para entrar' : 'Clique para detalhes'}</em>`;
+          <em>${e.type === 'chamber' ? 'Clique para entrar' : 'Clique para detalhes e Crachá 🏷️'}</em>`;
         ctx.hoverKey = key;
       }
       const rect = ctx.stage.getBoundingClientRect();
@@ -1163,6 +1873,130 @@
       }
       const pulse = 0.25 + (Math.sin(t * 4) + 1) * 0.3;
       ctx.pulse.forEach(m => { m.emissiveIntensity = pulse; });
+
+      // Delta de tempo preciso via performance.now() para locomoção suave
+      const now = performance.now();
+      const delta = ctx.lastAnimTime ? Math.min((now - ctx.lastAnimTime) / 1000, 0.1) : 0.016;
+      ctx.lastAnimTime = now;
+
+      // Animação e movimentação periódica dos operadores e empilhadeiras
+      if (ctx.animatedActors && ctx.animatedActors.length) {
+        for (let i = 0; i < ctx.animatedActors.length; i++) {
+          const act = ctx.animatedActors[i];
+
+          if (act.type === 'beacon' && act.mesh?.material) {
+            act.mesh.material.emissiveIntensity = 0.4 + Math.abs(Math.sin(t * 9 + act.phase)) * 0.9;
+
+          } else if (act.type === 'worker' && act.group) {
+            act.stateTimer -= delta;
+
+            if (act.state === 'idle') {
+              // Em pausa: trabalhando, auditando com prancheta ou respirando
+              act.group.position.y = act.baseY + Math.sin(t * 2.2 + act.phase) * 0.012;
+              if (act.arm) {
+                act.arm.rotation.x = act.baseArmRotX + Math.sin(t * 1.6 + act.phase) * 0.04;
+              }
+              // Pernas retornam à posição neutra
+              if (act.legL) act.legL.rotation.x *= 0.85;
+              if (act.legR) act.legR.rotation.x *= 0.85;
+
+              // Transição: anda para o próximo ponto de conferência!
+              if (act.stateTimer <= 0 && act.waypoints && act.waypoints.length) {
+                act.state = 'moving';
+              }
+
+            } else if (act.state === 'moving' && act.waypoints && act.waypoints.length) {
+              const target = act.waypoints[act.targetWp];
+              const dx = target.x - act.group.position.x;
+              const dz = target.z - act.group.position.z;
+              const dist = Math.hypot(dx, dz);
+
+              if (dist > 0.18) {
+                const dirX = dx / dist;
+                const dirZ = dz / dist;
+                act.group.position.x += dirX * act.speed * delta;
+                act.group.position.z += dirZ * act.speed * delta;
+
+                // Rotação rápida e suave do corpo para a direção da caminhada
+                const targetRotY = Math.atan2(dirX, dirZ);
+                let diff = targetRotY - act.group.rotation.y;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                act.group.rotation.y += diff * Math.min(1, delta * 6);
+
+                // Passadas bem visíveis e balanço do corpo ao caminhar
+                act.walkCycle += delta * 8.5;
+                if (act.legL) act.legL.rotation.x = Math.sin(act.walkCycle) * 0.55;
+                if (act.legR) act.legR.rotation.x = -Math.sin(act.walkCycle) * 0.55;
+                act.group.position.y = act.baseY + Math.abs(Math.sin(act.walkCycle)) * 0.045;
+
+                if (act.arm) {
+                  act.arm.rotation.x = act.baseArmRotX + Math.sin(act.walkCycle) * 0.25;
+                }
+
+              } else {
+                // Chegou ao ponto de destino!
+                act.group.position.x = target.x;
+                act.group.position.z = target.z;
+                if (target.facingY !== undefined) act.group.rotation.y = target.facingY;
+                if (act.legL) act.legL.rotation.x = 0;
+                if (act.legR) act.legR.rotation.x = 0;
+
+                act.currentWp = act.targetWp;
+                act.targetWp = (act.targetWp + 1) % act.waypoints.length;
+                act.state = 'idle';
+                // Pausa dinâmica e ágil: apenas 2 a 3.5 segundos antes de circular novamente!
+                act.stateTimer = 2.0 + Math.random() * 1.5;
+              }
+            }
+
+          } else if (act.type === 'forklift' && act.group) {
+            act.stateTimer -= delta;
+
+            if (act.state === 'idle') {
+              if (act.stateTimer <= 0 && act.waypoints && act.waypoints.length) {
+                act.state = 'moving';
+              }
+            } else if (act.state === 'moving' && act.waypoints && act.waypoints.length) {
+              const target = act.waypoints[act.targetWp];
+              const dx = target.x - act.group.position.x;
+              const dz = target.z - act.group.position.z;
+              const dist = Math.hypot(dx, dz);
+
+              if (dist > 0.2) {
+                const dirX = dx / dist;
+                const dirZ = dz / dist;
+                act.group.position.x += dirX * act.speed * delta;
+                act.group.position.z += dirZ * act.speed * delta;
+
+                // Giro suave da empilhadeira
+                const targetRotY = Math.atan2(dirX, dirZ);
+                let diff = targetRotY - act.group.rotation.y;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                act.group.rotation.y += diff * Math.min(1, delta * 3.5);
+
+                // Rotação das rodas ao rodar
+                if (act.wheels) {
+                  for (let w = 0; w < act.wheels.length; w++) {
+                    act.wheels[w].rotation.x += delta * 7;
+                  }
+                }
+              } else {
+                act.group.position.x = target.x;
+                act.group.position.z = target.z;
+                if (target.facingY !== undefined) act.group.rotation.y = target.facingY;
+
+                act.currentWp = act.targetWp;
+                act.targetWp = (act.targetWp + 1) % act.waypoints.length;
+                act.state = 'idle';
+                // Empilhadeira para para carga/descarga por apenas 2.5 a 4 segundos
+                act.stateTimer = 2.5 + Math.random() * 1.5;
+              }
+            }
+          }
+        }
+      }
       if (ctx.selRing.visible) {
         ctx.selRing.material.opacity = 0.55 + Math.sin(t * 5) * 0.4;
         ctx.selRing.rotation.z = t * 0.8;

@@ -388,6 +388,10 @@ window.BrigadaPereciveis = {
                       <option value="pct">pct</option>
                     </select>
                   </div>
+                  <div class="form-group">
+                    <label class="form-label">Qtd por Caixa (un/cx)</label>
+                    <input type="number" id="field-units-per-box-pereciveis" class="form-input" placeholder="ex: 10" step="1" min="1">
+                  </div>
                 </div>
                 <div class="form-row" id="annotation-info-banner-pereciveis" style="display: none; margin-top: 1rem; width: 100%;">
                   <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 8px 12px; width: 100%; display: flex; justify-content: space-between; font-size: 0.85rem; color: #f8fafc;">
@@ -1387,6 +1391,7 @@ window.BrigadaPereciveis = {
     container.querySelector('#field-startDate-pereciveis').value = window.BrigadaData.getTodayFormatted();
     container.querySelector('#field-endDate-pereciveis').value = '';
     container.querySelector('#field-quantity-pereciveis').value = '';
+    if (container.querySelector('#field-units-per-box-pereciveis')) container.querySelector('#field-units-per-box-pereciveis').value = '';
     container.querySelector('#field-location-pereciveis').value = '';
     if (container.querySelector('#field-chamber-col-pereciveis')) container.querySelector('#field-chamber-col-pereciveis').value = '';
     if (container.querySelector('#field-chamber-level-pereciveis')) container.querySelector('#field-chamber-level-pereciveis').value = '';
@@ -1504,6 +1509,10 @@ window.BrigadaPereciveis = {
 
     container.querySelector('#field-unit-pereciveis').value = product.unit || 'kg';
     container.querySelector('#field-quantity-pereciveis').value = product.quantity !== undefined ? product.quantity : '';
+    const customBox = product.unitsPerBox || window.BrigadaData.getUnitsPerBoxForProduct(product);
+    if (container.querySelector('#field-units-per-box-pereciveis')) {
+      container.querySelector('#field-units-per-box-pereciveis').value = customBox || '';
+    }
     
     // Reset annotation
     container.querySelector('#group-annotation-pereciveis').style.display = 'none';
@@ -1527,7 +1536,7 @@ window.BrigadaPereciveis = {
     // Disable all fields except quantity, annotation and sub-annotation details
     const form = container.querySelector('#product-form-pereciveis');
     form.querySelectorAll('.form-input, select, textarea').forEach(el => {
-      if (el.id !== 'field-quantity-pereciveis' && el.id !== 'field-annotation-pereciveis' && el.id !== 'field-annotation-text-pereciveis') {
+      if (el.id !== 'field-quantity-pereciveis' && el.id !== 'field-units-per-box-pereciveis' && el.id !== 'field-annotation-pereciveis' && el.id !== 'field-annotation-text-pereciveis') {
         el.disabled = true;
       } else {
         el.disabled = false;
@@ -1591,6 +1600,8 @@ window.BrigadaPereciveis = {
     const unit = container.querySelector('#field-unit-pereciveis').value;
     const qtyVal = container.querySelector('#field-quantity-pereciveis').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+    const unitsPerBoxVal = container.querySelector('#field-units-per-box-pereciveis')?.value;
+    const unitsPerBox = (unitsPerBoxVal && !isNaN(unitsPerBoxVal) && Number(unitsPerBoxVal) > 0) ? parseInt(unitsPerBoxVal, 10) : null;
     
     const startDate = rawStartDate ? window.BrigadaData.parseDateInput(rawStartDate) : null;
     const endDate = window.BrigadaData.parseDateInput(rawEndDate);
@@ -1667,9 +1678,13 @@ window.BrigadaPereciveis = {
       return;
     }
 
-    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber, annotation, creator, editor };
+    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, unitsPerBox, column, columnNumber, annotation, creator, editor };
 
     try {
+      if (unitsPerBox) {
+        window.BrigadaData.setUnitsPerBoxForProduct(plu, unitsPerBox);
+        if (this.editingId) window.BrigadaData.setUnitsPerBoxForProduct(this.editingId, unitsPerBox);
+      }
       if (this.editingId) {
         await window.BrigadaData.updateProduct(this.editingId, payload);
         window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');

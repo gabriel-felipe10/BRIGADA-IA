@@ -512,6 +512,10 @@ window.BrigadaDashboard = {
                     <option value="un">un</option>
                   </select>
                 </div>
+                <div class="form-group">
+                  <label class="form-label">Qtd por Caixa (un/cx)</label>
+                  <input type="number" id="field-units-per-box" class="form-input" placeholder="ex: 10" step="1" min="1">
+                </div>
               </div>
               <div class="form-row" id="annotation-info-banner" style="display: none; margin-top: 1rem; width: 100%;">
                 <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 8px 12px; width: 100%; display: flex; justify-content: space-between; font-size: 0.85rem; color: #f8fafc;">
@@ -1003,6 +1007,7 @@ window.BrigadaDashboard = {
           ` : products.map(p => {
             const canEditThis = window.BrigadaAuth.canEditProduct(p);
             const canDeleteThis = window.BrigadaAuth.canDeleteProduct(p);
+            const decision = window.BrigadaData.evaluateDecisionSupport(p);
             return `
             <tr>
               <td data-label="PLU"><span class="plu-badge">${p.plu}</span></td>
@@ -1025,6 +1030,11 @@ window.BrigadaDashboard = {
                   <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-right: 8px;">Ações:</span>
                   <span class="badge ${p._baseStatus.class}" style="font-size: 0.7rem; padding: 4px 10px;">${p._baseStatus.icon} ${p._baseStatus.label}</span>
                   ${p.expiredAction && p._status ? `<span class="badge ${p._status.class}" style="font-size: 0.7rem; padding: 4px 10px;">${p._status.icon} ${p._status.label}</span>` : ''}
+                  ${decision && decision.triggerRule ? `
+                    <button type="button" class="btn btn--sm" onclick="window.BrigadaUI.showDecisionModal('${p.id}')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(239, 68, 68, 0.25) 100%); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;" title="Auxílio na Decisão: Vence em < 5d, estoque > 50, giro < 5. Clique para ver apoio à decisão!">
+                      ⚡ Rebaixa / Abastecer (${decision.replenishment.summary})
+                    </button>
+                  ` : ''}
                   ${p.isAwaitingReduction ? `
                     <span class="badge" style="background:${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'}; color:${p.rebaixaStatus === 'ok' ? '#34d399' : '#fbbf24'}; border:1px solid ${p.rebaixaStatus === 'ok' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}; font-size:0.7rem; padding: 4px 10px;">
                       ${p.rebaixaStatus === 'ok' ? '🟢 Rebaixa OK' : '🟡 Aguardando'}
@@ -1248,6 +1258,39 @@ window.BrigadaDashboard = {
         if (p.expiredAction) actionsHtml += `<button class="btn-icon" data-panel-action="clear-expired" data-id="${p.id}" title="Desfazer">↩️<span class="btn-label">Desfazer</span></button>`;
       }
 
+      const decision = window.BrigadaData.evaluateDecisionSupport(p);
+      let decisionHtml = '';
+      if (decision && decision.triggerRule) {
+        decisionHtml = `
+          <div class="decision-support-box" style="margin-top: 8px; padding: 10px 12px; background: var(--bg-card); border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-weight: 700; color: #d97706; font-size: 0.76rem; display: flex; align-items: center; gap: 5px;">
+                <span>⚡</span> <b>Auxílio na Decisão:</b> Risco de Quebra
+              </span>
+              <span style="font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #dc2626; padding: 1px 7px; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                Risco: ${decision.riskStock} ${p.unit || 'un'}
+              </span>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-primary); line-height: 1.35;">
+              🛒 <b>Abastecimento Diário Recomendado:</b> <strong style="color: var(--primary);">${decision.replenishment.summary}</strong>
+              <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px;">
+                ${decision.replenishment.explanation}
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
+              ${canEditThis ? `
+                <button type="button" class="btn btn--sm" data-decision-action="apply-discount" data-id="${p.id}" style="background: #f59e0b; color: #1e1b4b; font-weight: 800; font-size: 0.7rem; padding: 4px 10px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                  📉 Marcar Rebaixa
+                </button>
+              ` : ''}
+              <button type="button" class="btn btn--sm" data-decision-action="open-modal" data-id="${p.id}" style="background: rgba(255,255,255,0.08); color: #e2e8f0; font-weight: 600; font-size: 0.7rem; padding: 4px 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                ⚙️ Apoio à Decisão
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
       return `
         <div class="status-product-card" style="animation-delay: ${idx * 0.04}s;" data-product-id="${p.id}">
           <div class="status-product-card__header">
@@ -1266,6 +1309,7 @@ window.BrigadaDashboard = {
               <span class="status-product-card__meta-tag">📍 ${window.BrigadaData.formatLocationFriendly(p)}</span>
             </div>
             ${p.createdBy ? `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px;">👤 ${window.BrigadaData.getUserNameByEmail(p.createdBy)}</div>` : ''}
+            ${decisionHtml}
             ${actionsHtml ? `<div class="status-product-card__actions">${actionsHtml}</div>` : ''}
           </div>
         </div>
@@ -1279,6 +1323,28 @@ window.BrigadaDashboard = {
         if (e.target.closest('[data-panel-action]')) return;
         const id = card.dataset.productId;
         if (id) window.BrigadaUI.showProductView(id);
+      });
+    });
+
+    // Bind Decision Support actions inside the panel
+    bodyEl.querySelectorAll('[data-decision-action]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.decisionAction;
+        const id = parseInt(btn.dataset.id);
+        if (action === 'apply-discount') {
+          btn.disabled = true;
+          btn.textContent = 'Aplicando...';
+          await window.BrigadaData.applyDecisionDiscount(id, 30);
+          if (window.BrigadaNotifications) {
+            window.BrigadaNotifications.success('Desconto promocional de 30% aplicado com sucesso!');
+          }
+          this.renderStatusPanelProducts(container, status);
+          this.renderDashProducts(container, this.currentFilter);
+          this.renderStats(container);
+        } else if (action === 'open-modal') {
+          window.BrigadaUI.showDecisionModal(id);
+        }
       });
     });
 
@@ -1382,6 +1448,10 @@ window.BrigadaDashboard = {
 
     container.querySelector('#field-unit').value = product.unit || 'kg';
     container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
+    const customBox = product.unitsPerBox || window.BrigadaData.getUnitsPerBoxForProduct(product);
+    if (container.querySelector('#field-units-per-box')) {
+      container.querySelector('#field-units-per-box').value = customBox || '';
+    }
     
     // Reset annotation
     container.querySelector('#group-annotation').style.display = 'none';
@@ -1408,7 +1478,7 @@ window.BrigadaDashboard = {
     // Disable all fields except quantity and annotation
     const form = container.querySelector('#product-form');
     form.querySelectorAll('.form-input, select, textarea').forEach(el => {
-      if (el.id !== 'field-quantity' && el.id !== 'field-annotation' && el.id !== 'field-annotation-text') {
+      if (el.id !== 'field-quantity' && el.id !== 'field-units-per-box' && el.id !== 'field-annotation' && el.id !== 'field-annotation-text') {
         el.disabled = true;
       } else {
         el.disabled = false;
@@ -1465,6 +1535,8 @@ window.BrigadaDashboard = {
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+    const unitsPerBoxVal = container.querySelector('#field-units-per-box')?.value;
+    const unitsPerBox = (unitsPerBoxVal && !isNaN(unitsPerBoxVal) && Number(unitsPerBoxVal) > 0) ? parseInt(unitsPerBoxVal, 10) : null;
     
     const startDate = rawStartDate ? window.BrigadaData.parseDateInput(rawStartDate) : null;
     const endDate = window.BrigadaData.parseDateInput(rawEndDate);
@@ -1537,9 +1609,13 @@ window.BrigadaDashboard = {
       return;
     }
 
-    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber, annotation, creator, editor };
+    const payload = { plu, name, category, startDate, endDate, supplier, location, unit, quantity, unitsPerBox, column, columnNumber, annotation, creator, editor };
 
     try {
+      if (unitsPerBox) {
+        window.BrigadaData.setUnitsPerBoxForProduct(plu, unitsPerBox);
+        if (this.editingId) window.BrigadaData.setUnitsPerBoxForProduct(this.editingId, unitsPerBox);
+      }
       if (this.editingId) {
         await window.BrigadaData.updateProduct(this.editingId, payload);
         window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');

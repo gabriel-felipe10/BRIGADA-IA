@@ -372,6 +372,10 @@ window.BrigadaProducts = {
                       <option value="pct">pct</option>
                     </select>
                   </div>
+                  <div class="form-group">
+                    <label class="form-label">Qtd por Caixa (un/cx)</label>
+                    <input type="number" id="field-units-per-box" class="form-input" placeholder="ex: 10" step="1" min="1">
+                  </div>
                 </div>
                 <div class="form-row" id="annotation-info-banner" style="display: none; margin-top: 1rem; width: 100%;">
                   <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 8px 12px; width: 100%; display: flex; justify-content: space-between; font-size: 0.85rem; color: #f8fafc;">
@@ -1368,6 +1372,7 @@ window.BrigadaProducts = {
     container.querySelector('#field-startDate').value = window.BrigadaData.getTodayFormatted();
     container.querySelector('#field-endDate').value = '';
     container.querySelector('#field-quantity').value = '';
+    if (container.querySelector('#field-units-per-box')) container.querySelector('#field-units-per-box').value = '';
     container.querySelector('#field-location').value = '';
     if (container.querySelector('#field-chamber-col')) container.querySelector('#field-chamber-col').value = '';
     if (container.querySelector('#field-chamber-level')) container.querySelector('#field-chamber-level').value = '';
@@ -1493,6 +1498,10 @@ window.BrigadaProducts = {
 
     container.querySelector('#field-unit').value = product.unit || 'kg';
     container.querySelector('#field-quantity').value = product.quantity !== undefined ? product.quantity : '';
+    const customBox = product.unitsPerBox || window.BrigadaData.getUnitsPerBoxForProduct(product);
+    if (container.querySelector('#field-units-per-box')) {
+      container.querySelector('#field-units-per-box').value = customBox || '';
+    }
     
     // Reset annotation
     container.querySelector('#group-annotation').style.display = 'none';
@@ -1525,7 +1534,7 @@ window.BrigadaProducts = {
     // Disable all fields except quantity, annotation and sub-annotation details
     const form = container.querySelector('#product-form');
     form.querySelectorAll('.form-input, select, textarea').forEach(el => {
-      if (el.id !== 'field-quantity' && el.id !== 'field-annotation' && el.id !== 'field-annotation-text') {
+      if (el.id !== 'field-quantity' && el.id !== 'field-units-per-box' && el.id !== 'field-annotation' && el.id !== 'field-annotation-text') {
         el.disabled = true;
       } else {
         el.disabled = false;
@@ -1589,6 +1598,8 @@ window.BrigadaProducts = {
     const unit = container.querySelector('#field-unit').value;
     const qtyVal = container.querySelector('#field-quantity').value;
     const quantity = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+    const unitsPerBoxVal = container.querySelector('#field-units-per-box')?.value;
+    const unitsPerBox = (unitsPerBoxVal && !isNaN(unitsPerBoxVal) && Number(unitsPerBoxVal) > 0) ? parseInt(unitsPerBoxVal, 10) : null;
     
     const startDate = rawStartDate ? window.BrigadaData.parseDateInput(rawStartDate) : null;
     const endDate = window.BrigadaData.parseDateInput(rawEndDate);
@@ -1665,9 +1676,13 @@ window.BrigadaProducts = {
       return;
     }
 
-    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, column, columnNumber, annotation, creator, editor };
+    const payload = { plu, barcode, name, category, startDate, endDate, supplier, location, unit, quantity, unitsPerBox, column, columnNumber, annotation, creator, editor };
 
     try {
+      if (unitsPerBox) {
+        window.BrigadaData.setUnitsPerBoxForProduct(plu, unitsPerBox);
+        if (this.editingId) window.BrigadaData.setUnitsPerBoxForProduct(this.editingId, unitsPerBox);
+      }
       if (this.editingId) {
         await window.BrigadaData.updateProduct(this.editingId, payload);
         window.BrigadaUI.showToast('Produto atualizado com sucesso!', 'success');

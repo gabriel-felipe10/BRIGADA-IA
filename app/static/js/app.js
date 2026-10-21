@@ -719,7 +719,511 @@ window.BrigadaUI = {
     } catch(e) {}
   },
 
+  // ── Apoio à Decisão Modal (Perecíveis - Intervenção Humana) ───────────────
+  showDecisionModal(productId, customTurnover = null) {
+    const product = (window.BrigadaData.products || []).find(p => String(p.id) === String(productId));
+    if (!product) return;
+
+    const overlay = document.getElementById('decision-modal-overlay');
+    const body = document.getElementById('decision-modal-body');
+    const footer = document.getElementById('decision-modal-footer');
+    const closeBtn = document.getElementById('close-decision-modal-btn');
+    if (!overlay || !body || !footer) return;
+
+    let currentTurnover = customTurnover !== null ? Number(customTurnover) : 3.0;
+
+    const renderModalContent = () => {
+      const decision = window.BrigadaData.evaluateDecisionSupport(product, currentTurnover);
+      const status = window.BrigadaData.getProductStatus(product);
+      const pack = decision.packInfo;
+
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Cabeçalho do Produto -->
+          <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 10px; padding: 0.9rem 1rem;">
+            <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Lote Sob Análise</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${product.name}</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center;">
+              <span class="badge ${status.class}" style="font-size: 0.7rem;">${status.icon} ${status.label}</span>
+              <span style="font-size: 0.75rem; color: var(--text-primary); background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 4px;">🏷️ PLU: <b>${product.plu}</b></span>
+              <span style="font-size: 0.75rem; color: var(--text-primary); background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 4px;">📦 Estoque: <b>${decision.stock} ${decision.unit}</b></span>
+              <span style="font-size: 0.75rem; color: var(--text-primary); background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 4px;">📍 ${window.BrigadaData.formatLocationFriendly(product)}</span>
+            </div>
+          </div>
+
+          <!-- Diagnóstico da Regra -->
+          <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 0.9rem 1rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px;">
+              <strong style="color: #d97706; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                <span>⚠️</span> <span>Diagnóstico: Vencimento & Giro de Estoque</span>
+              </strong>
+              <span style="font-size: 0.68rem; font-weight: 700; background: ${decision.triggerRule ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; color: ${decision.triggerRule ? '#dc2626' : '#059669'}; border: 1px solid ${decision.triggerRule ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}; padding: 2px 8px; border-radius: 9999px;">
+                ${decision.triggerRule ? '🚨 Risco de Quebra' : 'ℹ️ Monitoramento'}
+              </span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+              O produto vence em <b style="color: var(--text-primary);">${decision.days} dias</b> com estoque de <b style="color: var(--text-primary);">${decision.stock} ${decision.unit}</b>. Com giro avaliado de <b style="color: var(--text-primary);">${decision.dailyTurnover} ${decision.unit}/dia</b>, a previsão de venda é de apenas <b style="color: var(--text-primary);">${decision.expectedSalesUntilExpiry} ${decision.unit}</b> antes do vencimento, deixando <b style="color: #dc2626;">${decision.riskStock} ${decision.unit}</b> sob risco de perda.
+            </p>
+          </div>
+
+          <!-- Controles de Intervenção Humana (Giro Diário) -->
+          <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 10px; padding: 1rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;">
+              <span>🎛️</span> <span>Intervenção Humana — Ajuste de Giro Diário</span>
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label for="decision-turnover-range" style="font-size: 0.75rem; color: var(--text-secondary);">Giro Diário Estimado (${decision.unit}/dia):</label>
+                <span id="decision-turnover-display" style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">${currentTurnover} ${decision.unit}/dia</span>
+              </div>
+              <input type="range" id="decision-turnover-range" min="0.5" max="30" step="0.5" value="${currentTurnover}" style="width: 100%; accent-color: var(--primary); cursor: pointer;">
+              <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 4px;">
+                Arraste para simular o comportamento de venda e recalcular instantaneamente as quantidades a abastecer.
+              </div>
+            </div>
+          </div>
+
+          <!-- SUGESTÃO DE ABASTECIMENTO DIÁRIO (Para Zerar o Lote) -->
+          <div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span>🛒</span> <span>Abastecimento Diário Recomendado (Para Zerar o Lote)</span>
+              </span>
+              <span style="font-size: 0.72rem; color: var(--primary); font-weight: 600;">Durante os próximos ${decision.effectiveDays} dia(s)</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+              ${decision.unit === 'kg' ? `
+                <!-- Referência de Cadastro: Quilos por Dia -->
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
+                  <div style="font-size: 0.72rem; color: #059669; font-weight: 700; text-transform: uppercase;">QUILOS / DIA</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${decision.replenishment.dailyKg} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">kg/dia</span></div>
+                  <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px;">Total do lote: ${decision.stock} kg</div>
+                </div>
+              ` : `
+                <!-- Referência de Cadastro: Unidades por Dia -->
+                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
+                  <div style="font-size: 0.72rem; color: #0284c7; font-weight: 700; text-transform: uppercase;">UNIDADES / DIA</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${decision.replenishment.dailyUnits} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">un/dia</span></div>
+                  <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px;">Total do lote: ${decision.stock} un</div>
+                </div>
+              `}
+
+              <!-- Caixas por Dia -->
+              <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
+                <div style="font-size: 0.72rem; color: #7c3aed; font-weight: 700; text-transform: uppercase;">CAIXAS / DIA</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${decision.replenishment.dailyBoxes} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">cx/dia</span></div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px;">~${pack.unitsPerBox} ${decision.unit}/cx ${pack.isUserCustomBox ? '(manual)' : '(padrão)'}</div>
+              </div>
+            </div>
+
+            <div style="background: var(--bg-tertiary); border: 1px dashed var(--glass-border); border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
+              📋 <b>Instrução para a equipe:</b> Abasteça <b style="color: var(--text-primary);">${decision.replenishment.dailyFormatted}</b> (${decision.replenishment.dailyBoxesFormatted}) diariamente até <b>${window.BrigadaData.formatDate(product.endDate)}</b> para liquidar todo o lote sem perdas.
+            </div>
+          </div>
+
+          <!-- Meta de Giro Total -->
+          <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary);">Meta de Giro p/ Zerar o Lote:</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary);">Giro diário necessário para liquidar 100% do estoque antes de vencer:</div>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 1.15rem; font-weight: 800; color: #d97706;">${decision.promoTurnoverNeeded} ${decision.unit}/dia</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Atualiza Footer com Botão de Ação
+      const isAlreadyAwaiting = product.isAwaitingReduction;
+      footer.innerHTML = `
+        <button type="button" class="btn btn--outline" id="btn-close-decision-modal" style="flex: 1; min-width: 100px;">Fechar</button>
+        <button type="button" class="btn" id="btn-confirm-discount-decision" style="flex: 2; min-width: 200px; background: #f59e0b; color: #1e1b4b; font-weight: 800; font-size: 0.85rem; border: none; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>⚡</span>
+          <span>${isAlreadyAwaiting ? 'Rebaixa Comercial Já Ativa' : 'Marcar para Rebaixa Comercial'}</span>
+        </button>
+      `;
+
+      const range = body.querySelector('#decision-turnover-range');
+      if (range) {
+        range.addEventListener('input', (e) => {
+          currentTurnover = parseFloat(e.target.value);
+          renderModalContent();
+        });
+      }
+
+      footer.querySelector('#btn-close-decision-modal')?.addEventListener('click', () => {
+        overlay.style.display = 'none';
+      });
+
+      footer.querySelector('#btn-confirm-discount-decision')?.addEventListener('click', async () => {
+        const btn = footer.querySelector('#btn-confirm-discount-decision');
+        btn.disabled = true;
+        btn.innerHTML = '<span>Salvando...</span>';
+
+        await window.BrigadaData.applyDecisionDiscount(product.id);
+        if (window.BrigadaNotifications) {
+          window.BrigadaNotifications.success(`Status de Rebaixa atualizado para ${product.name}!`);
+        }
+
+        overlay.style.display = 'none';
+
+        const dashContainer = document.getElementById('dashboard-content');
+        if (dashContainer && window.BrigadaDashboard) {
+          window.BrigadaDashboard.renderStats(dashContainer);
+          window.BrigadaDashboard.renderDashProducts(dashContainer, window.BrigadaDashboard.currentFilter);
+          if (window.BrigadaDashboard.currentStatusFilter) {
+            window.BrigadaDashboard.renderStatusPanelProducts(dashContainer, window.BrigadaDashboard.currentStatusFilter);
+          }
+        }
+      });
+    };
+
+    if (closeBtn) {
+      closeBtn.onclick = () => { overlay.style.display = 'none'; };
+    }
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+
+    renderModalContent();
+    overlay.style.display = 'flex';
+  },
+
+  // ── Modal de Edição e Impressão de Crachá Direto do Gêmeo Digital ───────
+  showEditableCrachaModal(product, context = null) {
+    if (!product) return;
+
+    const overlay = document.getElementById('twin-cracha-modal-overlay');
+    const body = document.getElementById('twin-cracha-modal-body');
+    const footer = document.getElementById('twin-cracha-modal-footer');
+    const closeBtn = document.getElementById('close-twin-cracha-modal-btn');
+    if (!overlay || !body || !footer) return;
+
+    // Um palete pode ter 1 lote ou múltiplos lotes/crachás (palete misto)
+    const slotProducts = (context && Array.isArray(context.products) && context.products.length > 0)
+      ? context.products.map(item => item.p || item)
+      : [product];
+
+    let currentProduct = product;
+
+    let locStr = '—';
+    if (context && context.label) {
+      locStr = context.label;
+    } else if (currentProduct.location) {
+      locStr = window.BrigadaData ? window.BrigadaData.formatLocationFriendly(currentProduct) : currentProduct.location;
+    }
+
+    const user = window.BrigadaAuth.currentUser || {};
+    const auditorName = user.name || user.username || 'Felipe Gabriel';
+    const emissionDate = new Date().toLocaleDateString('pt-BR');
+
+    const formatProductCracha = (p) => {
+      let formattedExpiry = p.endDate || '--/--/--';
+      if (p.endDate && p.endDate.includes('-')) {
+        const parts = p.endDate.split('-');
+        if (parts.length === 3) formattedExpiry = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+      } else if (p.endDate && p.endDate.includes('/')) {
+        formattedExpiry = p.endDate;
+      }
+
+      return {
+        productName: (p.name || 'PRODUTO').toUpperCase(),
+        consincoCode: p.plu || '',
+        quantity: `${p.quantity !== undefined ? p.quantity : 0} ${p.unit || 'un'}`,
+        expiryDate: formattedExpiry,
+        location: locStr,
+        notes: p.notes || `Posição: ${locStr}`,
+        createdBy: auditorName,
+        emissionDate: emissionDate
+      };
+    };
+
+    let crachaData = formatProductCracha(currentProduct);
+
+    const render = () => {
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Banner de Identificação do Palete -->
+          <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 10px; padding: 0.8rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.3rem;">📍</span>
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.9rem;">Palete Identificado no Gêmeo Digital</strong>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">${locStr}</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${slotProducts.length > 1 ? `
+                <span style="font-size: 0.72rem; background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.35); font-weight: 700; padding: 3px 9px; border-radius: 6px;">
+                  📦 ${slotProducts.length} Lotes / Crachás neste Palete
+                </span>
+              ` : `
+                <span style="font-size: 0.72rem; background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 700; padding: 3px 9px; border-radius: 6px;">
+                  ✓ 1 Lote / Crachá
+                </span>
+              `}
+            </div>
+          </div>
+
+          ${slotProducts.length > 1 ? `
+            <!-- Seletor de Lotes quando o palete tem mais de 1 produto -->
+            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 10px; padding: 0.85rem 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                  <span>🏷️</span> <span>Selecione o Lote do Palete para Visualizar/Editar o Crachá:</span>
+                </span>
+                <span style="font-size: 0.7rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">Um palete pode ter múltiplos crachás</span>
+              </div>
+              <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;">
+                ${slotProducts.map((p, idx) => `
+                  <button type="button" class="btn btn--sm cracha-slot-tab-btn" data-slot-id="${p.id}" style="font-size: 0.75rem; padding: 6px 12px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; cursor: pointer; transition: all 0.2s ease; ${p.id === currentProduct.id ? 'background: #6366f1; color: #ffffff; font-weight: 700; border: none; box-shadow: 0 2px 8px rgba(99,102,241,0.3);' : 'background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--glass-border);'}">
+                    ${p.id === currentProduct.id ? '✓ ' : ''}${p.name} (PLU ${p.plu})
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Formulário de Edição Completa -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; background: var(--bg-card); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 10px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+              <span>✏️</span> <span>Informações do Crachá (Verdadeiras & Editáveis)</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">PRODUTO</label>
+                <input type="text" id="cracha-edit-name" class="form-input" value="${crachaData.productName}" style="width: 100%; font-size: 0.85rem; font-weight: 700;">
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">CÓDIGO (PLU)</label>
+                <input type="text" id="cracha-edit-plu" class="form-input" value="${crachaData.consincoCode}" style="width: 100%; font-size: 0.85rem; font-weight: 700;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">QUANTIDADE</label>
+                <input type="text" id="cracha-edit-qty" class="form-input" value="${crachaData.quantity}" style="width: 100%; font-size: 0.85rem;">
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: #dc2626; font-weight: 700; display: block; margin-bottom: 4px;">VALIDADE *</label>
+                <input type="text" id="cracha-edit-expiry" class="form-input" value="${crachaData.expiryDate}" style="width: 100%; font-size: 0.95rem; font-weight: 800; border-color: #dc2626;">
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">LOCALIZAÇÃO</label>
+                <input type="text" id="cracha-edit-loc" class="form-input" value="${crachaData.location}" style="width: 100%; font-size: 0.85rem;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">RESPONSÁVEL</label>
+                <input type="text" id="cracha-edit-user" class="form-input" value="${crachaData.createdBy}" style="width: 100%; font-size: 0.85rem;">
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">DATA EMISSÃO</label>
+                <input type="text" id="cracha-edit-date" class="form-input" value="${crachaData.emissionDate}" style="width: 100%; font-size: 0.85rem;">
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">OBSERVAÇÕES ADICIONAIS</label>
+              <input type="text" id="cracha-edit-notes" class="form-input" value="${crachaData.notes}" placeholder="Ex: Prioridade de abastecimento no piso" style="width: 100%; font-size: 0.85rem;">
+            </div>
+          </div>
+
+          <!-- Prévia Visual do Crachá Físico -->
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase;">
+              👁️ Prévia do Crachá A4 (Como sairá na impressão):
+            </div>
+            <div style="background: var(--bg-tertiary); border: 2px dashed var(--glass-border); border-radius: 8px; padding: 12px; display: flex; justify-content: center;">
+              <div id="cracha-print-preview" style="background: #ffffff; color: #000000; width: 100%; max-width: 480px; border: 3px solid #000000; border-radius: 6px; padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); font-family: 'Arial', sans-serif;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #000000; padding-bottom: 6px; margin-bottom: 8px; align-items: center;">
+                  <div style="font-weight: 900; font-size: 1.15rem; letter-spacing: 0.05em; color: #000000;">CRACHÁ DE VALIDADE</div>
+                  <div style="font-weight: 700; font-size: 0.75rem; color: #333333;">BRIGADA-IA</div>
+                </div>
+
+                <div style="margin-bottom: 8px;">
+                  <div style="font-size: 0.7rem; font-weight: bold; color: #444444; text-transform: uppercase;">PRODUTO:</div>
+                  <div id="prev-prod-name" style="font-size: 1.05rem; font-weight: 900; line-height: 1.2; color: #000000;">${crachaData.productName}</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 2px solid #000000; border-bottom: 2px solid #000000; padding: 6px 0; margin-bottom: 8px; gap: 8px;">
+                  <div>
+                    <div style="font-size: 0.68rem; font-weight: bold; color: #444444;">PLU / CÓDIGO:</div>
+                    <div id="prev-prod-plu" style="font-size: 1rem; font-weight: 800; color: #000000;">${crachaData.consincoCode}</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.68rem; font-weight: bold; color: #444444;">QUANTIDADE:</div>
+                    <div id="prev-prod-qty" style="font-size: 1rem; font-weight: 800; color: #000000;">${crachaData.quantity}</div>
+                  </div>
+                </div>
+
+                <div style="background: #000000; color: #ffffff; text-align: center; padding: 8px 4px; border-radius: 4px; margin-bottom: 8px;">
+                  <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">DATA DE VENCIMENTO:</div>
+                  <div id="prev-prod-expiry" style="font-size: 1.85rem; font-weight: 900; line-height: 1.1; letter-spacing: 0.03em;">${crachaData.expiryDate}</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; font-size: 0.72rem; color: #333333; border-top: 1px solid #cccccc; padding-top: 6px;">
+                  <div><b>LOCAL:</b> <span id="prev-prod-loc">${crachaData.location}</span></div>
+                  <div style="text-align: right;"><b>EMISSÃO:</b> <span id="prev-prod-date">${crachaData.emissionDate}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Eventos de clique nas abas de produtos do palete
+      body.querySelectorAll('.cracha-slot-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.dataset.slotId;
+          const found = slotProducts.find(p => String(p.id) === String(targetId));
+          if (found) {
+            currentProduct = found;
+            crachaData = formatProductCracha(currentProduct);
+            render();
+          }
+        });
+      });
+
+      // Eventos de sincronização em tempo real da edição para a prévia
+      const bindSync = (id, targetId, prop) => {
+        const input = body.querySelector(id);
+        if (input) {
+          input.addEventListener('input', (e) => {
+            crachaData[prop] = e.target.value;
+            const target = body.querySelector(targetId);
+            if (target) target.textContent = e.target.value;
+          });
+        }
+      };
+
+      bindSync('#cracha-edit-name', '#prev-prod-name', 'productName');
+      bindSync('#cracha-edit-plu', '#prev-prod-plu', 'consincoCode');
+      bindSync('#cracha-edit-qty', '#prev-prod-qty', 'quantity');
+      bindSync('#cracha-edit-expiry', '#prev-prod-expiry', 'expiryDate');
+      bindSync('#cracha-edit-loc', '#prev-prod-loc', 'location');
+      bindSync('#cracha-edit-date', '#prev-prod-date', 'emissionDate');
+      bindSync('#cracha-edit-user', null, 'createdBy');
+      bindSync('#cracha-edit-notes', null, 'notes');
+
+      footer.innerHTML = `
+        <button type="button" class="btn btn--outline" id="btn-cancel-cracha" style="flex: 1; min-width: 100px;">Fechar</button>
+        <button type="button" class="btn btn--primary" id="btn-print-cracha-direct" style="flex: 1.5; min-width: 170px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
+          <span>🖨️</span>
+          <span>Imprimir Este Crachá</span>
+        </button>
+        ${slotProducts.length > 1 ? `
+          <button type="button" class="btn" id="btn-print-all-crachas-slot" style="flex: 2; min-width: 210px; background: #059669; color: #ffffff; font-weight: 800; font-size: 0.82rem; border: none; border-radius: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>🖨️</span>
+            <span>Imprimir Todos os ${slotProducts.length} Crachás</span>
+          </button>
+        ` : ''}
+      `;
+
+      footer.querySelector('#btn-cancel-cracha')?.addEventListener('click', () => {
+        overlay.style.display = 'none';
+      });
+
+      footer.querySelector('#btn-print-cracha-direct')?.addEventListener('click', () => {
+        const itemToPrint = {
+          productName: crachaData.productName,
+          consincoCode: crachaData.consincoCode,
+          quantity: crachaData.quantity,
+          expiryDate: crachaData.expiryDate,
+          location: crachaData.location,
+          notes: crachaData.notes,
+          createdBy: crachaData.createdBy,
+          emissionDate: crachaData.emissionDate
+        };
+        window.BrigadaUI.printCrachas([itemToPrint]);
+      });
+
+      footer.querySelector('#btn-print-all-crachas-slot')?.addEventListener('click', () => {
+        const allItems = slotProducts.map(p => formatProductCracha(p));
+        window.BrigadaUI.printCrachas(allItems);
+      });
+    };
+
+    if (closeBtn) {
+      closeBtn.onclick = () => { overlay.style.display = 'none'; };
+    }
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+
+    render();
+    overlay.style.display = 'flex';
+  },
+
   // ── Product View Modal ───────────────────────────────────────────────────
+  sendProductWhatsApp(product, targetPhone = null) {
+    const isGroup = targetPhone === '__group__' || targetPhone === 'group';
+    const currentUser = window.BrigadaAuth?.currentUser || {};
+    let phone = (!isGroup && targetPhone) ? targetPhone.trim() : '';
+
+    if (!isGroup && !phone) {
+      phone = (currentUser.whatsapp || '').trim();
+    }
+
+    if (!isGroup && !phone) {
+      const confirmProfile = confirm(
+        'Nenhum número de WhatsApp encontrado cadastrado no seu perfil!\n\nDeseja abrir a edição de Perfil agora para cadastrar seu número de WhatsApp?'
+      );
+      if (confirmProfile) {
+        document.querySelector('.sidebar__user')?.click();
+      }
+      return;
+    }
+
+    const status = window.BrigadaData.getProductStatus(product);
+    const decision = window.BrigadaData.evaluateDecisionSupport(product);
+    const locationText = window.BrigadaData.formatLocationFriendly(product);
+    const validadeText = window.BrigadaData.formatDate(product.endDate);
+
+    const statusDesc = status.days < 0 
+      ? `🔴 Vencido há ${Math.abs(status.days)} dia(s)` 
+      : status.days === 0 
+        ? `🟠 Vence HOJE!` 
+        : `⏳ Faltam ${status.days} dia(s)`;
+
+    let msg = `🛒 *BRIGADA-IA — DETALHES DO PRODUTO*\n\n`;
+    msg += `📦 *Produto:* ${product.name}\n`;
+    msg += `🔢 *PLU:* ${product.plu || '—'}\n`;
+    if (product.barcode) msg += `🏷️ *Cód. Barras:* ${product.barcode}\n`;
+    msg += `⚖️ *Quantidade:* ${product.quantity !== undefined ? product.quantity : 0} ${product.unit || 'kg'}\n`;
+    msg += `📅 *Validade:* ${validadeText} (${statusDesc})\n`;
+    msg += `📍 *Localização:* ${locationText}\n`;
+    if (product.supplier) msg += `🏢 *Fornecedor:* ${product.supplier}\n`;
+
+    if (decision && decision.triggerRule) {
+      msg += `\n⚠️ *Apoio à Decisão:* Estoque de ${decision.stock} ${decision.unit} com giro baixo.\n`;
+      msg += `💡 *Sugestão de Abastecimento:* Abastecer ${decision.replenishment.dailyFormatted} (${decision.replenishment.dailyBoxesFormatted}) diariamente nos próximos ${decision.effectiveDays} dias para escoar todo o lote.\n`;
+    }
+
+    msg += `\n👤 *Enviado por:* ${currentUser.name || 'Operador'} (${(currentUser.sector || 'Açougue').toUpperCase()})\n`;
+    msg += `_Sistema BRIGADA-IA — Gestão Inteligente_`;
+
+    if (isGroup) {
+      // Abre o WhatsApp permitindo escolher diretamente qualquer Grupo ou contato
+      const waGroupUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+      window.open(waGroupUrl, '_blank');
+      window.BrigadaUI.showToast('WhatsApp aberto! Selecione o Grupo desejado para enviar.', 'info');
+      return;
+    }
+
+    const cleanPhone = window.BrigadaData.normalizePhone(phone);
+    if (!cleanPhone) {
+      window.BrigadaUI.showToast('Número de telefone inválido no perfil.', 'error');
+      return;
+    }
+
+    const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+  },
+
   showProductView(productId) {
     const product = window.BrigadaData.products.find(p => String(p.id) === String(productId));
     if (!product) return;
@@ -732,8 +1236,53 @@ window.BrigadaUI = {
       aves: '🐔 Aves', suino: '🐷 Suíno', bovino: '🐮 Bovino', pescado: '🐟 Pescado'
     };
     const status = window.BrigadaData.getProductStatus(product);
-
     const isConciliacao = product.category === 'conciliacao';
+
+    // ── Prepara Perfis para envio de WhatsApp ──
+    const allUsers = window.BrigadaData.users || [];
+    const currentUser = window.BrigadaAuth?.currentUser || {};
+    const curPhone = (currentUser.whatsapp || '').trim();
+
+    // Monta lista de perfis disponíveis
+    const profileOptions = [];
+    if (curPhone) {
+      profileOptions.push({
+        name: `${currentUser.name || 'Meu Perfil'} (Você)`,
+        phone: curPhone,
+        sector: currentUser.sector || 'açougue',
+        isCurrent: true
+      });
+    }
+
+    // Se o criador do produto for outro usuário com whatsapp
+    if (product.createdBy) {
+      const creator = allUsers.find(u => 
+        (u.email && u.email.toLowerCase() === product.createdBy.toLowerCase()) || 
+        (u.name && u.name.toLowerCase() === product.createdBy.toLowerCase())
+      );
+      if (creator && creator.whatsapp && (!curPhone || creator.whatsapp !== curPhone)) {
+        profileOptions.push({
+          name: `${creator.name} (Cadastrou o Lote)`,
+          phone: creator.whatsapp,
+          sector: creator.sector || 'geral',
+          isCreator: true
+        });
+      }
+    }
+
+    // Demais usuários que possuem whatsapp cadastrado
+    allUsers.forEach(u => {
+      const uPhone = (u.whatsapp || '').trim();
+      if (uPhone && !profileOptions.some(p => p.phone === uPhone)) {
+        profileOptions.push({
+          name: u.name,
+          phone: uPhone,
+          sector: u.sector || 'geral'
+        });
+      }
+    });
+
+    const hasProfiles = profileOptions.length > 0;
 
     content.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -786,6 +1335,61 @@ window.BrigadaUI = {
           <strong style="color: var(--text-secondary); font-size: 0.85rem;">LOCALIZAÇÃO DESTE LOTE</strong>
           <div style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; margin-top: 2px;">${window.BrigadaData.formatLocationFriendly(product)}</div>
         </div>
+
+        <!-- Bloco de Apoio à Decisão & Sugestão de Abastecimento -->
+        ${(() => {
+          if (isConciliacao || status.days < 0) return '';
+          const decision = window.BrigadaData.evaluateDecisionSupport(product);
+          if (!decision) return '';
+          return `
+            <div class="decision-support-card" style="grid-column: span 2; background: var(--bg-card); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 1.2rem;">🤖</span>
+                  <strong style="color: #d97706; font-size: 0.9rem;">Apoio à Decisão & Sugestão de Abastecimento</strong>
+                </div>
+                <button type="button" class="btn btn--sm" onclick="window.BrigadaUI.showDecisionModal('${product.id}')" style="background: #f59e0b; color: #1e1b4b; font-weight: 700; font-size: 0.72rem; padding: 4px 10px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                  ⚙️ Abrir Simulador Interativo
+                </button>
+              </div>
+
+              ${decision.triggerRule ? `
+                <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; color: #dc2626; margin-bottom: 8px; line-height: 1.35;">
+                  ⚡ <b>Regra Ativada:</b> Vence em menos de 5 dias com estoque de ${decision.stock} ${decision.unit} e giro baixo (&lt; 5 ${decision.unit}/dia). <b>Risco iminente de quebra!</b>
+                </div>
+              ` : ''}
+
+              <div style="font-size: 0.78rem; color: var(--text-primary); margin-bottom: 8px; font-weight: 600;">
+                🛒 <b>Abastecimento Diário Recomendado (Para Zerar o Lote):</b>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 6px;">
+                ${decision.unit === 'kg' ? `
+                  <div style="background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                    <div style="font-size: 0.68rem; color: #059669; font-weight: 700;">QUILOS / DIA</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">${decision.replenishment.dailyKg} <span style="font-size: 0.75rem; color: var(--text-secondary);">kg/dia</span></div>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">Total: ${decision.stock} kg</div>
+                  </div>
+                ` : `
+                  <div style="background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                    <div style="font-size: 0.68rem; color: #0284c7; font-weight: 700;">UNIDADES / DIA</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">${decision.replenishment.dailyUnits} <span style="font-size: 0.75rem; color: var(--text-secondary);">un/dia</span></div>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">Total: ${decision.stock} un</div>
+                  </div>
+                `}
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                  <div style="font-size: 0.68rem; color: #7c3aed; font-weight: 700;">CAIXAS / DIA</div>
+                  <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">${decision.replenishment.dailyBoxes} <span style="font-size: 0.75rem; color: var(--text-secondary);">cx/dia</span></div>
+                  <div style="font-size: 0.65rem; color: var(--text-secondary);">${decision.packInfo.unitsPerBox} ${decision.unit}/cx</div>
+                </div>
+              </div>
+
+              <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.35; margin-top: 6px;">
+                💡 Abasteça <b style="color: var(--text-primary);">${decision.replenishment.dailyFormatted}</b> (${decision.replenishment.dailyBoxesFormatted}) diariamente nos próximos <b>${decision.effectiveDays} dias</b> para escoar todo o estoque antes do vencimento.
+              </div>
+            </div>
+          `;
+        })()}
 
         <!-- Bloco de Relação deste Lote / Mesma Data de Validade (Câmara x Piso) -->
         ${(() => {
@@ -876,12 +1480,12 @@ window.BrigadaUI = {
           `;
         })()}
         <!-- Bloco de Ações Rápidas de Crachá -->
-        <div style="grid-column: span 2; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;">
+        <div style="grid-column: span 2; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.25rem;">🏷️</span>
               <div>
-                <strong style="color: #a5b4fc; font-size: 0.95rem;">Crachá de Validade deste Produto</strong>
+                <strong style="color: var(--text-primary); font-size: 0.95rem;">Crachá de Validade deste Produto</strong>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">Gere o crachá em folha A4 paisagem ou envie para a aba Crachá:</div>
               </div>
             </div>
@@ -890,9 +1494,58 @@ window.BrigadaUI = {
             <button type="button" class="btn btn--primary" id="btn-print-cracha-card" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; padding: 0.65rem; font-size: 0.85rem;">
               🖨️ Imprimir Crachá
             </button>
-            <button type="button" class="btn btn--outline" id="btn-send-to-cracha-card" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; padding: 0.65rem; font-size: 0.85rem; border-color: rgba(99, 102, 241, 0.5); color: #c7d2fe;">
+            <button type="button" class="btn btn--outline" id="btn-send-to-cracha-card" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; padding: 0.65rem; font-size: 0.85rem;">
               🏷️ Enviar p/ Crachá
             </button>
+          </div>
+        </div>
+
+        <!-- Bloco de Contato Direto via WhatsApp com Perfil e Grupos -->
+        <div class="product-view-whatsapp-card" style="grid-column: span 2; background: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.35); border-radius: 12px; padding: 1.1rem; margin-top: 0.25rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.4rem;">💬</span>
+              <div>
+                <strong style="color: #10b981; font-size: 0.98rem;">Enviar via WhatsApp (Perfil ou Grupo)</strong>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Envie os dados deste produto para o contato do perfil ou compartilhe em qualquer grupo:</div>
+              </div>
+            </div>
+            ${curPhone ? `
+              <span style="font-size: 0.75rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px;">
+                📱 ${window.BrigadaData.formatPhoneDisplay(curPhone)}
+              </span>
+            ` : `
+              <button type="button" class="btn btn--sm" id="btn-link-profile-whatsapp" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; cursor: pointer;">
+                ⚙️ Cadastrar WhatsApp no Perfil
+              </button>
+            `}
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <label for="product-view-whatsapp-target" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">Destino:</label>
+              <select id="product-view-whatsapp-target" class="form-input" style="flex: 1; min-width: 220px; font-size: 0.85rem; padding: 7px 10px; font-weight: 600;">
+                <option value="__group__">👥 Qualquer Grupo do WhatsApp (Escolher na lista)</option>
+                ${profileOptions.map((opt, i) => `
+                  <option value="${opt.phone}" ${opt.isCurrent ? 'selected' : (i === 0 ? 'selected' : '')}>
+                    👤 ${opt.name} — 📱 ${window.BrigadaData.formatPhoneDisplay(opt.phone)} [${(opt.sector || '').toUpperCase()}]
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button type="button" class="btn" id="btn-send-whatsapp-card" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; padding: 0.7rem 0.5rem; font-size: 0.84rem; background: #25D366; color: #ffffff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 8px rgba(37,211,102,0.25);">
+                💬 Enviar para o Perfil
+              </button>
+              <button type="button" class="btn" id="btn-send-whatsapp-group" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; padding: 0.7rem 0.5rem; font-size: 0.84rem; background: #059669; color: #ffffff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 8px rgba(5,150,105,0.25);">
+                👥 Enviar para um Grupo
+              </button>
+            </div>
+
+            <div style="font-size: 0.73rem; color: var(--text-secondary); line-height: 1.4; background: rgba(255,255,255,0.03); padding: 7px 10px; border-radius: 6px; border: 1px dashed var(--glass-border);">
+              💡 <b>Para Grupos:</b> Clique no botão <b>"👥 Enviar para um Grupo"</b>. O WhatsApp abrirá direto na tela de compartilhamento para você escolher qualquer grupo da loja (Açougue, Perecíveis, Gerência, etc.) com a mensagem já digitada e pronta para enviar!
+            </div>
           </div>
         </div>
 
@@ -908,6 +1561,10 @@ window.BrigadaUI = {
     const sendCrachaFooterBtn = document.getElementById('btn-send-to-cracha-footer');
     const sendCrachaCardBtn = document.getElementById('btn-send-to-cracha-card');
     const printCrachaCardBtn = document.getElementById('btn-print-cracha-card');
+    const waFooterBtn = document.getElementById('btn-whatsapp-product-view');
+    const waCardBtn = document.getElementById('btn-send-whatsapp-card');
+    const linkProfileBtn = document.getElementById('btn-link-profile-whatsapp');
+    const goProfileBtn = document.getElementById('btn-go-profile-register');
 
     const closeHandler = () => {
       modal.classList.remove('modal-overlay--visible');
@@ -936,6 +1593,31 @@ window.BrigadaUI = {
         this.sendProductToCrachaPage(product);
       };
     }
+
+    const sendWhatsAppHandler = () => {
+      const targetSelect = document.getElementById('product-view-whatsapp-target');
+      const selectedPhone = targetSelect ? targetSelect.value : curPhone;
+      this.sendProductWhatsApp(product, selectedPhone);
+    };
+
+    const waGroupBtn = document.getElementById('btn-send-whatsapp-group');
+
+    if (waFooterBtn) waFooterBtn.onclick = sendWhatsAppHandler;
+    if (waCardBtn) waCardBtn.onclick = sendWhatsAppHandler;
+    if (waGroupBtn) {
+      waGroupBtn.onclick = () => {
+        this.sendProductWhatsApp(product, '__group__');
+      };
+    }
+
+    const openProfileHandler = () => {
+      closeHandler();
+      setTimeout(() => {
+        document.querySelector('.sidebar__user')?.click();
+      }, 300);
+    };
+    if (linkProfileBtn) linkProfileBtn.onclick = openProfileHandler;
+    if (goProfileBtn) goProfileBtn.onclick = openProfileHandler;
 
     modal.onclick = (e) => {
       if (e.target === modal) closeHandler();
@@ -1457,9 +2139,15 @@ window.BrigadaRouter = {
                 </div>
               </div>
 
-              <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label">Nova Senha (deixe em branco para manter)</label>
-                <input type="password" id="profile-field-password" class="form-input" placeholder="Mínimo 6 caracteres" style="width: 100%;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                  <label class="form-label">📱 WhatsApp / Contato *</label>
+                  <input type="tel" id="profile-field-whatsapp" class="form-input" placeholder="(81) 99999-9999" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nova Senha (opcional)</label>
+                  <input type="password" id="profile-field-password" class="form-input" placeholder="Mínimo 6 caracteres" style="width: 100%;">
+                </div>
               </div>
 
               <input type="hidden" id="profile-field-avatar-base64">
@@ -1607,6 +2295,7 @@ window.BrigadaRouter = {
       const emailInput = document.getElementById('profile-field-email');
       const sectorSelect = document.getElementById('profile-field-sector');
       const roleDisplay = document.getElementById('profile-field-role-display');
+      const whatsappInput = document.getElementById('profile-field-whatsapp');
       const cardName = document.getElementById('profile-card-name');
       const cardRoleBadge = document.getElementById('profile-card-role-badge');
       const cardSectorBadge = document.getElementById('profile-card-sector-badge');
@@ -1625,6 +2314,7 @@ window.BrigadaRouter = {
                         currentUser.role === 'promotor' ? '📋 Promotor' : 
                         currentUser.role === 'lider' ? '👤 Usuário / Líder' : '👤 Usuário / Operador';
       if (roleDisplay) roleDisplay.value = roleLabel;
+      if (whatsappInput) whatsappInput.value = currentUser.whatsapp || '';
       if (cardName) cardName.textContent = currentUser.name;
       if (cardRoleBadge) cardRoleBadge.textContent = roleLabel;
       if (cardSectorBadge) cardSectorBadge.textContent = `🏬 Setor: ${(currentUser.sector || 'Açougue').toUpperCase()}`;
@@ -1715,6 +2405,7 @@ window.BrigadaRouter = {
       if (!currentUser) return;
 
       const name = document.getElementById('profile-field-name').value.trim();
+      const whatsapp = document.getElementById('profile-field-whatsapp')?.value.trim() || '';
       const password = document.getElementById('profile-field-password').value;
       const sector = document.getElementById('profile-field-sector')?.value || currentUser.sector || 'açougue';
       const base64Avatar = document.getElementById('profile-field-avatar-base64').value;
@@ -1733,6 +2424,7 @@ window.BrigadaRouter = {
       const payload = {
         name,
         email: currentUser.email,
+        whatsapp,
         role: currentUser.role,
         sector: sector,
         status: currentUser.status,
@@ -1744,9 +2436,20 @@ window.BrigadaRouter = {
         await window.BrigadaData.updateUser(currentUser.id, payload);
         
         currentUser.name = name;
+        currentUser.whatsapp = whatsapp;
         currentUser.avatar = avatar;
         currentUser.sector = sector;
         sessionStorage.setItem('brigada_user', JSON.stringify(currentUser));
+        
+        // Sincroniza também na lista em memória de usuários
+        if (Array.isArray(window.BrigadaData.users)) {
+          const uIdx = window.BrigadaData.users.findIndex(u => u.id === currentUser.id || u.email === currentUser.email);
+          if (uIdx !== -1) {
+            window.BrigadaData.users[uIdx].whatsapp = whatsapp;
+            window.BrigadaData.users[uIdx].name = name;
+            window.BrigadaData.users[uIdx].sector = sector;
+          }
+        }
         
         window.BrigadaRouter.updateUserInfo();
 
