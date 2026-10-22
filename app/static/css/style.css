@@ -5184,3 +5184,28 @@ input[type="checkbox"]:focus-visible {
 .light-theme #btn-guardar-rail:hover {
   background: rgba(0, 0, 0, 0.08) !important;
 }
+
+#twin-rail-pull-tab {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(13, 7, 26, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+#btn-guardar-rail:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+}

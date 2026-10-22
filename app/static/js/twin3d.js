@@ -319,6 +319,9 @@
           <div class="twin__body">
             <aside class="twin__rail ${this.railOpen ? '' : 'twin__rail--closed'}" id="twin-rail"></aside>
             <div class="twin__stage" id="twin-stage">
+              <button type="button" class="btn btn--sm" id="twin-rail-pull-tab" style="display: ${this.railOpen ? 'none' : 'inline-flex'};" title="Puxar / Abrir Painel de Alertas">
+                🚨 Alertas ▶
+              </button>
               <div class="twin__loading" id="twin-loading"><div class="spinner"></div><span>Carregando ambiente 3D…</span></div>
               <div class="twin__tooltip" id="twin-tooltip"></div>
               <div class="twin__legend" id="twin-legend"></div>
@@ -354,9 +357,7 @@
         t = setTimeout(() => { this.search = e.target.value.trim(); this._applyColors(); this.renderRail(); }, 200);
       });
       root.querySelector('#twin-toggle-rail').addEventListener('click', () => {
-        this.railOpen = !this.railOpen;
-        root.querySelector('#twin-rail').classList.toggle('twin__rail--closed', !this.railOpen);
-        setTimeout(() => this._resize(), 260);
+        this.toggleRail();
       });
       root.querySelector('#twin-back').addEventListener('click', () => this.setView('store'));
       root.querySelector('#twin-reset').addEventListener('click', () => this._flyToView(this.view));
@@ -366,6 +367,11 @@
         if (e.target.closest('#btn-guardar-rail')) {
           e.preventDefault();
           this.toggleRail(false);
+          return;
+        }
+        if (e.target.closest('#twin-rail-pull-tab')) {
+          e.preventDefault();
+          this.toggleRail(true);
           return;
         }
         const crachaBtn = e.target.closest('[data-twin-cracha]');
@@ -387,6 +393,34 @@
         const act = e.target.closest('[data-action]');
         if (act) { e.preventDefault(); this._handleAction(act.dataset.action, act.dataset); }
       });
+    },
+
+    toggleRail(open) {
+      if (typeof open === 'boolean') {
+        this.railOpen = open;
+      } else {
+        this.railOpen = !this.railOpen;
+      }
+      const rail = this.container?.querySelector('#twin-rail');
+      if (rail) {
+        rail.classList.toggle('twin__rail--closed', !this.railOpen);
+      }
+      this._updateRailControls();
+      setTimeout(() => this._resize(), 260);
+    },
+
+    _updateRailControls() {
+      const alertCount = this.model?.alerts?.length || 0;
+      const toggleBtn = this.container?.querySelector('#twin-toggle-rail');
+      if (toggleBtn) {
+        toggleBtn.innerHTML = this.railOpen ? '◀ Guardar Painel' : `🚨 Alertas (${alertCount})`;
+        toggleBtn.classList.toggle('twin-chip--active', this.railOpen);
+      }
+      const pullTab = this.container?.querySelector('#twin-rail-pull-tab');
+      if (pullTab) {
+        pullTab.style.display = this.railOpen ? 'none' : 'inline-flex';
+        pullTab.innerHTML = `🚨 Alertas (${alertCount}) ▶`;
+      }
     },
 
     renderHud() {
@@ -420,11 +454,7 @@
       this.renderLegend();
       this.renderDrawer();
 
-      const toggleBtn = this.container?.querySelector('#twin-toggle-rail');
-      if (toggleBtn) {
-        const alertCount = this.model?.alerts?.length || 0;
-        toggleBtn.innerHTML = this.railOpen ? '◀ Guardar Painel' : `▶ Puxar Painel (${alertCount})`;
-      }
+      this._updateRailControls();
     },
 
     renderRail() {
@@ -668,8 +698,9 @@
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.maxPolarAngle = Math.PI * 0.47;
-      controls.minDistance = 3;
-      controls.maxDistance = 90;
+      controls.minDistance = 4;
+      controls.maxDistance = 85;
+      controls.zoomSpeed = 0.65;
 
       scene.add(new THREE.HemisphereLight(isLight ? 0xffffff : 0xbfd4ff, isLight ? 0x888888 : 0x1a1030, isLight ? 1.1 : 0.9));
       const sun = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -1676,7 +1707,13 @@
 
       el.addEventListener('pointermove', (ev) => this._onHover(ev));
       el.addEventListener('pointerleave', () => this._setHover(null));
-      el.addEventListener('pointerdown', (ev) => { downAt = { x: ev.clientX, y: ev.clientY }; });
+      el.addEventListener('wheel', () => {
+        if (this._ctx?.tween) this._ctx.tween = null;
+      }, { passive: true });
+      el.addEventListener('pointerdown', (ev) => {
+        if (this._ctx?.tween) this._ctx.tween = null;
+        downAt = { x: ev.clientX, y: ev.clientY };
+      });
       el.addEventListener('pointerup', (ev) => {
         if (!downAt) return;
         const moved = Math.hypot(ev.clientX - downAt.x, ev.clientY - downAt.y);
@@ -1795,9 +1832,7 @@
       }
       this.select(key, true);
       if (window.innerWidth <= 900 && this.railOpen) {
-        this.railOpen = false;
-        this.container.querySelector('#twin-rail')?.classList.add('twin__rail--closed');
-        setTimeout(() => this._resize(), 260);
+        this.toggleRail(false);
       }
     },
 
