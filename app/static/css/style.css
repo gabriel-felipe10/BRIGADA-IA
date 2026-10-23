@@ -5209,3 +5209,200 @@ input[type="checkbox"]:focus-visible {
 #btn-guardar-rail:hover {
   background: rgba(255, 255, 255, 0.16) !important;
 }
+
+/* ── BRIGADA-IA — Dock e Agentes Operacionais no Gêmeo Digital ── */
+.twin__agents-dock {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 8px 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  scrollbar-width: thin;
+}
+
+.twin-agents-dock__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.twin-agents-dock__label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+
+.twin-agent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.twin-agent-pill:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.twin-agent-pill--active {
+  border-color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.5) !important;
+}
+
+.twin-agent-pill__icon {
+  font-size: 0.95rem;
+}
+
+.twin-agent-pill__name {
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.twin-agent-pill__badge {
+  font-size: 0.70rem;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+
+.twin-agent-pill.agent-pill--danger .twin-agent-pill__badge {
+  background: #ef4444;
+  color: #fff;
+  animation: pulse-danger 1.5s infinite;
+}
+
+.twin-agent-pill.agent-pill--warn .twin-agent-pill__badge {
+  background: #f97316;
+  color: #fff;
+}
+
+.twin-agent-pill.agent-pill--ok .twin-agent-pill__badge {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+
+@keyframes pulse-danger {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.85; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.light-theme .twin__agents-dock {
+  background: rgba(248, 250, 252, 0.88);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.light-theme .twin-agent-pill {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #1e293b;
+}
+
+.light-theme .twin-agent-pill:hover {
+  background: #f1f5f9;
+}
+
+.btn-agent-kpi:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.25);
+}
+
+.btn-agent-kpi:active {
+  transform: scale(0.96);
+}
+
+
+/* ==========================================================================
+   ESTILOS DE VERIFICAR HOJE (COR VERDE PISCANDO)
+   ========================================================================== */
+.twin-alert--verificar {
+  border-left: 3.5px solid #10b981 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  animation: twin-alert-glow 1.4s ease-in-out infinite alternate !important;
+}
+
+@keyframes twin-alert-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+    border-color: #10b981;
+  }
+}
+
+.twin-alert--verificar .twin-alert__dot {
+  background: #10b981 !important;
+  box-shadow: 0 0 10px #10b981, 0 0 20px #10b981 !important;
+  animation: twin-dot-blink 0.75s ease-in-out infinite alternate !important;
+}
+
+@keyframes twin-dot-blink {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+.twin-badge--verificar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #10b981 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.6px;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+  animation: twin-badge-flash 0.85s ease-in-out infinite alternate !important;
+}
+
+@keyframes twin-badge-flash {
+  0% {
+    background: #059669;
+    box-shadow: 0 0 4px rgba(5, 150, 105, 0.4);
+    transform: scale(0.97);
+  }
+  100% {
+    background: #10b981;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.9);
+    transform: scale(1.05);
+  }
+}
+
+.twin-chip[data-layer="agenda"].twin-chip--active {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.45) !important;
+  animation: twin-chip-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes twin-chip-pulse {
+  0% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.25); }
+  100% { box-shadow: 0 0 18px rgba(16, 185, 129, 0.75); }
+}

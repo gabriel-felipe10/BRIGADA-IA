@@ -70,7 +70,767 @@
   const norm = (s) => (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+    // ── Configuração dos Agentes Operacionais da Brigada IA (Funções Reais) ────
+  const AGENTS_CONFIG = {
+    FELIPE: {
+      name: 'FELIPE',
+      role: 'Auditor Geral & Central de Validades',
+      icon: '⭐',
+      badge: 'Coordenação Geral',
+      sector: 'global',
+      sectorLabel: 'Visão Consolidada da Loja e Câmaras',
+      themeColor: '#f97316',
+      description: 'Audita todas as validades da loja, consolida produtos vencidos e dispara o Relatório Geral no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Detectei ${sum.expired} lote(s) VENCIDO(S) no sistema! Clique no botão verde abaixo para disparar o relatório completo no WhatsApp da gerência e equipe agora.`
+        : (sum.today > 0 ? `Atenção: ${sum.today} lote(s) vencem HOJE! Dispare o relatório no WhatsApp para que a equipe aplique rebaixa imediata.` : `Auditoria global concluída: zero produtos vencidos no momento. Sistema 100% em conformidade.`)
+    },
+    LIU: {
+      name: 'LIU',
+      role: 'Auditor de Freezers de Carnes (Açougue)',
+      icon: '🥩',
+      badge: 'Açougue',
+      sector: 'acougue',
+      sectorLabel: 'Freezers de Carnes e Aves (FZ17 ao FZ41)',
+      freezers: [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41],
+      categories: ['bovino', 'suino', 'aves', 'pescado', 'misto'],
+      themeColor: '#ef4444',
+      description: 'Varre os freezers FZ17 ao FZ41, identifica carnes vencidas e notifica a equipe do Açougue no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Atenção Açougue: identifiquei ${sum.expired} carne(s) VENCIDA(S) nos freezers! Envie o relatório pelo WhatsApp para recolher e lançar quebra já.`
+        : (sum.today > 0 ? `Temos ${sum.today} corte(s) vencendo hoje nos freezers de carnes. Dispare o aviso no WhatsApp para rebaixa ou produção.` : `Freezers do Açougue (FZ17 ao FZ41) conferidos: todas as carnes com validade em dia.`)
+    },
+    ROSE: {
+      name: 'ROSE',
+      role: 'Auditora de Cortes Especiais & Embalagens a Vácuo',
+      icon: '🔍',
+      badge: 'Cortes Especiais',
+      sector: 'acougue_cortes',
+      sectorLabel: 'Cortes Nobres e Peças a Vácuo (FZ17 ao FZ41)',
+      freezers: [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41],
+      categories: ['bovino', 'suino', 'aves'],
+      themeColor: '#f97316',
+      description: 'Audita cortes nobres e embalagens a vácuo, notifica produtos vencidos e dispara lista de descarte no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Corte especial com data de validade vencida detectado! Dispare a notificação no WhatsApp para remoção imediata da área de vendas.`
+        : (sum.warn > 0 ? `Alerta preventivo: ${sum.warn} corte(s) nobres vencendo nos próximos 3 dias. Monitorando giro.` : `Cortes nobres e carnes a vácuo auditados com 100% de conformidade.`)
+    },
+    ISABEL: {
+      name: 'ISABEL',
+      role: 'Auditora de Perecíveis & Laticínios',
+      icon: '🥗',
+      badge: 'Perecíveis',
+      sector: 'pereciveis',
+      sectorLabel: 'Gôndolas de Perecíveis e Freezers FZ42 ao FZ48',
+      freezers: [42, 43, 44, 45, 46, 47, 48],
+      categories: ['pereciveis', 'iogurtes', 'laticinios', 'frios', 'queijos_especiais'],
+      themeColor: '#06b6d4',
+      description: 'Audita gôndolas e freezers de perecíveis, notifica lotes vencidos e envia relação para rebaixa no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Identifiquei ${sum.expired} produto(s) de perecíveis VENCIDO(S)! Clique abaixo para enviar o relatório no WhatsApp do setor.`
+        : (sum.today > 0 ? `Temos ${sum.today} produto(s) de laticínios/frios vencendo hoje! Mande a lista no WhatsApp para aplicação da etiqueta de rebaixa.` : `Setor de Perecíveis e Laticínios conferido sem vencimentos.`)
+    },
+    IMPERADOR: {
+      name: 'IMPERADOR',
+      role: 'Auditor de Gôndolas & Frios',
+      icon: '📦',
+      badge: 'Gôndolas / Frios',
+      sector: 'pereciveis',
+      sectorLabel: 'Gôndolas de Auto-Serviço e Embutidos',
+      freezers: [42, 43, 44, 45, 46, 47, 48],
+      categories: ['pereciveis', 'iogurtes', 'laticinios', 'frios'],
+      themeColor: '#eab308',
+      description: 'Audita as gôndolas de embutidos e frios, localiza itens vencidos e gera relatório de quebra no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Detectei produto vencido na gôndola de frios! Envie o alerta no WhatsApp para retirar e registrar a quebra.`
+        : `Gôndolas de frios e perecíveis auditadas e com giro regular.`
+    },
+    HUGO: {
+      name: 'HUGO',
+      role: 'Auditor da Câmara Congelada (-18.5 °C)',
+      icon: '❄️',
+      badge: 'Câmara Congelada',
+      sector: 'congelado',
+      sectorLabel: 'Câmara Congelada -18.5 °C (Colunas 01 a 16)',
+      chamberKey: 'congelado',
+      themeColor: '#0284c7',
+      description: 'Rastreia paletes da câmara congelada, notifica caixas vencidas no estoque fechado e manda relatório no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Atenção estoque: ${sum.expired} lote(s) VENCIDO(S) dentro da Câmara Congelada! Dispare a notificação no WhatsApp da logística.`
+        : (sum.long > 0 ? `Alerta de 30 dias na câmara congelada: ${sum.long} lote(s) precisam descer para o piso de loja.` : `Câmara Congelada (-18.5°C) 100% conferida. Nenhum lote vencido.`)
+    },
+    JUARES: {
+      name: 'JUARES',
+      role: 'Auditor da Câmara Resfriada (2.5 °C) & Recebimento',
+      icon: '🧊',
+      badge: 'Câmara Resfriada',
+      sector: 'resfriado',
+      sectorLabel: 'Câmara Resfriada 2.5 °C (Colunas 01 a 04) & Recebimento',
+      chamberKey: 'resfriado',
+      themeColor: '#10b981',
+      description: 'Audita cargas recebidas e câmara resfriada, detecta produtos vencidos e avisa os fiscais no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Detectei ${sum.expired} lote(s) VENCIDO(S) na Câmara Resfriada! Envie o relatório pelo WhatsApp para que a equipe providencie o descarte.`
+        : (sum.long > 0 ? `Alerta de 15 dias: ${sum.long} lote(s) na câmara resfriada prontos para abastecer a loja.` : `Recebimento e Câmara Resfriada (2.5°C) auditados sem pendências.`)
+    },
+    RAFAEL: {
+      name: 'RAFAEL',
+      role: 'Auditor de Paletes Aéreos (Câmara Congelada)',
+      icon: '🚜',
+      badge: 'Paletes Aéreos',
+      sector: 'congelado',
+      sectorLabel: 'Níveis Superiores da Câmara Congelada (N2, N3, N4)',
+      chamberKey: 'congelado',
+      themeColor: '#f59e0b',
+      description: 'Localiza paletes aéreos com lotes vencidos e manda a relação com número da coluna e nível no WhatsApp.',
+      speech: (sum) => (sum.expired > 0 || sum.today > 0)
+        ? `Palete nos níveis aéreos com produto crítico/vencido localizado! Mande a ordem no WhatsApp com a coluna e nível exatos.`
+        : `Níveis aéreos da câmara congelada auditados e com prazos regulares.`
+    },
+    GILMAR: {
+      name: 'GILMAR',
+      role: 'Auditor de Carga Pesada & Escoamento Resfriado',
+      icon: '🚜',
+      badge: 'Cargas Resfriadas',
+      sector: 'resfriado',
+      sectorLabel: 'Paletes Pesados da Câmara Resfriada',
+      chamberKey: 'resfriado',
+      themeColor: '#0284c7',
+      description: 'Identifica lotes pesados perto da validade e dispara lista para reposição urgente no WhatsApp.',
+      speech: (sum) => sum.long > 0
+        ? `Lotes de carga pesada na câmara resfriada precisam de giro. Envie o alerta pelo WhatsApp para reposição.`
+        : `Paletes da câmara resfriada organizados e dentro do prazo.`
+    },
+    JEFFERSON: {
+      name: 'JEFFERSON',
+      role: 'Auditor de Quebras & Baixas Operacionais',
+      icon: '🛒',
+      badge: 'Quebras & Baixas',
+      sector: 'transporte',
+      sectorLabel: 'Controle de Quebra e Descarte de Vencidos',
+      themeColor: '#84cc16',
+      description: 'Consolida itens vencidos para lançamento de quebra no sistema e envia comprovante de recolhimento no WhatsApp.',
+      speech: (sum) => sum.expired > 0
+        ? `Temos ${sum.expired} item(ns) vencido(s) aguardando baixa. Clique abaixo para enviar o resumo de quebra no WhatsApp da equipe.`
+        : `Nenhum produto vencido pendente de recolhimento no momento.`
+    }
+  };
+
   window.BrigadaTwin = {
+    AGENTS_CONFIG,
+    // ════════════════════════════════════════════════════════════════════════
+    // 1.1 SISTEMA DE AGENTES OPERACIONAIS (AUDITORIA E NOTIFICAÇÃO REAL)
+    // ════════════════════════════════════════════════════════════════════════
+
+    
+    generateWhatsAppReport(agentName) {
+      const agent = this.getAgentData(agentName);
+      const sum = agent.summary;
+      const now = new Date();
+      const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      let msg = `🚨 *RELATÓRIO DE AUDITORIA DE VALIDADES — BRIGADA IA* 🚨\n\n`;
+      msg += `👤 *Agente Auditor:* ${agent.name} (${agent.role})\n`;
+      msg += `📍 *Setor:* ${agent.sectorLabel}\n`;
+      msg += `⏰ *Data da Auditoria:* ${dataHora}\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+      if (sum.expired > 0) {
+        msg += `🔴 *PRODUTOS VENCIDOS:* ${sum.expired} lote(s) detectado(s)!\n`;
+      }
+      if (sum.today > 0) {
+        msg += `🟠 *VENCEM HOJE:* ${sum.today} lote(s)\n`;
+      }
+      if (sum.warn > 0) {
+        msg += `🟡 *VENCEM EM ATÉ 3 DIAS:* ${sum.warn} lote(s)\n`;
+      }
+      if (sum.expired === 0 && sum.today === 0 && sum.warn === 0) {
+        msg += `✅ *Nenhum produto vencido. Setor 100% regular.*\n`;
+      }
+
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `📋 *RELAÇÃO DETALHADA DOS PRODUTOS:*\n\n`;
+
+      const criticals = agent.products.filter(({ sev }) => sev === SEV.EXPIRED || sev === SEV.TODAY || sev === SEV.WARN);
+      const listToReport = criticals.length ? criticals : agent.products.slice(0, 10);
+
+      listToReport.forEach(({ p, sev }, idx) => {
+        let statusBadge = '🟢 [REGULAR]';
+        if (sev === SEV.EXPIRED) statusBadge = '🔴 *[VENCIDO]*';
+        else if (sev === SEV.TODAY) statusBadge = '🟠 *[VENCE HOJE]*';
+        else if (sev === SEV.WARN) statusBadge = '🟡 *[ATÉ 3 DIAS]*';
+
+        let locFriendly = p.location || 'Local não informado';
+        if (window.BrigadaData?.formatLocationFriendly) {
+          try { locFriendly = window.BrigadaData.formatLocationFriendly(p); } catch (e) {}
+        }
+        const valDate = window.BrigadaData?.formatDate ? window.BrigadaData.formatDate(p.endDate) : p.endDate;
+
+        msg += `${idx + 1}. ${statusBadge} *${p.name || 'Sem nome'}*\n`;
+        msg += `   📍 *Local:* ${locFriendly}\n`;
+        msg += `   📅 *Validade:* ${valDate}\n`;
+        msg += `   📦 *Qtd:* ${p.quantity ?? 0} ${p.unit || ''} (PLU: ${p.plu || '—'})\n\n`;
+      });
+
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      if (sum.expired > 0) {
+        msg += `⚠️ *AÇÃO REQUERIDA:* Retirar imediatamente os produtos vencidos da área de vendas e lançar no módulo de quebras.\n`;
+      } else if (sum.today > 0) {
+        msg += `🏷️ *AÇÃO REQUERIDA:* Aplicar etiqueta amarela de rebaixa nos produtos que vencem hoje.\n`;
+      }
+      msg += `_Relatório gerado e auditado automaticamente pela Brigada IA._`;
+
+      return msg;
+    },
+
+    async sendAgentWhatsApp(agentName) {
+      const agent = this.getAgentData(agentName);
+      const text = this.generateWhatsAppReport(agentName);
+      this.playNotificationSound('audit');
+
+      // Tenta broadcast via Pastorini API se configurado
+      if (window.BrigadaData?.broadcastWhatsApp) {
+        try {
+          const allUsers = window.BrigadaData?.users || [];
+          const targetSector = (agent.config.sector || '').toLowerCase();
+          const phones = allUsers
+            .filter(u => u.whatsapp && (targetSector === 'global' || !u.sector || u.sector.toLowerCase().includes(targetSector) || u.sector === 'todos'))
+            .map(u => u.whatsapp);
+          if (phones.length) {
+            window.BrigadaData.broadcastWhatsApp(phones, text);
+          }
+        } catch (e) {
+          console.warn('Pastorini broadcast error:', e);
+        }
+      }
+
+      // Abre o WhatsApp Web / Mobile para envio direto em Grupos ou Contatos
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(waUrl, '_blank');
+      window.BrigadaUI?.showToast?.(`📲 Relatório de validades do Agente ${agent.name} aberto no WhatsApp!`, 'success');
+    },
+
+    sendProductWhatsApp(productId, agentName) {
+      const D = window.BrigadaData;
+      const allProducts = D?.products || [];
+      const p = allProducts.find(x => String(x.id) === String(productId));
+      if (!p) {
+        window.BrigadaUI?.showToast?.('Produto não encontrado.', 'error');
+        return;
+      }
+
+      const st = D?.getProductStatus ? D.getProductStatus(p) : { label: 'Aviso', icon: '🚨' };
+      let locFriendly = p.location || 'Local não informado';
+      if (D?.formatLocationFriendly) {
+        try { locFriendly = D.formatLocationFriendly(p); } catch (e) {}
+      }
+      const valDate = D?.formatDate ? D.formatDate(p.endDate) : p.endDate;
+
+      let msg = `🚨 *ALERTA DE PRODUTO VENCIDO — BRIGADA IA* 🚨\n\n`;
+      msg += `🤖 *Agente Notificador:* ${agentName || 'Auditor de Validade'}\n`;
+      msg += `❌ *Produto:* *${p.name || 'Sem nome'}*\n`;
+      msg += `📍 *Local Exato:* ${locFriendly}\n`;
+      msg += `📅 *Data de Validade:* ${valDate} (${st.label})\n`;
+      msg += `📦 *Estoque:* ${p.quantity ?? 0} ${p.unit || ''} (PLU: ${p.plu || '—'})\n\n`;
+      msg += `⚠️ *Ação:* Recolher imediatamente este lote para descarte/quebra e evitar irregularidades!\n`;
+      msg += `_Disparado via Gêmeo Digital BRIGADA-IA._`;
+
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+      window.BrigadaUI?.showToast?.(`📲 Alerta do produto ${p.name} aberto no WhatsApp!`, 'info');
+    },
+
+    getAgentData(agentName) {
+      const rawName = (agentName || '').toUpperCase();
+      const cfg = AGENTS_CONFIG[rawName] || {
+        name: agentName,
+        role: 'Agente Operacional',
+        icon: '👤',
+        badge: 'Operação',
+        sector: 'geral',
+        sectorLabel: 'Piso de Loja',
+        themeColor: '#38bdf8',
+        description: 'Supervisão de conformidade no salão de vendas.',
+        speech: () => 'Ronda em andamento no salão de vendas.'
+      };
+
+      const allProducts = window.BrigadaData?.products || [];
+      const audited = allProducts.filter(p => {
+        if (!p) return false;
+        if (cfg.sector === 'global' || cfg.name === 'FELIPE' || cfg.name === 'JEFFERSON') return true;
+        if (cfg.chamberKey) {
+          return (p.location || '').toLowerCase().startsWith(cfg.chamberKey.toLowerCase());
+        }
+        const loc = (p.location || '').toUpperCase();
+        const fzMatch = /^PISO_LOJA:FZ(\d+)$/i.exec(loc);
+        if (fzMatch && cfg.freezers) {
+          const fzNum = parseInt(fzMatch[1], 10);
+          if (cfg.freezers.includes(fzNum)) return true;
+        }
+        const cat = (p.category || '').toLowerCase();
+        if (cfg.categories && cfg.categories.includes(cat)) return true;
+        return false;
+      });
+
+      const counts = {
+        [SEV.EXPIRED]: 0,
+        [SEV.TODAY]: 0,
+        [SEV.WARN]: 0,
+        [SEV.LONG]: 0,
+        [SEV.OK]: 0,
+        rebaixa: 0
+      };
+
+      const classified = audited.map(p => {
+        const sev = this.classify(p);
+        if (sev !== null && counts[sev] !== undefined) counts[sev]++;
+        if (p.isAwaitingReduction) counts.rebaixa++;
+        return { p, sev };
+      });
+
+      classified.sort((a, b) => (b.sev ?? -2) - (a.sev ?? -2) || String(a.p.endDate).localeCompare(String(b.p.endDate)));
+
+      const expired = counts[SEV.EXPIRED];
+      const today = counts[SEV.TODAY];
+      const warn = counts[SEV.WARN];
+      const long = counts[SEV.LONG];
+      const ok = counts[SEV.OK];
+      const total = audited.length;
+
+      let worst = SEV.OK;
+      let statusText = 'Operação Conforme';
+      let statusColor = '#10b981';
+      let statusIcon = '🟢';
+
+      if (expired > 0) {
+        worst = SEV.EXPIRED;
+        statusText = `${expired} Vencido${expired > 1 ? 's' : ''}!`;
+        statusColor = '#ef4444';
+        statusIcon = '🚨';
+      } else if (today > 0) {
+        worst = SEV.TODAY;
+        statusText = `${today} Vence Hoje!`;
+        statusColor = '#f97316';
+        statusIcon = '🟠';
+      } else if (warn > 0) {
+        worst = SEV.WARN;
+        statusText = `${warn} em até 3 dias`;
+        statusColor = '#f59e0b';
+        statusIcon = '🟡';
+      } else if (long > 0) {
+        worst = SEV.LONG;
+        statusText = `${long} Alerta de Câmara`;
+        statusColor = '#38bdf8';
+        statusIcon = '❄️';
+      }
+
+      const summary = { total, expired, today, warn, long, ok, rebaixa: counts.rebaixa, worst, statusText, statusColor, statusIcon };
+      const speechText = cfg.speech ? cfg.speech(summary) : 'Ronda operacional em andamento.';
+
+      return {
+        config: cfg,
+        name: cfg.name,
+        role: cfg.role,
+        icon: cfg.icon,
+        badge: cfg.badge,
+        sectorLabel: cfg.sectorLabel,
+        themeColor: cfg.themeColor,
+        description: cfg.description,
+        summary,
+        speechText,
+        products: classified
+      };
+    },
+
+    focusAgent(agentName) {
+      if (this.view !== 'store') {
+        this.setView('store', true);
+      }
+      const key = 'agent:' + agentName;
+      this.select(key, true);
+    },
+
+    notifyAgentAlert(agentName) {
+      const agent = this.getAgentData(agentName);
+      const sum = agent.summary;
+      this.playNotificationSound(sum.expired > 0 ? 'critical' : 'alert');
+
+      let msg = '';
+      if (sum.expired > 0) {
+        msg = `🚨 [AGENTE ${agent.name}] Detectados ${sum.expired} lote(s) VENCIDO(S) em ${agent.sectorLabel}! Ação urgente necessária.`;
+      } else if (sum.today > 0) {
+        msg = `🟠 [AGENTE ${agent.name}] Atenção: ${sum.today} lote(s) vencem HOJE em ${agent.sectorLabel}.`;
+      } else if (sum.warn > 0) {
+        msg = `🟡 [AGENTE ${agent.name}] Alerta preventivo: ${sum.warn} lote(s) vencendo em até 3 dias em ${agent.sectorLabel}.`;
+      } else {
+        msg = `✅ [AGENTE ${agent.name}] Ronda de conformidade concluída em ${agent.sectorLabel}. Zero irregularidades!`;
+      }
+
+      window.BrigadaUI?.showToast?.(msg, sum.expired > 0 ? 'error' : (sum.today > 0 ? 'warning' : 'success'));
+
+      if (window.BrigadaNotifications?.addSystemBanner) {
+        try {
+          window.BrigadaNotifications.addSystemBanner({
+            title: `Alerta do Agente ${agent.name} (${agent.role})`,
+            message: msg,
+            type: sum.expired > 0 ? 'danger' : 'warning',
+            sector: agent.config.sector
+          });
+        } catch (e) {}
+      }
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(`Brigada IA - Agente ${agent.name}`, {
+            body: msg,
+            icon: '/static/icons/icon-192x192.png'
+          });
+        } catch (e) {}
+      }
+    },
+
+    async reauditAgent(agentName) {
+      window.BrigadaUI?.showToast?.(`🔄 Agente ${agentName} realizando nova varredura minuciosa...`, 'info');
+      this.playNotificationSound('audit');
+      try {
+        if (window.BrigadaData?.load) {
+          await window.BrigadaData.load();
+        }
+      } catch (e) {
+        console.warn('Erro ao atualizar dados:', e);
+      }
+      this._rebuild();
+      if (this.selectedKey === 'agent:' + agentName) {
+        this.renderDrawer();
+      }
+      const agent = this.getAgentData(agentName);
+      window.BrigadaUI?.showToast?.(`✅ Varredura concluída por ${agent.name}: ${agent.summary.statusText}`, agent.summary.expired > 0 ? 'error' : 'success');
+    },
+
+    flyToLocation(loc) {
+      if (!loc) return;
+      const fz = /^piso_loja:FZ(\d+)$/i.exec(loc.trim());
+      if (fz) {
+        const fzKey = `fz:${fz[1]}`;
+        if (this.view !== 'store') this.setView('store', true);
+        this.select(fzKey, true);
+        return;
+      }
+      const ch = this.parseChamberLocation(loc);
+      if (ch) {
+        const slotKey = `slot:${ch.chamberKey}:${ch.column}:${ch.level}:${ch.pos}`;
+        if (this.view !== ch.chamberKey) this.setView(ch.chamberKey, true);
+        this.select(slotKey, true);
+        return;
+      }
+      window.BrigadaUI?.showToast?.(`Localização: ${loc}`, 'info');
+    },
+
+    playNotificationSound(type = 'alert') {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+
+        if (type === 'critical') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.setValueAtTime(780, now + 0.1);
+          osc.frequency.setValueAtTime(1040, now + 0.2);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          osc.start(now);
+          osc.stop(now + 0.46);
+        } else if (type === 'audit') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(659.25, now);
+          osc.frequency.setValueAtTime(880, now + 0.12);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.36);
+        }
+      } catch (err) {}
+    },
+
+    renderAgentsDock() {
+      const dock = this.container?.querySelector('#twin-agents-dock');
+      if (!dock) return;
+      const agentsList = ['FELIPE', 'LIU', 'HUGO', 'ISABEL', 'ROSE', 'IMPERADOR', 'JEFFERSON', 'RAFAEL', 'GILMAR', 'JUARES'];
+      const html = agentsList.map(name => {
+        const data = this.getAgentData(name);
+        const hasExpired = data.summary.expired > 0;
+        const hasToday = data.summary.today > 0;
+        const isSelected = this.selectedKey === 'agent:' + name;
+        let badgeClass = 'agent-pill--ok';
+        let badgeLabel = '✓';
+        if (hasExpired) {
+          badgeClass = 'agent-pill--danger';
+          badgeLabel = `🚨 ${data.summary.expired}`;
+        } else if (hasToday) {
+          badgeClass = 'agent-pill--warn';
+          badgeLabel = `🟠 ${data.summary.today}`;
+        }
+        return `
+          <button type="button" class="twin-agent-pill ${badgeClass} ${isSelected ? 'twin-agent-pill--active' : ''}" data-focus-agent="${name}" title="${esc(data.name)} · ${esc(data.role)} (${esc(data.summary.statusText)})">
+            <span class="twin-agent-pill__icon">${data.icon}</span>
+            <span class="twin-agent-pill__name">${data.name}</span>
+            <span class="twin-agent-pill__badge">${badgeLabel}</span>
+          </button>
+        `;
+      }).join('');
+      dock.innerHTML = `
+        <div class="twin-agents-dock__inner">
+          <span class="twin-agents-dock__label">🤖 AGENTES DA BRIGADA:</span>
+          ${html}
+        </div>
+      `;
+    },
+
+    _renderAgentDrawer(drawer, agentName) {
+      const agent = this.getAgentData(agentName);
+      const D = window.BrigadaData;
+      const sum = agent.summary;
+      const activeFilter = this.agentProductFilter || null;
+
+      let displayProducts = agent.products;
+      if (activeFilter === 'expired') {
+        displayProducts = agent.products.filter(({ sev }) => sev === SEV.EXPIRED);
+      } else if (activeFilter === 'today') {
+        displayProducts = agent.products.filter(({ sev }) => sev === SEV.TODAY);
+      } else if (activeFilter === 'warn') {
+        displayProducts = agent.products.filter(({ sev }) => sev === SEV.WARN);
+      } else if (activeFilter === 'ok') {
+        displayProducts = agent.products.filter(({ sev }) => sev === SEV.OK || sev === SEV.LONG);
+      }
+
+      const rows = displayProducts.length ? displayProducts.map(({ p, sev }) => {
+        const st = D.getProductStatus ? D.getProductStatus(p) : { label: 'Conforme', icon: '🟢' };
+        const color = sev === null ? '#64748b' : SEV_META[sev]?.color || '#10b981';
+        let friendlyLoc = p.location || 'Local não informado';
+        if (D.formatLocationFriendly) {
+          try { friendlyLoc = D.formatLocationFriendly(p); } catch (e) {}
+        }
+        
+        const isExp = sev === SEV.EXPIRED;
+        const isTod = sev === SEV.TODAY;
+        const statusBadge = isExp
+          ? `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.72rem;">🔴 VENCIDO</span>`
+          : (isTod
+            ? `<span style="background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.72rem;">🟠 VENCE HOJE</span>`
+            : `<span style="color: ${color}; font-size: 0.75rem; font-weight: 600;">${st.icon} ${esc(st.label)}</span>`);
+
+        return `
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-left: 4px solid ${color}; border-radius: 8px; padding: 10px; margin-bottom: 8px; transition: all 0.2s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.88rem; display: block;">${esc(p.name || 'Sem nome')}</strong>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">PLU: ${esc(p.plu || '—')} · Qtd: <b>${esc(p.quantity ?? 0)} ${esc(p.unit || '')}</b></span>
+              </div>
+              <div>${statusBadge}</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; padding: 4px 6px; background: rgba(0,0,0,0.25); border-radius: 4px;">
+              <span>📍 <b>${esc(friendlyLoc)}</b></span>
+              <span>📅 Val: <b>${esc(D.formatDate ? D.formatDate(p.endDate) : p.endDate)}</b></span>
+            </div>
+
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn btn--sm" data-fly-to="${esc(p.location || '')}" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #7dd3fc; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px;" title="Ver localização no 3D">
+                🎯 Ver no 3D
+              </button>
+              <button type="button" class="btn btn--sm" data-twin-cracha="${esc(p.id)}" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: #a5b4fc; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px;" title="Gerar Crachá">
+                🏷️ Crachá
+              </button>
+              <button type="button" class="btn btn--sm" data-agent-wa-item="${esc(p.id)}" data-agent="${esc(agent.name)}" style="background: rgba(37, 211, 102, 0.2); border: 1px solid rgba(37, 211, 102, 0.5); color: #4ade80; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="Avisar este produto no WhatsApp">
+                📲 WhatsApp
+              </button>
+              ${isExp ? `
+                <button type="button" class="btn btn--sm" data-agent-quebra="${esc(p.id)}" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #fca5a5; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; font-weight: 700;" title="Lançar Quebra">
+                  🗑️ Quebra
+                </button>
+              ` : ''}
+              ${(sev === SEV.WARN || isTod) && !p.isAwaitingReduction ? `
+                <button type="button" class="btn btn--sm" data-agent-rebaixa="${esc(p.id)}" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #d8b4fe; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px;" title="Marcar Rebaixa">
+                  🏷️ Rebaixa
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('') : `<div class="twin-rail__empty" style="text-align: center; padding: 2rem 1rem;">✅ Nenhum produto sob supervisão deste agente requer atenção no momento.</div>`;
+
+      drawer.innerHTML = `
+        <div class="twin-drawer__head" style="--sev:${sum.statusColor}; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95)); border-bottom: 2px solid ${sum.statusColor};">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 2.2rem; background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center;">
+              ${agent.icon}
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h2 style="margin: 0; font-size: 1.15rem; color: #fff; font-weight: 800;">${esc(agent.name)}</h2>
+                <span class="twin-badge" style="background: ${agent.themeColor}; color: #fff; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 700;">${esc(agent.badge)}</span>
+              </div>
+              <p style="margin: 3px 0 0; font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">${esc(agent.role)}</p>
+              <div style="color: #94a3b8; font-size: 0.74rem; margin-top: 2px;">📍 ${esc(agent.sectorLabel)}</div>
+            </div>
+          </div>
+          <button class="modal-close" data-action="close" title="Fechar">✕</button>
+        </div>
+
+        <!-- Diálogo / Insight do Agente -->
+        <div style="margin: 12px 14px; padding: 12px 14px; background: rgba(99, 102, 241, 0.08); border-left: 4px solid ${sum.statusColor}; border-radius: 8px;">
+          <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: ${agent.themeColor}; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>💬</span> RELATÓRIO DO AGENTE EM TEMPO REAL:
+          </div>
+          <div style="font-size: 0.86rem; color: var(--text-primary); line-height: 1.45; font-weight: 500;">
+            "${esc(agent.speechText)}"
+          </div>
+        </div>
+
+        <!-- KPIs Resumo Clicáveis (Filtro Interativo de Produtos) -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0 14px 12px;">
+          <button type="button" class="btn-agent-kpi ${activeFilter === 'expired' ? 'btn-agent-kpi--active' : ''}" data-agent-filter="expired" data-agent="${esc(agent.name)}" title="Filtrar produtos vencidos" style="background: ${activeFilter === 'expired' ? 'rgba(239, 68, 68, 0.32)' : 'rgba(239, 68, 68, 0.12)'}; border: 1.5px solid ${activeFilter === 'expired' ? '#ef4444' : 'rgba(239, 68, 68, 0.25)'}; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; transition: all 0.2s ease; outline: none; box-shadow: ${activeFilter === 'expired' ? '0 0 12px rgba(239, 68, 68, 0.45)' : 'none'};">
+            <div style="font-size: 1.25rem; font-weight: 800; color: #ef4444; line-height: 1;">${sum.expired}</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-top: 4px;">Vencidos</div>
+          </button>
+          <button type="button" class="btn-agent-kpi ${activeFilter === 'today' ? 'btn-agent-kpi--active' : ''}" data-agent-filter="today" data-agent="${esc(agent.name)}" title="Filtrar produtos que vencem hoje" style="background: ${activeFilter === 'today' ? 'rgba(249, 115, 22, 0.32)' : 'rgba(249, 115, 22, 0.12)'}; border: 1.5px solid ${activeFilter === 'today' ? '#f97316' : 'rgba(249, 115, 22, 0.25)'}; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; transition: all 0.2s ease; outline: none; box-shadow: ${activeFilter === 'today' ? '0 0 12px rgba(249, 115, 22, 0.45)' : 'none'};">
+            <div style="font-size: 1.25rem; font-weight: 800; color: #f97316; line-height: 1;">${sum.today}</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-top: 4px;">Hoje</div>
+          </button>
+          <button type="button" class="btn-agent-kpi ${activeFilter === 'warn' ? 'btn-agent-kpi--active' : ''}" data-agent-filter="warn" data-agent="${esc(agent.name)}" title="Filtrar produtos que vencem em até 3 dias" style="background: ${activeFilter === 'warn' ? 'rgba(245, 158, 11, 0.32)' : 'rgba(245, 158, 11, 0.12)'}; border: 1.5px solid ${activeFilter === 'warn' ? '#f59e0b' : 'rgba(245, 158, 11, 0.25)'}; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; transition: all 0.2s ease; outline: none; box-shadow: ${activeFilter === 'warn' ? '0 0 12px rgba(245, 158, 11, 0.45)' : 'none'};">
+            <div style="font-size: 1.25rem; font-weight: 800; color: #f59e0b; line-height: 1;">${sum.warn}</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-top: 4px;">Até 3d</div>
+          </button>
+          <button type="button" class="btn-agent-kpi ${activeFilter === 'ok' ? 'btn-agent-kpi--active' : ''}" data-agent-filter="ok" data-agent="${esc(agent.name)}" title="Filtrar produtos conformes / regulares" style="background: ${activeFilter === 'ok' ? 'rgba(16, 185, 129, 0.32)' : 'rgba(16, 185, 129, 0.12)'}; border: 1.5px solid ${activeFilter === 'ok' ? '#10b981' : 'rgba(16, 185, 129, 0.25)'}; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; transition: all 0.2s ease; outline: none; box-shadow: ${activeFilter === 'ok' ? '0 0 12px rgba(16, 185, 129, 0.45)' : 'none'};">
+            <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; line-height: 1;">${sum.ok}</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-top: 4px;">OK</div>
+          </button>
+        </div>
+
+        <!-- AÇÕES REAIS: DISPARO DE RELATÓRIO VIA WHATSAPP E ALERTAS -->
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 14px 12px;">
+          <button type="button" class="btn" data-agent-action="send-whatsapp" data-agent="${esc(agent.name)}" style="background: #25D366; color: #ffffff; border: none; font-weight: 800; font-size: 0.86rem; padding: 10px 14px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 3px 12px rgba(37, 211, 102, 0.4); transition: all 0.2s ease;">
+            <span style="font-size: 1.2rem;">📲</span> Enviar Relatório de Validades no WhatsApp
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn--primary btn--sm" data-agent-action="notify" data-agent="${esc(agent.name)}" style="background: var(--accent-gradient); border: none; font-weight: 700; flex: 1; padding: 7px 10px; font-size: 0.78rem;">
+              🚨 Alarme no Sistema
+            </button>
+            <button type="button" class="btn btn--outline btn--sm" data-agent-action="reaudit" data-agent="${esc(agent.name)}" style="border-color: rgba(255,255,255,0.2); font-weight: 600; padding: 7px 10px; font-size: 0.78rem;">
+              🔄 Reauditar Setor
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Produtos Auditados -->
+        <div class="twin-drawer__list" style="padding: 0 14px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+              📦 ${activeFilter ? `Filtrando: ${activeFilter === 'expired' ? 'Vencidos' : (activeFilter === 'today' ? 'Vencem Hoje' : (activeFilter === 'warn' ? 'Até 3 dias' : 'Regulares (OK)'))} (${displayProducts.length})` : `Todos os Produtos (${agent.products.length})`}
+            </span>
+            ${activeFilter ? `
+              <button type="button" class="btn btn--sm" data-agent-filter="clear" data-agent="${esc(agent.name)}" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #cbd5e1; font-size: 0.70rem; padding: 2px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" title="Limpar filtro e ver todos os produtos">
+                ✕ Ver Todos (${agent.products.length})
+              </button>
+            ` : `<span style="font-size: 0.70rem; color: #94a3b8;">Clique nos cartões acima para filtrar</span>`}
+          </div>
+          ${rows}
+        </div>
+      `;
+    },
+
+    _createAgentBubbleSprite(name) {
+      if (!this._ctx) return null;
+      const { THREE } = this._ctx;
+      const canvas = document.createElement('canvas');
+      canvas.width = 340;
+      canvas.height = 76;
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(1.5, 0.335, 1);
+      sprite.userData = { canvas, tex, agentName: name };
+      this._renderBubbleCanvas(sprite, name);
+      return sprite;
+    },
+
+    _renderBubbleCanvas(sprite, name) {
+      if (!sprite?.userData?.canvas) return;
+      const data = this.getAgentData(name);
+      const canvas = sprite.userData.canvas;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      let bg = 'rgba(16, 185, 129, 0.92)';
+      let border = '#34d399';
+      let text = '✓ 0 Vencidos';
+
+      if (data.summary.expired > 0) {
+        bg = 'rgba(239, 68, 68, 0.96)';
+        border = '#fca5a5';
+        text = `🚨 ${data.summary.expired} VENCIDO${data.summary.expired > 1 ? 'S' : ''}!`;
+      } else if (data.summary.today > 0) {
+        bg = 'rgba(249, 115, 22, 0.96)';
+        border = '#fdba74';
+        text = `🟠 ${data.summary.today} VENCE HOJE`;
+      } else if (data.summary.warn > 0) {
+        bg = 'rgba(245, 158, 11, 0.95)';
+        border = '#fde047';
+        text = `⚠️ ${data.summary.warn} EM RISCO`;
+      } else if (data.summary.long > 0) {
+        bg = 'rgba(2, 132, 199, 0.95)';
+        border = '#7dd3fc';
+        text = `❄️ ${data.summary.long} CÂMARA ALERTA`;
+      }
+
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 3;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(4, 4, w - 8, h - 8, 16);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.fillRect(4, 4, w - 8, h - 8);
+      }
+
+      ctx.font = 'bold 30px Outfit, system-ui, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(text, w / 2, h / 2);
+      ctx.shadowBlur = 0;
+
+      sprite.userData.tex.needsUpdate = true;
+    },
+
+    _updateAllAgentBubbles() {
+      if (!this._ctx?.agentBubbles) return;
+      this._ctx.agentBubbles.forEach((sprite, name) => {
+        this._renderBubbleCanvas(sprite, name);
+      });
+    },
+
     SEV, SEV_META, LAYOUT,
 
     // estado de UI
@@ -316,6 +1076,7 @@
             </div>
             <button class="twin-chip" id="twin-toggle-rail" title="Mostrar/ocultar alertas">🚨 Alertas</button>
           </div>
+          <div class="twin__agents-dock" id="twin-agents-dock"></div>
           <div class="twin__body">
             <aside class="twin__rail ${this.railOpen ? '' : 'twin__rail--closed'}" id="twin-rail"></aside>
             <div class="twin__stage" id="twin-stage">
@@ -362,8 +1123,69 @@
       root.querySelector('#twin-back').addEventListener('click', () => this.setView('store'));
       root.querySelector('#twin-reset').addEventListener('click', () => this._flyToView(this.view));
 
-      // Delegação de eventos (rail + drawer)
+      // Delegação de eventos (rail + drawer + agentes)
       root.addEventListener('click', (e) => {
+        const agentBtn = e.target.closest('[data-focus-agent]');
+        if (agentBtn) {
+          e.preventDefault();
+          this.focusAgent(agentBtn.dataset.focusAgent);
+          return;
+        }
+        const filterBtn = e.target.closest('[data-agent-filter]');
+        if (filterBtn) {
+          e.preventDefault();
+          const targetFilter = filterBtn.dataset.agentFilter;
+          const agentName = filterBtn.dataset.agent;
+          if (targetFilter === 'clear' || this.agentProductFilter === targetFilter) {
+            this.agentProductFilter = null;
+          } else {
+            this.agentProductFilter = targetFilter;
+          }
+          const drawer = this.container?.querySelector('#twin-drawer');
+          if (drawer) this._renderAgentDrawer(drawer, agentName);
+          return;
+        }
+
+        const agentAct = e.target.closest('[data-agent-action]');
+        if (agentAct) {
+          e.preventDefault();
+          const action = agentAct.dataset.agentAction;
+          const agentName = agentAct.dataset.agent;
+          if (action === 'send-whatsapp') this.sendAgentWhatsApp(agentName);
+          if (action === 'notify') this.notifyAgentAlert(agentName);
+          if (action === 'reaudit') this.reauditAgent(agentName);
+          return;
+        }
+        const waItemBtn = e.target.closest('[data-agent-wa-item]');
+        if (waItemBtn) {
+          e.preventDefault();
+          const prodId = waItemBtn.dataset.agentWaItem;
+          const agentName = waItemBtn.dataset.agent;
+          this.sendProductWhatsApp(prodId, agentName);
+          return;
+        }
+        const flyToBtn = e.target.closest('[data-fly-to]');
+        if (flyToBtn) {
+          e.preventDefault();
+          this.flyToLocation(flyToBtn.dataset.flyTo);
+          return;
+        }
+        const quebraBtn = e.target.closest('[data-agent-quebra]');
+        if (quebraBtn) {
+          e.preventDefault();
+          window.BrigadaUI?.showQuebraModal?.(quebraBtn.dataset.agentQuebra);
+          return;
+        }
+        const rebaixaBtn = e.target.closest('[data-agent-rebaixa]');
+        if (rebaixaBtn) {
+          e.preventDefault();
+          const prodId = rebaixaBtn.dataset.agentRebaixa;
+          window.BrigadaData?.setAwaitingReduction?.([prodId], true, 'aguardando').then(() => {
+            window.BrigadaUI?.showToast?.('Produto enviado para rebaixa!', 'success');
+            this.refresh();
+          });
+          return;
+        }
         if (e.target.closest('#btn-guardar-rail')) {
           e.preventDefault();
           this.toggleRail(false);
@@ -453,6 +1275,7 @@
       this.renderRail();
       this.renderLegend();
       this.renderDrawer();
+      this.renderAgentsDock();
 
       this._updateRailControls();
     },
@@ -491,9 +1314,9 @@
         if (m.alerts.length > 60) html += `<div class="twin-rail__empty">+ ${m.alerts.length - 60} alertas…</div>`;
       }
 
-      html += `<div class="twin-rail__section">📅 Verificação de hoje <span class="twin-badge">${m.scheduledToday.length}</span></div>`;
+      html += `<div class="twin-rail__section" style="color: #10b981; font-weight: 700;">📅 Verificação de hoje <span class="twin-badge twin-badge--verificar">${m.scheduledToday.length}</span></div>`;
       if (!m.scheduledToday.length) html += `<div class="twin-rail__empty">Sem locais agendados para hoje.</div>`;
-      m.scheduledToday.forEach(e => { html += this._railItem(e, `${e.products.length} item(ns) · verificar hoje`); });
+      m.scheduledToday.forEach(e => { html += this._railItem(e, `${e.products.length} item(ns) · verificar hoje`, true); });
 
       if (m.kpis.unplaced) {
         html += `<div class="twin-rail__note">ℹ️ ${m.kpis.unplaced} produto(s) sem posição no mapa (sem freezer ou palete definido).</div>`;
@@ -501,18 +1324,22 @@
       rail.innerHTML = html;
     },
 
-    _railItem(e, subtitle) {
-      const meta = SEV_META[e.worst];
+    _railItem(e, subtitle, isScheduled = false) {
+      const isVerificar = isScheduled || (this.layer === 'agenda' && e.scheduled);
+      const meta = isVerificar ? { color: '#10b981', label: 'Verificar Hoje' } : SEV_META[e.worst];
       const where = e.type === 'freezer'
         ? (e.sector === 'acougue' ? 'Açougue' : 'Perecíveis')
         : CHAMBER_NAMES[e.chamberKey];
       const label = e.type === 'slot' ? `C${pad2(e.column)} · N${e.level} · ${e.pos}` : e.type === 'column' ? `Coluna ${pad2(e.column)}` : e.label;
       return `
-        <button class="twin-alert ${this.selectedKey === e.key ? 'twin-alert--active' : ''}" data-go="${e.key}" style="--sev:${meta.color}">
+        <button class="twin-alert ${isVerificar ? 'twin-alert--verificar' : ''} ${this.selectedKey === e.key ? 'twin-alert--active' : ''}" data-go="${e.key}" style="--sev:${meta.color}">
           <span class="twin-alert__dot"></span>
           <span class="twin-alert__body">
-            <strong>${esc(label)}</strong>
-            <small>${esc(where)} — ${esc(subtitle)}</small>
+            <span style="display:flex; align-items:center; justify-content:space-between; width:100%; gap: 6px;">
+              <strong>${esc(label)}</strong>
+              ${isVerificar ? `<span class="twin-badge--verificar">🟢 VERIFICAR</span>` : ''}
+            </span>
+            <small>${esc(where)} — ${isVerificar ? `<strong style="color:#10b981; font-weight:700;">${esc(subtitle)}</strong>` : esc(subtitle)}</small>
           </span>
           <span class="twin-alert__go">➜</span>
         </button>`;
@@ -522,9 +1349,13 @@
       const el = this.container?.querySelector('#twin-legend');
       if (!el) return;
       let items = [];
-      if (this.layer === 'validade' || this.layer === 'agenda') {
+      if (this.layer === 'agenda') {
+        items = [
+          ['#10b981', '🟢 Verificar hoje (Piscando)'],
+          ['#1e293b', 'Fora da agenda de hoje']
+        ];
+      } else if (this.layer === 'validade') {
         items = [SEV.EXPIRED, SEV.TODAY, SEV.WARN, SEV.LONG, SEV.OK, SEV.EMPTY].map(s => [SEV_META[s].color, SEV_META[s].label]);
-        if (this.layer === 'agenda') items.push(['#1e293b', 'Fora da agenda de hoje']);
       } else if (this.layer === 'rebaixa') {
         items = [['#a855f7', 'Com itens em rebaixa'], ['#334155', 'Sem rebaixa']];
       } else {
@@ -537,6 +1368,14 @@
     renderDrawer() {
       const drawer = this.container?.querySelector('#twin-drawer');
       if (!drawer) return;
+
+      if (this.selectedKey && this.selectedKey.startsWith('agent:')) {
+        const agentName = this.selectedKey.replace('agent:', '');
+        this._renderAgentDrawer(drawer, agentName);
+        drawer.classList.add('twin__drawer--open');
+        return;
+      }
+
       const e = this.selectedKey && this.model.entities.get(this.selectedKey);
       drawer.classList.toggle('twin__drawer--open', !!e);
       if (!e) { drawer.innerHTML = ''; return; }
@@ -594,7 +1433,7 @@
           </div>
           <button class="modal-close" data-action="close" title="Fechar">✕</button>
         </div>
-        ${e.scheduled ? `<div class="twin-drawer__notice">📅 Este local está na <strong>agenda de verificação de hoje</strong>.</div>` : ''}
+        ${e.scheduled ? `<div class="twin-drawer__notice" style="background: rgba(16,185,129,0.15); border-left: 4px solid #10b981; color: #10b981; font-weight:600; display:flex; align-items:center; justify-content:space-between; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px;"><span>🗓️ Este local está na <strong>agenda de verificação de hoje</strong></span><span class="twin-badge--verificar">🟢 VERIFICAR</span></div>` : ''}
         <div class="twin-drawer__pills">${chips || '<span class="twin-pill">Sem itens ativos</span>'}${e.rebaixa ? `<span class="twin-pill" style="--sev:#a855f7">🏷️ ${e.rebaixa} em rebaixa</span>` : ''}</div>
         ${e.type === 'slot' && e.products.length > 1 ? `<div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 6px 10px; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px;">📦 <b>Palete com múltiplos lotes:</b> Este palete possui ${e.products.length} lotes alocados. Cada lote possui seu próprio crachá de identificação.</div>` : ''}
         <div class="twin-drawer__actions">${actions.join('')}</div>
@@ -662,9 +1501,10 @@
 
     _rebuild() {
       this.model = this.buildModel();
-      if (this.selectedKey && !this.model.entities.has(this.selectedKey)) this.selectedKey = null;
+      if (this.selectedKey && !this.selectedKey.startsWith('agent:') && !this.model.entities.has(this.selectedKey)) this.selectedKey = null;
       this.renderHud();
       this._applyColors();
+      this._updateAllAgentBubbles();
     },
 
     // ════════════════════════════════════════════════════════════════════════
@@ -829,36 +1669,199 @@
       const F = LAYOUT.freezer;
       const bodyGeo = new THREE.BoxGeometry(F.w, F.h, F.d);
       const glassGeo = new THREE.BoxGeometry(F.w * 0.92, 0.06, F.d * 0.85);
-      const glassMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.35, roughness: 0.1, metalness: 0.3 });
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.35, roughness: 0.1, metalness: 0.3 });      // Materiais compartilhados para as Geladeiras Verticais / Expositores em "L"
+      const darkFrameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6, metalness: 0.4 });
+      const canopyMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.5 });
+      const interiorShelfMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.7 });
+      const geladeiraGlassMat = new THREE.MeshStandardMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.22, roughness: 0.1, metalness: 0.3 });
+      const ledMat = new THREE.MeshBasicMaterial({ color: 0x67e8f9 });
+
+      // Paleta vibrante para os produtos internos nas prateleiras dos módulos
+      const prodColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x14b8a6, 0xf97316, 0xffffff];
+      const prodMats = prodColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+
+      // Dimensões dos módulos colados (formando uma linha contínua perfeita em "L")
+      const GW = 1.02; // largura de cada módulo (1.02m)
+      const GD = 0.85; // profundidade
+      const G_baseH = 0.16;
+      const G_canopyH = 0.22;
+      const G_bodyH = 1.84;
+      const G_totalH = G_baseH + G_bodyH + G_canopyH; // 2.22m
+
+      const gBodyGeo = new THREE.BoxGeometry(GW * 0.99, G_bodyH, GD * 0.98);
+      const gDoorGeo = new THREE.BoxGeometry(GW * 0.96, G_bodyH * 0.88, 0.03);
+      const gCanopyGeo = new THREE.BoxGeometry(GW, G_canopyH, GD);
+      const gBaseGeo = new THREE.BoxGeometry(GW, G_baseH, GD);
+      const gShelfGeo = new THREE.BoxGeometry(GW * 0.92, 0.025, GD * 0.72);
+
+      // Função construtora de cada módulo colado (com produtos visíveis e zero Z-fighting)
+      const buildGeladeira = (e, slot) => {
+        const group = new THREE.Group();
+        group.position.set(slot.x, 0, slot.z);
+        group.rotation.y = slot.rotY;
+
+        // 1. Rodapé (base de aço escuro: y de 0 a 0.16)
+        const base = new THREE.Mesh(gBaseGeo, darkFrameMat);
+        base.position.set(0, G_baseH / 2, 0);
+        base.receiveShadow = true;
+        group.add(base);
+
+        // 2. Gabinete principal com a cor semafórica de validade (y de 0.16 a 2.00)
+        const body = new THREE.Mesh(gBodyGeo, this._mat(SEV_META[SEV.EMPTY].color));
+        body.position.set(0, G_baseH + G_bodyH / 2, 0);
+        body.castShadow = true;
+        body.receiveShadow = true;
+        group.add(body);
+        this._register(e.key, body);
+
+        // 3. Testeira superior chanfrada estritamente no topo (y de 2.00 a 2.22 - ZERO sobreposição!)
+        const canopy = new THREE.Mesh(gCanopyGeo, canopyMat);
+        canopy.position.set(0, G_baseH + G_bodyH + G_canopyH / 2, 0);
+        group.add(canopy);
+
+        // Faixa de LED superior
+        const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(GW * 0.92, 0.04, 0.03), ledMat);
+        ledStrip.position.set(0, G_baseH + G_bodyH + G_canopyH / 2, GD / 2 + 0.015);
+        group.add(ledStrip);
+
+        // Prateleiras internas com produtos empilhados visíveis (estilo gôndola/geladeira expositora)
+        [0.42, 0.86, 1.30].forEach((sy, lvlIdx) => {
+          const shelf = new THREE.Mesh(gShelfGeo, interiorShelfMat);
+          shelf.position.set(0, G_baseH + sy, 0);
+          shelf.receiveShadow = true;
+          group.add(shelf);
+
+          // Testeira frontal colorida da prateleira (porta-preço)
+          const trim = new THREE.Mesh(new THREE.BoxGeometry(GW * 0.92, 0.03, 0.015), this._mat(SEV_META[SEV.EMPTY].color));
+          trim.position.set(0, G_baseH + sy - 0.01, GD * 0.72 / 2);
+          group.add(trim);
+
+          // Caixinhas e pacotes de produtos coloridos
+          [-0.28, 0, 0.28].forEach((px, pIdx) => {
+            const pMat = prodMats[(e.num + lvlIdx * 2 + pIdx) % prodMats.length];
+            const pHeight = 0.22 + (pIdx % 2) * 0.05;
+            const prodBox = new THREE.Mesh(new THREE.BoxGeometry(0.24, pHeight, GD * 0.52), pMat);
+            prodBox.position.set(px, G_baseH + sy + pHeight / 2 + 0.012, 0);
+            prodBox.castShadow = true;
+            group.add(prodBox);
+
+            // Etiqueta frontal branca no produto
+            const tagMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, pHeight * 0.45, 0.01), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            tagMesh.position.set(px, G_baseH + sy + pHeight / 2 + 0.012, GD * 0.52 / 2 + 0.006);
+            group.add(tagMesh);
+          });
+        });
+
+        // Porta de vidro frontal translúcida cristalina
+        const glassDoor = new THREE.Mesh(gDoorGeo, geladeiraGlassMat);
+        glassDoor.position.set(0, G_baseH + G_bodyH * 0.52, GD / 2 + 0.015);
+        group.add(glassDoor);
+
+        // Puxador vertical metálico na porta
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 8), darkFrameMat);
+        handle.position.set(0.18, G_baseH + G_bodyH * 0.5, GD / 2 + 0.035);
+        group.add(handle);
+
+        // Etiqueta com o número do freezer no topo (01 a 35)
+        const label = this._label(pad2(e.num), { size: 0.55 });
+        label.position.set(0, G_totalH + 0.38, 0);
+        group.add(label);
+
+        g.add(group);
+      };
 
       this.model.sectors.forEach(sector => {
         const conf = LAYOUT.store[sector];
         const list = [...this.model.entities.values()].filter(e => e.type === 'freezer' && e.sector === sector).sort((a, b) => a.num - b.num);
-        list.forEach((e, i) => {
-          const row = Math.floor(i / conf.perRow);
-          const col = i % conf.perRow;
-          const x = conf.origin.x + col * (F.w + F.gapX) + F.w / 2;
-          const z = conf.origin.z + row * (F.d + F.rowGap) + F.d / 2;
 
-          const body = new THREE.Mesh(bodyGeo, this._mat(SEV_META[SEV.EMPTY].color));
-          body.position.set(x, F.h / 2, z);
-          body.castShadow = true; body.receiveShadow = true;
-          g.add(body);
-          this._register(e.key, body);
+        if (sector === 'acougue') {
+          // ── AÇOUGUE: ILHAS DE FREEZERS HORIZONTAIS TRADICIONAIS (NÃO CONVERTIDAS EM GELADEIRAS) ──
+          list.forEach((e, i) => {
+            const row = Math.floor(i / conf.perRow);
+            const col = i % conf.perRow;
+            const x = conf.origin.x + col * (F.w + F.gapX) + F.w / 2;
+            const z = conf.origin.z + row * (F.d + F.rowGap) + F.d / 2;
 
-          const glass = new THREE.Mesh(glassGeo, glassMat);
-          glass.position.set(x, F.h + 0.03, z);
-          g.add(glass);
+            const body = new THREE.Mesh(bodyGeo, this._mat(SEV_META[SEV.EMPTY].color));
+            body.position.set(x, F.h / 2, z);
+            body.castShadow = true; body.receiveShadow = true;
+            g.add(body);
+            this._register(e.key, body);
 
-          const label = this._label(pad2(e.num), { size: 0.55 });
-          label.position.set(x, F.h + 0.6, z);
-          g.add(label);
-        });
+            const glass = new THREE.Mesh(glassGeo, glassMat);
+            glass.position.set(x, F.h + 0.03, z);
+            g.add(glass);
 
-        const rows = Math.ceil(list.length / conf.perRow);
-        const title = this._label(conf.label, { size: 1.3, flat: true, bg: null, color: isLight ? '#334155' : '#a5b4fc' });
-        title.position.set(conf.origin.x + (conf.perRow * (F.w + F.gapX)) / 2, 0.03, conf.origin.z + rows * (F.d + F.rowGap) + 0.6);
-        g.add(title);
+            const label = this._label(pad2(e.num), { size: 0.55 });
+            label.position.set(x, F.h + 0.6, z);
+            g.add(label);
+          });
+
+          const rows = Math.ceil(list.length / conf.perRow);
+          const title = this._label(conf.label, { size: 1.3, flat: true, bg: null, color: isLight ? '#991b1b' : '#f87171' });
+          title.position.set(conf.origin.x + (conf.perRow * (F.w + F.gapX)) / 2, 0.03, conf.origin.z + rows * (F.d + F.rowGap) + 0.6);
+          g.add(title);
+
+        } else if (sector === 'pereciveis') {
+          // ── PERECÍVEIS: MÓDULOS COLADOS AO REDOR FORMANDO UM "L" CONTÍNUO (35 UNIDADES) ──
+          // Braço Norte (fundo): 21 módulos colados lado a lado (x de 4.31 a 24.71, z = 0.8, virados para o Sul)
+          // Braço Leste (lateral direita): 14 módulos colados lado a lado (x = 24.8, z de 1.74 a 15.00, virados para o Oeste)
+          // As unidades se encontram perfeitamente no canto formando um "L" contínuo sem vãos!
+          const lPerimeterSlots = [];
+
+          // Braço Norte do L: 21 módulos (índices 0 a 20 -> unidades 01 a 21)
+          for (let k = 0; k < 21; k++) {
+            lPerimeterSlots.push({
+              x: 4.31 + k * GW,
+              z: 0.8,
+              rotY: 0
+            });
+          }
+
+          // Braço Leste do L: 14 módulos (índices 21 a 34 -> unidades 22 a 35)
+          for (let k = 0; k < 14; k++) {
+            lPerimeterSlots.push({
+              x: 24.8,
+              z: 1.74 + k * GW,
+              rotY: -Math.PI / 2
+            });
+          }
+
+          list.forEach((e, i) => {
+            const slot = lPerimeterSlots[i] || { x: 4.31 + (i % 10) * 1.5, z: 2.0 + Math.floor(i / 10) * 2.0, rotY: 0 };
+            buildGeladeira(e, slot);
+          });
+
+          // ── GÔNDOLAS CENTRAIS DE PERECÍVEIS (NO CENTRO, DENTRO DO "L") ──
+          // Gôndola 01 (Norte): Mercearia / Laticínios Secos / Queijos
+          const gondola1 = this._createGondola({
+            x: 13.5,
+            z: 5.4,
+            length: 13.0,
+            depth: 1.35,
+            height: 1.68,
+            label: '🥗 GÔNDOLA 01 · LATICÍNIOS & QUEIJOS',
+            isLight
+          });
+          g.add(gondola1);
+
+          // Gôndola 02 (Sul): Mercearia de Perecíveis / Frios Secos / Matinais
+          const gondola2 = this._createGondola({
+            x: 13.5,
+            z: 10.4,
+            length: 13.0,
+            depth: 1.35,
+            height: 1.68,
+            label: '🥗 GÔNDOLA 02 · MERCEARIA & MATINAIS',
+            isLight
+          });
+          g.add(gondola2);
+
+          // Corredor central com letreiro oficial no piso entre as gôndolas
+          const title = this._label('🥗 PERECÍVEIS', { size: 1.4, flat: true, bg: null, color: isLight ? '#065f46' : '#6ee7b7' });
+          title.position.set(13.5, 0.03, 7.9);
+          g.add(title);
+        }
       });
 
       // câmaras (blocos clicáveis no fundo da loja)
@@ -1158,6 +2161,168 @@
       g.add(rose);
     },
 
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 3.1 GÔNDOLAS DE SUPERMERCADO (PERECÍVEIS / MERCEARIA)
+    // ════════════════════════════════════════════════════════════════════════
+
+    _createGondola({ x = 0, z = 0, length = 13.5, depth = 1.35, height = 1.68, label = '', isLight = false } = {}) {
+      const { THREE } = this._ctx;
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+
+      // Materiais da estrutura da gôndola de aço
+      const rackSteelMat = new THREE.MeshStandardMaterial({
+        color: isLight ? 0x64748b : 0x1e293b,
+        metalness: 0.7,
+        roughness: 0.35
+      });
+      const shelfSteelMat = new THREE.MeshStandardMaterial({
+        color: isLight ? 0xe2e8f0 : 0x334155,
+        metalness: 0.6,
+        roughness: 0.4
+      });
+      const trimRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+      const trimYellowMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.4 });
+      const trimGreenMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.4 });
+      const trimBlueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
+
+      // Base contínua de aço (rodapé inferior)
+      const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(length, 0.16, depth), rackSteelMat);
+      baseMesh.position.set(0, 0.08, 0);
+      baseMesh.castShadow = true;
+      baseMesh.receiveShadow = true;
+      group.add(baseMesh);
+
+      // Painel central / divisória da gôndola (spine)
+      const spineMesh = new THREE.Mesh(new THREE.BoxGeometry(length, height, 0.08), rackSteelMat);
+      spineMesh.position.set(0, height / 2, 0);
+      spineMesh.castShadow = true;
+      group.add(spineMesh);
+
+      // Colunas verticais cremalheiras ao longo do comprimento
+      const numCols = Math.max(3, Math.floor(length / 2.2));
+      const colStep = (length - 0.3) / (numCols - 1);
+      for (let c = 0; c < numCols; c++) {
+        const colX = -length / 2 + 0.15 + c * colStep;
+        const colPost = new THREE.Mesh(new THREE.BoxGeometry(0.06, height + 0.04, depth * 0.95), rackSteelMat);
+        colPost.position.set(colX, height / 2, 0);
+        group.add(colPost);
+      }
+
+      // Níveis de prateleiras suspensas em ambos os lados (face frontal e posterior)
+      const shelfLevels = [
+        { y: 0.20, shelfDepth: 0.54, trimMat: trimRedMat },
+        { y: 0.62, shelfDepth: 0.48, trimMat: trimYellowMat },
+        { y: 1.04, shelfDepth: 0.44, trimMat: trimGreenMat },
+        { y: 1.44, shelfDepth: 0.40, trimMat: trimBlueMat }
+      ];
+
+      // Paleta vibrante para os produtos nas prateleiras
+      const prodColors = [
+        0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6,
+        0xec4899, 0x14b8a6, 0xf97316, 0xffffff, 0xd97706
+      ];
+      const prodMaterials = prodColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+
+      shelfLevels.forEach((lvl, lvlIdx) => {
+        [-1, 1].forEach(side => {
+          const sideZ = side * (lvl.shelfDepth / 2 + 0.04);
+
+          // Bandeja / Prateleira de aço
+          const shelf = new THREE.Mesh(new THREE.BoxGeometry(length - 0.05, 0.025, lvl.shelfDepth), shelfSteelMat);
+          shelf.position.set(0, lvl.y, sideZ);
+          shelf.castShadow = true;
+          shelf.receiveShadow = true;
+          group.add(shelf);
+
+          // Testeira frontal colorida (porta-preço de acrílico)
+          const trim = new THREE.Mesh(new THREE.BoxGeometry(length - 0.05, 0.035, 0.015), lvl.trimMat);
+          trim.position.set(0, lvl.y - 0.01, sideZ + side * (lvl.shelfDepth / 2 + 0.008));
+          group.add(trim);
+
+          // Fileiras de produtos organizados nesta prateleira
+          const prodCount = Math.floor((length - 0.6) / 0.45);
+          for (let p = 0; p < prodCount; p++) {
+            const px = -length / 2 + 0.35 + p * 0.44;
+            const pMat = prodMaterials[(p + lvlIdx * 3 + (side > 0 ? 5 : 0)) % prodMaterials.length];
+            const pHeight = 0.22 + (p % 3) * 0.05;
+            const pWidth = 0.36;
+            const pDepth = lvl.shelfDepth * 0.75;
+
+            // Caixa ou pacote de produto
+            const prodBox = new THREE.Mesh(new THREE.BoxGeometry(pWidth, pHeight, pDepth), pMat);
+            prodBox.position.set(px, lvl.y + pHeight / 2 + 0.015, sideZ);
+            prodBox.castShadow = true;
+            group.add(prodBox);
+
+            // Etiqueta frontal branca na caixinha
+            const tagMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(pWidth * 0.65, pHeight * 0.4, 0.01),
+              new THREE.MeshBasicMaterial({ color: 0xffffff })
+            );
+            tagMesh.position.set(px, lvl.y + pHeight / 2 + 0.015, sideZ + side * (pDepth / 2 + 0.006));
+            group.add(tagMesh);
+          }
+        });
+      });
+
+      // Pontas de Gôndola (Endcaps) nas duas extremidades
+      [-1, 1].forEach(endSide => {
+        const endX = endSide * (length / 2 + 0.32);
+        const endcapDepth = depth * 0.95;
+        const endcapWidth = 0.60;
+
+        // Base da ponta
+        const endBase = new THREE.Mesh(new THREE.BoxGeometry(endcapWidth, 0.16, endcapDepth), rackSteelMat);
+        endBase.position.set(endX, 0.08, 0);
+        group.add(endBase);
+
+        // Painel de fundo da ponta
+        const endBack = new THREE.Mesh(new THREE.BoxGeometry(0.06, height, endcapDepth), rackSteelMat);
+        endBack.position.set(endX - endSide * (endcapWidth / 2 - 0.03), height / 2, 0);
+        group.add(endBack);
+
+        // Prateleiras da ponta de gôndola
+        shelfLevels.forEach((lvl, idx) => {
+          const eShelf = new THREE.Mesh(new THREE.BoxGeometry(endcapWidth * 0.92, 0.025, endcapDepth * 0.9), shelfSteelMat);
+          eShelf.position.set(endX, lvl.y, 0);
+          group.add(eShelf);
+
+          // Produtos em destaque na ponta de gôndola
+          [-0.32, 0, 0.32].forEach((pz, pIdx) => {
+            const featMat = prodMaterials[(pIdx * 2 + idx + (endSide > 0 ? 4 : 1)) % prodMaterials.length];
+            const featBox = new THREE.Mesh(new THREE.BoxGeometry(endcapWidth * 0.75, 0.26, 0.26), featMat);
+            featBox.position.set(endX, lvl.y + 0.14, pz);
+            featBox.castShadow = true;
+            group.add(featBox);
+          });
+        });
+
+        // Plaquinha testeira promocional no topo da ponta de gôndola
+        const promoTag = this._label(endSide < 0 ? '✨ OFERTAS' : '🥗 DESTAQUE', {
+          size: 0.42,
+          color: '#fef08a',
+          bg: 'rgba(180, 83, 9, 0.92)'
+        });
+        promoTag.position.set(endX, height + 0.35, 0);
+        group.add(promoTag);
+      });
+
+      // Placa identificadora no topo da gôndola (se houver rótulo)
+      if (label) {
+        const sign = this._label(label, {
+          size: 0.48,
+          color: '#ffffff',
+          bg: isLight ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.92)'
+        });
+        sign.position.set(0, height + 0.42, 0);
+        group.add(sign);
+      }
+
+      return group;
+    },
+
     _createForklift({ x = 0, z = 0, rotY = 0, color = 0xf59e0b, counterColor = 0x1e293b, hasPallet = false, forkHeight = 0.35, driverName = '', driverHelmet = 0xffffff, waypoints = null, speed = 1.3 } = {}) {
       const { THREE } = this._ctx;
       const group = new THREE.Group();
@@ -1242,6 +2407,24 @@
         const forkTag = this._label(`🚜 ${driverName}`, { size: 0.46, color: '#fef08a', bg: 'rgba(15, 23, 42, 0.92)' });
         forkTag.position.set(0, 2.65, -0.15);
         group.add(forkTag);
+
+        const bubbleSprite = this._createAgentBubbleSprite(driverName);
+        if (bubbleSprite) {
+          bubbleSprite.position.set(0, 3.15, -0.15);
+          group.add(bubbleSprite);
+          this._ctx.agentBubbles = this._ctx.agentBubbles || new Map();
+          this._ctx.agentBubbles.set(driverName, bubbleSprite);
+        }
+
+        const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+        const hitMesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.6, 2.8), hitMat);
+        hitMesh.position.set(0, 1.3, 0.3);
+        hitMesh.userData = { key: 'agent:' + driverName };
+        group.add(hitMesh);
+        if (this._ctx) {
+          this._ctx.pickables.push(hitMesh);
+          this._ctx.meshes.set('agent:' + driverName, group);
+        }
       }
 
       // Faróis dianteiros
@@ -1609,6 +2792,24 @@
         });
         tag.position.set(0, 1.76, 0);
         group.add(tag);
+
+        const bubbleSprite = this._createAgentBubbleSprite(name);
+        if (bubbleSprite) {
+          bubbleSprite.position.set(0, 2.18, 0);
+          group.add(bubbleSprite);
+          this._ctx.agentBubbles = this._ctx.agentBubbles || new Map();
+          this._ctx.agentBubbles.set(name, bubbleSprite);
+        }
+
+        const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+        const hitMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2.1, 8), hitMat);
+        hitMesh.position.set(0, 1.05, 0);
+        hitMesh.userData = { key: 'agent:' + name };
+        group.add(hitMesh);
+        if (this._ctx) {
+          this._ctx.pickables.push(hitMesh);
+          this._ctx.meshes.set('agent:' + name, group);
+        }
       }
 
       if (this._ctx.animatedActors) {
@@ -1677,8 +2878,15 @@
 
         if (this.layer === 'agenda') {
           const sched = e.scheduled || (isChamberBox && [...this.model.entities.values()].some(x => x.type === 'column' && x.chamberKey === e.chamberKey && x.scheduled));
-          if (!sched) { color = '#1e293b'; emissive = 0.02; if (e.type === 'slot') opacity = empty ? 0.08 : 0.35; }
-          else emissive = 0.35;
+          if (!sched) {
+            color = '#1e293b';
+            emissive = 0.02;
+            if (e.type === 'slot') opacity = empty ? 0.08 : 0.35;
+          } else {
+            color = '#10b981'; // VERDE VIBRANTE DE VERIFICAÇÃO!
+            emissive = 0.85;
+            opacity = 1.0;
+          }
         } else if (this.layer === 'rebaixa') {
           color = e.rebaixa ? '#a855f7' : '#334155';
           emissive = e.rebaixa ? 0.4 : 0.05;
@@ -1695,7 +2903,10 @@
 
         const mat = this._mat(color, { opacity, emissive });
         mesh.material = mat;
-        const pulsing = !matches && this.layer === 'validade' && (e.worst === SEV.EXPIRED || e.worst === SEV.TODAY);
+        const pulsing = !matches && (
+          (this.layer === 'validade' && (e.worst === SEV.EXPIRED || e.worst === SEV.TODAY)) ||
+          (this.layer === 'agenda' && (e.scheduled || (isChamberBox && [...this.model.entities.values()].some(x => x.type === 'column' && x.chamberKey === e.chamberKey && x.scheduled))))
+        );
         if (pulsing) ctx.pulse.add(mat);
       });
     },
@@ -1758,6 +2969,30 @@
       if (!tip || !ctx) return;
       ctx.renderer.domElement.style.cursor = key ? 'pointer' : 'grab';
       if (!key) { tip.style.opacity = 0; ctx.hoverKey = null; return; }
+
+      if (key.startsWith('agent:')) {
+        const agentName = key.replace('agent:', '');
+        const agent = this.getAgentData(agentName);
+        if (ctx.hoverKey !== key) {
+          tip.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <span style="font-size:1.25rem;">${agent.icon}</span>
+              <strong>${esc(agent.name)} · ${esc(agent.role)}</strong>
+            </div>
+            <span style="color:${agent.summary.statusColor}; font-weight:700;">${agent.summary.statusIcon} ${esc(agent.summary.statusText)}</span>
+            <span>📍 ${esc(agent.sectorLabel)}</span>
+            <span style="color:var(--text-secondary);">${agent.summary.total} produto(s) sob supervisão</span>
+            <em style="color:#38bdf8; margin-top:4px;">👉 Clique para abrir a Central do Agente</em>
+          `;
+          ctx.hoverKey = key;
+        }
+        const rect = ctx.stage.getBoundingClientRect();
+        tip.style.left = `${Math.min(ev.clientX - rect.left + 16, rect.width - 260)}px`;
+        tip.style.top = `${Math.max(ev.clientY - rect.top - 10, 8)}px`;
+        tip.style.opacity = 1;
+        return;
+      }
+
       const e = this.model.entities.get(key);
       if (!e) return;
       if (ctx.hoverKey !== key) {
@@ -1837,11 +3072,29 @@
     },
 
     select(key, fly = false) {
+      if (this.selectedKey !== key) {
+        this.agentProductFilter = null;
+      }
       this.selectedKey = key;
       this.renderHud();
       if (!this._ctx) return;
       this._updateSelectionMarker();
       if (key && fly) {
+        if (key.startsWith('agent:')) {
+          const obj = this._ctx.meshes.get(key);
+          if (obj) {
+            const { THREE, camera, controls } = this._ctx;
+            const target = new THREE.Vector3();
+            obj.getWorldPosition(target);
+            target.y += 0.9;
+            const dir = camera.position.clone().sub(controls.target).normalize();
+            if (dir.y < 0.35) { dir.y = 0.35; dir.normalize(); }
+            const camPos = target.clone().add(dir.multiplyScalar(4.5));
+            camPos.y = Math.max(camPos.y, 2.0);
+            this._tweenCamera(camPos, target, false, 800);
+          }
+          return;
+        }
         const obj = this._ctx.meshes.get(key);
         if (!obj) return;
         const { THREE, camera, controls } = this._ctx;
@@ -1906,8 +3159,17 @@
         ctx.controls.target.lerpVectors(ctx.tween.fromTarget, ctx.tween.toTarget, e);
         if (k >= 1) ctx.tween = null;
       }
-      const pulse = 0.25 + (Math.sin(t * 4) + 1) * 0.3;
+      const pulse = 0.20 + (Math.sin(t * 6.5) + 1) * 0.60;
       ctx.pulse.forEach(m => { m.emissiveIntensity = pulse; });
+
+      if (this.selectedKey && this.selectedKey.startsWith('agent:') && ctx.meshes) {
+        const aObj = ctx.meshes.get(this.selectedKey);
+        if (aObj && ctx.selRing && ctx.selRing.visible) {
+          const aPos = new this._three.Vector3();
+          aObj.getWorldPosition(aPos);
+          ctx.selRing.position.set(aPos.x, 0.05, aPos.z);
+        }
+      }
 
       // Delta de tempo preciso via performance.now() para locomoção suave
       const now = performance.now();
@@ -2060,5 +3322,15 @@
       }
       this._ctx = null;
     },
+  };
+
+  // Exposição global dos agentes da Brigada IA
+  window.BrigadaAgents = {
+    CONFIG: AGENTS_CONFIG,
+    get: (name) => window.BrigadaTwin.getAgentData(name),
+    getAll: () => Object.keys(AGENTS_CONFIG).map(name => window.BrigadaTwin.getAgentData(name)),
+    focus: (name) => window.BrigadaTwin.focusAgent(name),
+    notify: (name) => window.BrigadaTwin.notifyAgentAlert(name),
+    reaudit: (name) => window.BrigadaTwin.reauditAgent(name)
   };
 })();
